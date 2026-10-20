@@ -1,0 +1,71 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cms-cookie-co",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+
+  // Static site lives in ./public. The Worker runs first on every request so it can
+  // redirect www, gate /admin behind Cloudflare Access, and add security headers.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page"
+  },
+
+  // Only reachable through the custom domains below (which sit behind Access for /admin).
+  // A *.workers.dev URL would skip Access, so keep it off.
+  "workers_dev": false,
+  "preview_urls": false,
+
+  // Custom domains are attached on `wrangler deploy` (see DEPLOY.md). Ignored by `wrangler dev`.
+  "routes": [
+    { "pattern": "cmscookieco3more.com", "custom_domain": true },
+    { "pattern": "www.cmscookieco3more.com", "custom_domain": true }
+  ],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cms",
+      // Production D1 (created 2026-10-20).
+      "database_id": "2463eae5-4d26-46c0-a508-8bfec2d56ec8",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Burst guard for POST /api/orders: 5 attempts per minute per device (the binding only supports
+  // 10s/60s windows). The 5-orders-per-10-minutes cap is enforced in D1; see createOrder().
+  "ratelimits": [
+    { "name": "ORDER_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }
+  ],
+
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "cms-media" }
+  ],
+
+  // Order notifications. The destination must be a verified Email Routing address.
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_destination_addresses": ["cmscookieco3more@gmail.com"],
+      "allowed_sender_addresses": ["orders@cmscookieco3more.com"]
+    }
+  ],
+
+  "vars": {
+    "NOTIFY_TO": "cmscookieco3more@gmail.com",
+    "NOTIFY_FROM": "orders@cmscookieco3more.com",
+    "SITE_ORIGIN": "https://cmscookieco3more.com",
+    // Cloudflare Access (Zero Trust). Set both before deploying; /admin fails closed while empty.
+    "ACCESS_TEAM_DOMAIN": "wandering-firefly-b425.cloudflareaccess.com",
+    "ACCESS_AUD": "6b0a16ee88498bb971d50275a36b34b5801b38ab8a7042c947a4dbf98fe3d6ce"
+    // ADMIN_EMAILS (optional extra allowlist on top of the Access policy) is a secret so the
+    // emails stay out of this public repo: `npx wrangler secret put ADMIN_EMAILS` (DEPLOY.md).
+  },
+
+  "observability": { "enabled": true },
+
+  // wrangler dev otherwise rewrites request URLs to the first route's host (cmscookieco3more.com).
+  "dev": { "ip": "127.0.0.1", "port": 8787, "local_protocol": "http", "upstream_protocol": "http", "host": "localhost" }
+}

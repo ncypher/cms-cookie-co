@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CMS Cookie Co. Flyer</title>
+<title>CMS Cookie Co. &amp; More</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="canonical" href="https://cmscookieco3more.com/">
 <meta name="description" content="Pre-order cookies from CMS Cookie Co. & More in South Lyon, MI. Dozen $25, half dozen $13, tasting flight $10, mini cookie lunch boxes and cookie grams.">
 <meta name="theme-color" content="#FFF9F2">
 <meta property="og:title" content="Pre-Order Cookies! · CMS Cookie Co.">
 <meta property="og:description" content="Cookies making smiles. Order your cookies today from Shaun in South Lyon, MI.">
-<meta property="og:image" content="../assets/og-image.jpg">
-<link rel="icon" type="image/png" href="../assets/favicon.png">
-<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<meta property="og:image" content="https://cmscookieco3more.com/assets/og-image.jpg">
+<meta property="og:url" content="https://cmscookieco3more.com/">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;500;600;700&family=Josefin+Sans:wght@400;600;700&family=Kalam:wght@400;700&family=Kaushan+Script&display=swap">
@@ -150,7 +152,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .orderbar button{width:100%; justify-content:space-between; padding:16px 22px; font-size:16.5px}
 @media (min-width:821px){.orderbar{display:none}}
 
-.toast{position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:999px; font-weight:700; font-size:15px; opacity:0; transition:.25s; z-index:90; pointer-events:none; white-space:nowrap}
+.toast{position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:999px; font-weight:700; font-size:15px; opacity:0; transition:.25s; z-index:90; pointer-events:none; width:max-content; max-width:calc(100vw - 32px); text-align:center}
 .toast.on{opacity:1; transform:translate(-50%,0)}
 
 @media (prefers-reduced-motion: reduce){
@@ -162,11 +164,48 @@ button{font:inherit; color:inherit; cursor:pointer}
 .price{font:700 22px/1 var(--f-hand); color:var(--pink)}
 .switch{position:sticky; top:env(safe-area-inset-top,0px); z-index:50; background:color-mix(in srgb, var(--paper) 90%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--pink-soft)}
 .switch .in{max-width:1120px; margin:0 auto; padding:10px max(16px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px)); display:flex; align-items:center; gap:12px}
-.concepts{display:flex; gap:4px; background:var(--blush); padding:4px; border-radius:999px; font:600 13px var(--f-caps); letter-spacing:.06em; text-transform:uppercase; margin-right:auto}
-.concepts a{white-space:nowrap; padding:7px 12px; border-radius:999px; text-decoration:none; color:var(--muted)}
-.concepts a[aria-current]{background:var(--green); color:#fff}
+.brand{display:flex; align-items:center; gap:8px; margin-right:auto; text-decoration:none; color:var(--green); font:400 22px/1 var(--f-display); white-space:nowrap}
+.brand img{width:30px; height:auto; transform:rotate(-8deg)}
+.brand small{font:600 12px var(--f-caps); letter-spacing:.2em; text-transform:uppercase; color:var(--cocoa)}
 .cart-btn{background:var(--green)!important; color:#fff!important; white-space:nowrap}
-@media (max-width:440px){ .cart-label{display:none} .concepts a{padding:7px 10px; letter-spacing:.02em} }
+@media (max-width:440px){ .cart-label{display:none} }
+.hp{position:absolute!important; left:-9999px; width:1px; height:1px; overflow:hidden}
+
+/* This month: Cookie of the Month, Specials, Events, Tip of the Week (from /api/content) */
+.news{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; margin-bottom:18px}
+.news .col{gap:18px}
+@media (max-width:820px){ .news{grid-template-columns:1fr} }
+.cotm{display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:center}
+.cotm img{width:120px; aspect-ratio:1; object-fit:cover; border-radius:50%; border:4px solid #fff; box-shadow:var(--shadow); transform:rotate(-6deg)}
+.cotm h3{font:400 clamp(26px,3.2vw,32px)/1.05 var(--f-script); color:var(--green)}
+.cotm p{font:400 17px/1.4 var(--f-hand); margin-top:6px}
+.cotm .buy{display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap}
+@media (max-width:420px){ .cotm{grid-template-columns:1fr; justify-items:center; text-align:center} .cotm .buy{justify-content:center} }
+.sp-list{display:grid; gap:10px}
+.sp{display:grid; gap:2px}
+.sp .prow{padding-inline:4px}
+.sp p{font:400 15.5px/1.4 var(--f-body); color:var(--muted); padding-inline:6px}
+.sp img{width:100%; max-height:180px; object-fit:cover; border-radius:10px; margin-bottom:6px}
+.ev-list{display:grid; gap:14px}
+.ev{display:grid; grid-template-columns:62px 1fr; gap:12px; align-items:start}
+.ev .when{display:grid; justify-items:center; align-content:center; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 35% 30%,#F59AB0,#E25A82); color:#fff; line-height:1}
+.ev .when b{font:700 22px var(--f-hand)} .ev .when small{font:600 11px var(--f-caps); letter-spacing:.1em; text-transform:uppercase}
+.ev h3{font:700 19px/1.2 var(--f-hand); color:var(--green)}
+.ev .dow{font:600 12.5px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--pink)}
+.ev p{font-size:15px; line-height:1.45; margin-top:2px}
+.ev .flyer{display:block; margin-top:8px; width:100%; max-width:220px; border-radius:8px; border:4px solid #fff; box-shadow:var(--shadow)}
+.ev .rsvp{margin-top:8px}
+.tip video{width:100%; border-radius:12px; background:#000; display:block}
+.tip .cap{font:400 18px/1.35 var(--f-hand); margin-top:10px; text-align:center}
+.igcard{display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:center; text-decoration:none; padding:14px; border-radius:14px; background:linear-gradient(135deg,#FDE7EE,#FFF3E5); border:1.5px solid var(--pink-line)}
+.igcard .ig{width:52px; height:52px; border-radius:14px}
+.igcard .ig svg{width:28px; height:28px}
+.igcard b{display:block; font:700 17px/1.25 var(--f-hand); color:var(--cocoa)}
+.igcard span.go-ig{font:600 13px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--pink)}
+.strip{display:flex; gap:10px; overflow-x:auto; margin-top:14px; padding-bottom:4px; scroll-snap-type:x mandatory}
+.strip figure{margin:0; flex:0 0 46%; scroll-snap-align:start}
+.strip img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px}
+.strip figcaption{font:400 14px/1.3 var(--f-hand); margin-top:4px}
 
 /* Masthead */
 .mast{display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:center; padding-block:18px 26px}
@@ -315,10 +354,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 <header class="switch" id="top">
   <div class="in">
-    <nav class="concepts" aria-label="Design concepts">
-      <a href="../">Concept 1</a>
-      <a href="./" aria-current="page">Concept 2</a>
-    </nav>
+    <a class="brand" href="#top" aria-label="CMS Cookie Co. home"><img src="assets/cookie-mark.webp" alt="" width="60" height="48">CMS <small>Cookie Co.</small></a>
     <button class="cart-btn" id="cartBtn" aria-label="Open your order">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>
       <span class="cart-label">My order</span>
@@ -330,7 +366,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 <main class="sheet">
   <section class="mast">
     <div class="brandmark">
-      <h1 class="cms" aria-label="CMS"><img src="../assets/cookie-mark.png" alt="" width="256" height="206">MS</h1>
+      <h1 class="cms" aria-label="CMS"><img src="assets/cookie-mark.png" alt="" width="256" height="206">MS</h1>
       <div class="coco">Cookie Co.</div>
       <p class="smiles">Cookies Making Smiles <span class="heart">♥</span></p>
     </div>
@@ -349,6 +385,31 @@ button{font:inherit; color:inherit; cursor:pointer}
     </div>
   </section>
 
+  <!-- Filled from /api/content; each panel stays hidden until it has something to show. -->
+  <div class="news" id="news" hidden>
+    <div class="col">
+      <section class="panel" id="cotmPanel" hidden>
+        <span class="hearts l">♥</span><h2 class="tag">Cookie of the Month</h2><span class="hearts r">♥</span>
+        <div id="cotm"></div>
+      </section>
+      <section class="panel" id="specialsPanel" hidden>
+        <span class="hearts l">♥</span><h2 class="tag">Specials</h2><span class="hearts r">♥</span>
+        <div class="sp-list" id="specials"></div>
+      </section>
+    </div>
+    <div class="col">
+      <section class="panel" id="eventsPanel" hidden>
+        <span class="hearts l">♥</span><h2 class="tag">Events</h2><span class="hearts r">♥</span>
+        <div class="ev-list" id="events"></div>
+      </section>
+      <section class="panel tip" id="tipPanel" hidden>
+        <span class="hearts l">♥</span><h2 class="tag">Tip of the Week</h2><span class="hearts r">♥</span>
+        <div id="tip"></div>
+        <div class="strip" id="photos" hidden></div>
+      </section>
+    </div>
+  </div>
+
   <div class="board">
     <div class="col">
       <section class="panel" id="flavors">
@@ -360,16 +421,16 @@ button{font:inherit; color:inherit; cursor:pointer}
       <section class="panel" id="pricing">
         <span class="hearts l">♥</span><h2 class="tag">Pricing</h2><span class="hearts r">♥</span>
         <div class="plist">
-          <button class="prow" data-go="12">1 Dozen <span class="dots"></span><span class="amt">$25</span><span class="go" aria-hidden="true">+</span></button>
-          <button class="prow" data-go="6">1/2 Dozen <span class="dots"></span><span class="amt">$13</span><span class="go" aria-hidden="true">+</span></button>
-          <button class="prow" data-go="each">Each <span class="dots"></span><span class="amt">$4</span><span class="go" aria-hidden="true">+</span></button>
-          <button class="prow" data-add="flight">Cookie Tasting Flight <small>(1 of each flavor)</small><span class="dots"></span><span class="amt">$10</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-go="12" data-item="dozen">1 Dozen <span class="dots"></span><span class="amt" data-price="dozen">$25</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-go="6" data-item="half">1/2 Dozen <span class="dots"></span><span class="amt" data-price="half">$13</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-go="each" data-item="single">Each <span class="dots"></span><span class="amt" data-price="single">$4</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-add="flight" data-item="flight">Cookie Tasting Flight <small>(1 of each flavor)</small><span class="dots"></span><span class="amt" data-price="flight">$10</span><span class="go" aria-hidden="true">+</span></button>
         </div>
         <h3 class="subtag">Specialty Item Pricing</h3>
         <div class="plist">
-          <button class="prow" data-quick="mini12">Mini Cookie Lunch Box <small>(12)</small><span class="dots"></span><span class="amt">12 for $12</span><span class="go" aria-hidden="true">+</span></button>
-          <button class="prow" data-quick="mini24">Mini Cookie Lunch Box <small>(24)</small><span class="dots"></span><span class="amt">24 for $20</span><span class="go" aria-hidden="true">+</span></button>
-          <button class="prow" data-add="gram">Cookie Grams <span class="dots"></span><span class="amt">$9</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-quick="mini12" data-item="mini12">Mini Cookie Lunch Box <small>(12)</small><span class="dots"></span><span class="amt">12 for <span data-price="mini12">$12</span></span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-quick="mini24" data-item="mini24">Mini Cookie Lunch Box <small>(24)</small><span class="dots"></span><span class="amt">24 for <span data-price="mini24">$20</span></span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-add="gram" data-item="gram">Cookie Grams <span class="dots"></span><span class="amt" data-price="gram">$9</span><span class="go" aria-hidden="true">+</span></button>
         </div>
         <p class="upon">Cookie Cake Bites, Cookie Cupcakes,<br>Mini Cookie Cakes &amp; Cookie Sheet Cakes<br>all still <a href="#request">Upon Request!</a> ♥</p>
       </section>
@@ -393,12 +454,12 @@ button{font:inherit; color:inherit; cursor:pointer}
       <section class="panel" id="extras">
         <span class="hearts l">♥</span><h2 class="tag">Mini Cookie Lunch Boxes</h2><span class="hearts r">♥</span>
         <div class="mini">
-          <img src="../assets/lunchbox.webp" alt="Clear box of twelve mini cookies with a CMS Cookie Co. sticker" width="416" height="386" loading="lazy">
+          <img src="assets/lunchbox.webp" alt="Clear box of twelve mini cookies with a CMS Cookie Co. sticker" width="416" height="386" loading="lazy">
           <div>
             <p class="lede">Perfect for lunch boxes, snacks, parties &amp; on-the-go!</p>
             <div class="mini-rows">
-              <button class="prow" data-quick="mini12">12 Lunch Box <span class="dots"></span><span class="amt">$12</span><span class="go" aria-hidden="true">+</span></button>
-              <button class="prow" data-quick="mini24">24 Lunch Boxes <span class="dots"></span><span class="amt">$20</span><span class="go" aria-hidden="true">+</span></button>
+              <button class="prow" data-quick="mini12" data-item="mini12">12 Lunch Box <span class="dots"></span><span class="amt" data-price="mini12">$12</span><span class="go" aria-hidden="true">+</span></button>
+              <button class="prow" data-quick="mini24" data-item="mini24">24 Lunch Boxes <span class="dots"></span><span class="amt" data-price="mini24">$20</span><span class="go" aria-hidden="true">+</span></button>
             </div>
           </div>
         </div>
@@ -418,8 +479,8 @@ button{font:inherit; color:inherit; cursor:pointer}
       </div>
       <div class="controls">
         <div class="seg" role="group" aria-label="Box size">
-          <button id="size6" aria-pressed="false" data-size="6">1/2 Dozen<small class="tnum">6 cookies · $13</small></button>
-          <button id="size12" aria-pressed="true" data-size="12">1 Dozen<small class="tnum">12 cookies · $25</small></button>
+          <button id="size6" aria-pressed="false" data-size="6" data-item="half">1/2 Dozen<small class="tnum">6 cookies · <span data-price="half">$13</span></small></button>
+          <button id="size12" aria-pressed="true" data-size="12" data-item="dozen">1 Dozen<small class="tnum">12 cookies · <span data-price="dozen">$25</span></small></button>
         </div>
         <div class="picker" id="picker"></div>
         <div class="tools">
@@ -440,17 +501,17 @@ button{font:inherit; color:inherit; cursor:pointer}
   </section>
 
   <div class="trio">
-    <section class="panel flight">
+    <section class="panel flight" data-item="flight">
       <h2 class="ptitle">Cookie Tasting Flight</h2>
       <p class="try">Try all 4 flavors!</p>
-      <p class="big">$10</p>
-      <img src="../assets/flight.webp" alt="Kraft box holding one of each of the four cookie flavors" width="488" height="372" loading="lazy">
+      <p class="big" data-price="flight">$10</p>
+      <img src="assets/flight.webp" alt="Kraft box holding one of each of the four cookie flavors" width="488" height="372" loading="lazy">
       <button class="btn btn-rose btn-sm" data-add="flight">Add a flight</button>
     </section>
     <section class="panel">
       <h2 class="ptitle">We Offer</h2>
       <ul class="offer">
-        <li>Cookies by the Dozen</li><li>Cookies by the Half Dozen</li><li>Individual Cookies</li><li>Cookie Tasting Flights</li><li>Mini Cookie Lunch Boxes</li><li>Cookie Grams</li><li>Cookie Cake Bites</li><li>Cookie Cupcakes</li><li>Cookie Sheet Cakes</li><li>Mini Cookie Cakes</li><li>Baking &amp; Cooking Lessons</li><li>Host a Cooking Party</li>
+        <li data-item="dozen">Cookies by the Dozen</li><li data-item="half">Cookies by the Half Dozen</li><li data-item="single">Individual Cookies</li><li data-item="flight">Cookie Tasting Flights</li><li>Mini Cookie Lunch Boxes</li><li data-item="gram">Cookie Grams</li><li>Cookie Cake Bites</li><li>Cookie Cupcakes</li><li>Cookie Sheet Cakes</li><li>Mini Cookie Cakes</li><li>Baking &amp; Cooking Lessons</li><li>Host a Cooking Party</li>
       </ul>
       <p class="custom">♥ Custom designs, colors, and themes available. ♥</p>
     </section>
@@ -469,7 +530,7 @@ button{font:inherit; color:inherit; cursor:pointer}
   <div class="duo">
     <section class="panel meet" id="about">
       <span class="hearts l">♥</span><h2 class="tag">Meet Shaun</h2><span class="hearts r">♥</span>
-      <img src="../assets/shaun-market.jpg" alt="Shaun smiling behind her market table full of boxed cookies" width="900" height="1125" loading="lazy">
+      <img src="assets/shaun-market.jpg" alt="Shaun smiling behind her market table full of boxed cookies" width="900" height="1125" loading="lazy">
       <p>Owner &amp; Chef. Thank you for supporting homemade and helping my dream come true, 1 cookie at a time!</p>
       <span class="sig">Shaun Marie Schwartz</span>
     </section>
@@ -526,6 +587,7 @@ button{font:inherit; color:inherit; cursor:pointer}
         <label><input type="checkbox" id="oDF"> Dairy-free</label>
       </div>
     </div>
+    <div class="hp" aria-hidden="true"><label for="oWebsite">Leave this empty</label><input id="oWebsite" name="website" tabindex="-1" autocomplete="off"></div>
     <div class="field"><label for="oNotes">Notes for Shaun</label><textarea id="oNotes" placeholder="Cookie gram recipient and message, allergies, colors…"></textarea></div>
     <p class="err" id="oErr" hidden></p>
   </form>
@@ -541,13 +603,14 @@ const CONFIG = {
   phonePretty: "(734) 755-0533",
   email: "cmscookieco3more@gmail.com",
   venmo: "CmsCookieCo",
-  // Optional: paste a Formspree (or similar) form URL here, e.g. "https://formspree.io/f/abcdwxyz".
-  // When set, orders are delivered to Shaun's inbox automatically with one tap.
-  orderEndpoint: "",
+  // Orders go to the site's own Worker (stored in D1, emailed to Shaun). Text/email/copy stay as fallbacks.
+  orderEndpoint: "/api/orders",
+  contentEndpoint: "/api/content",
   leadDays: 2 // earliest date a customer can pick
 };
+// Defaults match the flyer; /api/content overrides them with Shaun's current menu.
 const PRICES = { single:4, box6:13, box12:25, flight:10, mini12:12, mini24:20, gram:9 };
-const FLAVORS = [
+let FLAVORS = [
   {id:"cc",   name:"Chocolate Chip",          short:"Choc Chip",    blurb:"The classic. Golden edges, soft middle, chocolate in every bite."},
   {id:"dcc",  name:"Double Chocolate Chip",   short:"Double Choc",  blurb:"Chocolate dough loaded with even more chocolate chips."},
   {id:"dcss", name:"Dark Chocolate Sea Salt", short:"Sea Salt",     blurb:"Dark chocolate chunks finished with flaky sea salt."},
@@ -557,7 +620,7 @@ const REQUESTS = ["Cookie Cake Bites","Cookie Cupcakes","Mini Cookie Cakes","Coo
 
 /* ============ Helpers ============ */
 const $ = s => document.querySelector(s);
-const money = n => "$" + (Math.round(n*100)/100).toString();
+const money = n => { const c = Math.round(n*100); return "$" + (c % 100 ? (c/100).toFixed(2) : String(c/100)); };
 const fl = id => FLAVORS.find(f => f.id === id);
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
@@ -662,14 +725,15 @@ function renderBox(){
   }));
 }
 document.querySelectorAll("[data-size]").forEach(b => b.addEventListener("click", ()=>{ boxSize = +b.dataset.size; boxFill = boxFill.slice(0, boxSize); renderBox(); }));
-$("#mixEven").addEventListener("click", ()=>{ boxFill = Array.from({length:boxSize}, (_,i)=>FLAVORS[i%4].id).sort(); renderBox(); });
-$("#surprise").addEventListener("click", ()=>{ while (boxFill.length < boxSize) boxFill.push(FLAVORS[Math.floor(Math.random()*4)].id); renderBox(); });
+$("#mixEven").addEventListener("click", ()=>{ boxFill = Array.from({length:boxSize}, (_,i)=>FLAVORS[i%FLAVORS.length].id).sort(); renderBox(); });
+$("#surprise").addEventListener("click", ()=>{ while (boxFill.length < boxSize) boxFill.push(FLAVORS[Math.floor(Math.random()*FLAVORS.length)].id); renderBox(); });
 $("#clearBox").addEventListener("click", ()=>{ boxFill = []; renderBox(); });
 $("#addBox").addEventListener("click", ()=>{
   const counts = FLAVORS.map(f => [f, boxFill.filter(x=>x===f.id).length]).filter(x=>x[1]);
   const detail = counts.map(([f,c]) => `${c} ${f.short}`).join(", ");
   const sorted = [...boxFill].sort().join("");
-  addItem({key:`box${boxSize}-${sorted}`, type:"box", name: boxSize===6 ? "Half-dozen box" : "Dozen box", detail, price: boxSize===6?PRICES.box6:PRICES.box12, art: counts.map(x=>x[0].id)});
+  addItem({key:`box${boxSize}-${sorted}`, type:"box", name: boxSize===6 ? "Half-dozen box" : "Dozen box", detail, price: boxSize===6?PRICES.box6:PRICES.box12, art: counts.map(x=>x[0].id),
+    size: boxSize, flavors: Object.fromEntries(counts.map(([f,c]) => [f.id, c]))});
   boxFill = []; renderBox();
 });
 renderBox();
@@ -753,8 +817,19 @@ function placeOrder(){
   const id = orderId();
   const lines = cart.map(c => `• ${c.qty} × ${c.name}${c.type==="box"?` (${c.detail})`:""} — ${money(c.price*c.qty)}`).join("\n");
   const text = `Hi Shaun! New cookie order ${id}\n\n${lines}\n\nTotal: ${money(total())}\nName: ${name}\nPhone: ${phone}\nWanted: ${prettyDate(date)} · ${$("#oHow").value}` + (diet?`\nDietary: ${diet}`:"") + ($("#oNotes").value.trim()?`\nNotes: ${$("#oNotes").value.trim()}`:"");
-  lastOrder = {id, text, total: total(), subject:`Cookie order ${id} from ${name}`};
+  lastOrder = {id, text, total: total(), subject:`Cookie order ${id} from ${name}`,
+    details: {name, phone, date, fulfillment: $("#oHow").selectedIndex === 1 ? "delivery" : "pickup",
+      dietary: [$("#oGF").checked&&"gf", $("#oDF").checked&&"df"].filter(Boolean), notes: $("#oNotes").value.trim(), website: $("#oWebsite").value}};
   showSend(lastOrder, true);
+}
+// Cart line -> what the Worker prices. The server never trusts prices from the browser.
+function toApiItem(c){
+  const base = {type:c.type, qty:c.qty};
+  if (c.type==="box") return {...base, size:c.size, flavors:c.flavors};
+  if (c.type==="single") return {...base, flavor:c.key.replace("single-","")};
+  if (c.type==="mini") return {...base, size:+c.key.replace("mini","")};
+  if (c.type==="special") return {...base, id:+c.key.replace("special-","")};
+  return base;
 }
 
 /* Send sheet (used by orders and custom requests) */
@@ -762,13 +837,14 @@ function showSend(payload, isOrder){
   if (!drawerOpen) openDrawer();
   goStep("send");
   const el = $("#stepSend"), foot = $("#drawerFoot"); foot.hidden = false;
-  const sms = `sms:${CONFIG.phone}?&body=${encodeURIComponent(payload.text)}`;
+  const direct = !!(CONFIG.orderEndpoint && isOrder && payload.details);
+  const sms =`sms:${CONFIG.phone}?&body=${encodeURIComponent(payload.text)}`;
   const mail = `mailto:${CONFIG.email}?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.text)}`;
   el.innerHTML = `<p style="color:var(--muted)">Here's what Shaun will get. Send it the way that's easiest for you.</p>
     <div class="msg-preview" id="msgText">${esc(payload.text)}</div>
     <div class="send-grid">
-      ${CONFIG.orderEndpoint ? `<button class="btn btn-rose" id="sendDirect">Send ${isOrder?"order":"request"} now</button>` : ""}
-      <a class="btn ${CONFIG.orderEndpoint?"btn-ghost":"btn-rose"}" href="${sms}" id="sendSms">Text it to Shaun</a>
+      ${direct ? `<button class="btn btn-rose" id="sendDirect">Send order now</button>` : ""}
+      <a class="btn ${direct?"btn-ghost":"btn-rose"}" href="${sms}" id="sendSms">${direct?"Or text it to Shaun":"Text it to Shaun"}</a>
       <a class="btn btn-ghost" href="${mail}" id="sendMail">Email it instead</a>
       <button class="btn btn-ghost" id="copyMsg">Copy message</button>
     </div>
@@ -782,14 +858,17 @@ function showSend(payload, isOrder){
     try{ await navigator.clipboard.writeText(payload.text); toast("Copied. Paste it in a text to Shaun."); }
     catch(e){ const r = document.createRange(); r.selectNodeContents($("#msgText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Copy it and send to Shaun."); }
   });
-  if (CONFIG.orderEndpoint){
+  if (direct){
     $("#sendDirect").addEventListener("click", async (e)=>{
       const b = e.currentTarget; b.disabled = true; b.textContent = "Sending…";
       try{
-        const res = await fetch(CONFIG.orderEndpoint, {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body: JSON.stringify({_subject:payload.subject, message:payload.text})});
-        if (!res.ok) throw new Error(res.status);
-        isOrder ? showDone(payload, true) : (closeDrawer(), goStep("cart"), toast("Request sent! Shaun will be in touch."));
-      }catch(err){ b.disabled = false; b.textContent = "Try again"; toast("That didn't go through. Try texting it instead."); }
+        const res = await fetch(CONFIG.orderEndpoint, {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body: JSON.stringify({...payload.details, items: cart.map(toApiItem)})});
+        const data = await res.json().catch(()=>({}));
+        if (res.status === 429){ b.textContent = "Text Shaun instead"; toast(data.error || "Too many orders from this device, please text Shaun at " + CONFIG.phonePretty); return; }
+        if (!res.ok) throw new Error(data.error || "That didn't go through.");
+        showDone({...payload, id:data.id, total:data.total}, true);
+      }catch(err){ b.disabled = false; b.textContent = "Try again"; toast(`${err.message} You can text it instead.`); }
     });
   }
 }
@@ -830,15 +909,18 @@ renderCartBadge();
 
 
 /* ============ Concept 2 extras ============ */
-const PHOTO = {cc:"../assets/f-cc.webp", dcc:"../assets/f-dcc.webp", dcss:"../assets/f-dcss.webp", fs:"../assets/f-fs.webp"};
-$("#flavorGrid").innerHTML = FLAVORS.map(f=>`
-  <div class="fl"><img src="${PHOTO[f.id]}" alt="${f.name}" width="220" height="226">
-    <b>${f.name}</b>
-    <button class="fl-add" data-single="${f.id}" aria-label="Add one ${f.name}, $4">+ $4</button></div>`).join("");
-document.querySelectorAll("[data-single]").forEach(b => b.addEventListener("click", ()=>{
-  const f = fl(b.dataset.single);
-  addItem({key:"single-"+f.id, type:"single", name:f.name, detail:"Single cookie", price:PRICES.single, art:[f.id]});
-}));
+const PHOTO = {cc:"assets/f-cc.webp", dcc:"assets/f-dcc.webp", dcss:"assets/f-dcss.webp", fs:"assets/f-fs.webp"};
+function renderFlavorGrid(){
+  $("#flavorGrid").innerHTML = FLAVORS.map(f=>`
+    <div class="fl"><img src="${PHOTO[f.id]}" alt="${f.name}" width="220" height="226">
+      <b>${f.name}</b>
+      <button class="fl-add" data-single="${f.id}" aria-label="Add one ${f.name}, ${money(PRICES.single)}">+ ${money(PRICES.single)}</button></div>`).join("");
+  document.querySelectorAll("[data-single]").forEach(b => b.addEventListener("click", ()=>{
+    const f = fl(b.dataset.single);
+    addItem({key:"single-"+f.id, type:"single", name:f.name, detail:"Single cookie", price:PRICES.single, art:[f.id]});
+  }));
+}
+renderFlavorGrid();
 document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", ()=>{
   const g = b.dataset.go;
   if (g === "each"){ $("#flavors").scrollIntoView({behavior:"smooth", block:"center"}); toast("Tap + under any flavor to add one."); return; }
@@ -852,6 +934,77 @@ document.querySelectorAll("[data-quick]").forEach(b => b.addEventListener("click
 // flavor photos in the box picker
 function photoPicker(){ document.querySelectorAll("#picker .pick").forEach(p=>{ const s = p.querySelector("span"); if (s && s.querySelector("svg")) s.innerHTML = `<img src="${PHOTO[p.dataset.pick]}" alt="">`; }); }
 new MutationObserver(photoPicker).observe($("#picker"), {childList:true}); photoPicker();
+
+/* ============ Live content from /api/content ============ */
+const MENU_TO_PRICE = {dozen:"box12", half:"box6", single:"single", flight:"flight", mini12:"mini12", mini24:"mini24", gram:"gram"};
+function applyMenu(menu){
+  const byKey = Object.fromEntries(menu.map(m => [m.key, m]));
+  for (const [key, pk] of Object.entries(MENU_TO_PRICE)){
+    const m = byKey[key]; if (!m) continue;
+    if (m.price != null) PRICES[pk] = m.price;
+    document.querySelectorAll(`[data-price="${key}"]`).forEach(el => el.textContent = money(PRICES[pk]));
+    document.querySelectorAll(`[data-item="${key}"]`).forEach(el => el.hidden = !m.active);
+  }
+  // A box size Shaun has turned off can't stay selected.
+  if (byKey.dozen && !byKey.dozen.active && boxSize===12 && byKey.half?.active) { boxSize = 6; boxFill = boxFill.slice(0,6); }
+  if (byKey.half && !byKey.half.active && boxSize===6 && byKey.dozen?.active) boxSize = 12;
+  const activeFlavors = FLAVORS.filter(f => byKey["flavor-"+f.id]?.active !== false);
+  if (activeFlavors.length){ FLAVORS = activeFlavors; boxFill = boxFill.filter(id => FLAVORS.some(f => f.id===id)); }
+  renderFlavorGrid(); renderBox();
+}
+function longDate(v, opts){ const [y,m,d] = v.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US", opts); }
+const IG_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff"/></svg>`;
+function renderContent(c){
+  const show = (id, on) => { $(id).hidden = !on; return on; };
+  let any = false;
+  const m = c.cookieOfTheMonth;
+  if (show("#cotmPanel", !!m)){ any = true;
+    $("#cotm").innerHTML = `<div class="cotm">
+      ${m.image ? `<img src="${esc(m.image)}" alt="${esc(m.title)}" width="240" height="240" loading="lazy">` : `<div style="width:120px">${cookieSVG("fs", 11, {heart:true})}</div>`}
+      <div><h3>${esc(m.title)}</h3>${m.body ? `<p>${esc(m.body)}</p>` : ""}
+        ${m.price != null ? `<div class="buy"><span class="price tnum">${money(m.price)}</span><button class="btn btn-rose btn-sm" data-special="${m.id}">Add one</button></div>` : ""}</div></div>`;
+  }
+  if (show("#specialsPanel", c.specials.length > 0)){ any = true;
+    $("#specials").innerHTML = c.specials.map(s => `<div class="sp">
+      ${s.image ? `<img src="${esc(s.image)}" alt="" loading="lazy">` : ""}
+      ${s.price != null
+        ? `<button class="prow" data-special="${s.id}">${esc(s.title)} <span class="dots"></span><span class="amt">${money(s.price)}</span><span class="go" aria-hidden="true">+</span></button>`
+        : `<div class="prow" style="cursor:default">${esc(s.title)}</div>`}
+      ${s.body ? `<p>${esc(s.body)}</p>` : ""}
+      ${s.ends ? `<p style="color:var(--pink);font-weight:600">Through ${esc(longDate(s.ends,{month:"short", day:"numeric"}))}</p>` : ""}</div>`).join("");
+  }
+  if (show("#eventsPanel", c.events.length > 0)){ any = true;
+    $("#events").innerHTML = c.events.map(e => `<div class="ev">
+      <div class="when" aria-hidden="true"><small>${esc(longDate(e.date,{month:"short"}))}</small><b>${esc(longDate(e.date,{day:"numeric"}))}</b></div>
+      <div style="min-width:0"><span class="dow">${esc(longDate(e.date,{weekday:"long", month:"long", day:"numeric"}))}</span><h3>${esc(e.title)}</h3>
+        ${e.body ? `<p>${esc(e.body)}</p>` : ""}
+        ${e.flyer ? `<a href="${esc(e.flyer)}" target="_blank" rel="noopener"><img class="flyer" src="${esc(e.flyer)}" alt="Flyer for ${esc(e.title)}" loading="lazy"></a>` : ""}
+        ${e.rsvp_url ? `<a class="btn btn-rose btn-sm rsvp" href="${esc(e.rsvp_url)}" target="_blank" rel="noopener">RSVP</a>` : ""}</div></div>`).join("");
+  }
+  const t = c.tip;
+  if (show("#tipPanel", !!t || c.photos.length > 0)){ any = true;
+    $("#tip").innerHTML = !t ? "" : t.kind === "video"
+      ? `<video src="${esc(t.url)}#t=0.1" controls playsinline preload="metadata"></video>${t.caption ? `<p class="cap">${esc(t.caption)}</p>` : ""}`
+      : `<a class="igcard" href="${esc(t.url)}" target="_blank" rel="noopener"><span class="ig">${IG_ICON}</span><span><b>${esc(t.caption || "This week's tip is on Instagram")}</b><span class="go-ig">Watch on Instagram →</span></span></a>`;
+    $("#photos").hidden = !c.photos.length;
+    $("#photos").innerHTML = c.photos.map(p => `<figure><img src="${esc(p.url)}" alt="${esc(p.caption||"")}" loading="lazy">${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("");
+  }
+  $("#news").hidden = !any;
+  const specials = [c.cookieOfTheMonth, ...c.specials].filter(Boolean);
+  document.querySelectorAll("[data-special]").forEach(b => b.addEventListener("click", ()=>{
+    const s = specials.find(x => x.id === +b.dataset.special); if (!s) return;
+    addItem({key:"special-"+s.id, type:"special", name:s.title, detail: s.kind==="cotm" ? "Cookie of the Month" : "Special", price:s.price, art:["fs"]});
+  }));
+}
+async function loadContent(){
+  try{
+    const res = await fetch(CONFIG.contentEndpoint, {headers:{Accept:"application/json"}});
+    if (!res.ok) throw new Error(res.status);
+    const c = await res.json();
+    applyMenu(c.menu); renderContent(c);
+  }catch(e){ /* Static flyer prices still work; checkout falls back to text/email if the API is down. */ }
+}
+loadContent();
 </script>
 </body>
 </html>

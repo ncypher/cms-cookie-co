@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CMS Cookie Co. · Admin</title>
+<meta name="theme-color" content="#FFF9F2">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;500;600;700&family=Josefin+Sans:wght@600;700&family=Kalam:wght@400;700&display=swap">
+<style>
+/* Admin: same flyer paper, pink ribbons and green type as the public site, laid out for one thumb on a phone. */
+:root{
+  --paper:#FFF9F2; --panel:#FFFDF9; --green:#1F4A37; --pink:#E54F7C; --pink-btn:#D63F6D; --pink-soft:#F7C3D0; --pink-line:#F1AFC0;
+  --blush:#FCE6EC; --cocoa:#4A2A1E; --muted:#7C5A4E; --line:rgba(74,42,30,.14); --ok:#2F7A4F;
+  --f-display:"Abril Fatface", Georgia, serif; --f-hand:"Kalam", "Comic Sans MS", cursive;
+  --f-caps:"Josefin Sans", "Century Gothic", sans-serif; --f-body:"Figtree", "Helvetica Neue", Arial, sans-serif;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{overflow-x:clip}
+body{margin:0; background:var(--paper); color:var(--cocoa); font:400 16px/1.5 var(--f-body); -webkit-font-smoothing:antialiased; padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--pink); outline-offset:2px; border-radius:8px}
+.wrap{max-width:760px; margin:0 auto; padding:0 max(16px, env(safe-area-inset-left,0px)) 0 max(16px, env(safe-area-inset-right,0px))}
+
+header{position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--pink-soft); padding-top:env(safe-area-inset-top,0px)}
+header .wrap{display:flex; align-items:center; gap:10px; padding-block:10px}
+.brand{font:400 22px/1 var(--f-display); color:var(--green); margin-right:auto; text-decoration:none; display:flex; align-items:center; gap:8px}
+.brand small{font:700 11px var(--f-caps); letter-spacing:.18em; text-transform:uppercase; color:var(--pink); background:var(--blush); padding:5px 8px 3px; border-radius:999px}
+.who{font-size:12.5px; color:var(--muted); max-width:42vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.viewsite{font:700 12px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--green); text-decoration:none; border:1.5px solid var(--green); border-radius:999px; padding:7px 10px 5px; white-space:nowrap}
+
+h1.page{font:400 34px/1.1 var(--f-hand); font-weight:700; color:var(--green); margin:18px 0 6px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+h1.page .sub{font:500 14px var(--f-body); color:var(--muted)}
+.bar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 14px}
+
+.card{background:var(--panel); border:1.5px solid var(--pink-line); border-radius:16px; padding:16px; margin-bottom:14px; position:relative}
+.card.off{opacity:.62}
+.card h3{margin:0; font:700 20px/1.2 var(--f-hand); color:var(--green)}
+.meta{font-size:13.5px; color:var(--muted)}
+.row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.spacer{margin-left:auto}
+.tag{display:inline-block; font:700 11.5px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; padding:4px 9px 2px; border-radius:999px; background:var(--blush); color:var(--pink-btn)}
+.tag.green{background:#E3F0E8; color:var(--ok)} .tag.warn{background:#FFE9C7; color:#8A5200}
+.price{font:700 22px/1 var(--f-hand); color:var(--pink)}
+.thumb{width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin-top:10px; background:#eee}
+video.thumb{background:#000}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:999px; padding:12px 18px; font-weight:700; font-size:15px; text-decoration:none; min-height:44px}
+.btn-rose{background:var(--pink-btn); color:#fff}
+.btn-green{background:var(--green); color:#fff}
+.btn-ghost{background:#fff; border:1.5px solid var(--line); color:var(--cocoa)}
+.btn-danger{background:#fff; border:1.5px solid #E7A0B4; color:#B42D55}
+.btn-sm{padding:8px 14px; min-height:38px; font-size:14px}
+.btn[disabled]{opacity:.5; cursor:not-allowed}
+.chip{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:7px 14px; font-weight:700; font-size:14px}
+.chip[aria-pressed="true"]{background:var(--green); border-color:var(--green); color:#fff}
+
+/* Switch toggles */
+.switch{display:inline-flex; align-items:center; gap:10px; font-weight:700; font-size:15px; cursor:pointer; user-select:none; min-height:44px}
+.switch input{appearance:none; -webkit-appearance:none; width:50px; height:30px; border-radius:15px; background:#D9CBC4; position:relative; transition:background .2s; margin:0; flex:none; cursor:pointer}
+.switch input::after{content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .2s}
+.switch input:checked{background:var(--ok)}
+.switch input:checked::after{transform:translateX(20px)}
+.switch input:disabled{opacity:.5}
+
+/* Forms */
+form.edit{display:grid; gap:12px}
+.field{display:grid; gap:5px}
+.field label, .field .lbl{font-weight:700; font-size:14px}
+.field input:not([type=checkbox]):not([type=file]), .field select, .field textarea{width:100%; font-size:16px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:11px 13px}
+.field textarea{min-height:88px; resize:vertical}
+.field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--pink)}
+.field .hint{font-size:12.5px; color:var(--muted)}
+.two{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.upl{display:grid; gap:8px}
+.upl img, .upl video{max-width:100%; max-height:180px; border-radius:10px; object-fit:cover}
+.progress{height:8px; border-radius:4px; background:var(--blush); overflow:hidden}
+.progress i{display:block; height:100%; width:0; background:var(--pink-btn); transition:width .2s}
+.err{color:#B42D55; font-weight:600; font-size:14px}
+.empty{text-align:center; color:var(--muted); padding:28px 10px; font:400 19px var(--f-hand)}
+
+/* Orders */
+.items{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:4px; font-size:15px}
+.items li{display:flex; gap:8px}
+.items li span:last-child{margin-left:auto; font-weight:700; white-space:nowrap}
+.items small{color:var(--muted); display:block}
+.contact{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+.toggles{display:flex; gap:18px; flex-wrap:wrap; margin-top:8px; border-top:1px dashed var(--pink-soft); padding-top:6px}
+
+/* Menu */
+.mrow{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px dashed var(--pink-soft)}
+.mrow:last-child{border-bottom:0}
+.mrow b{font:700 17px/1.2 var(--f-hand)}
+.mrow .dollar{display:flex; align-items:center; gap:4px; font-weight:700}
+.mrow input[type=number]{width:78px; font-size:16px; border:1.5px solid var(--line); border-radius:10px; padding:8px 8px; background:#fff}
+.mrow .switch{min-height:auto}
+.mrow .switch span{display:none}
+.subhead{font:700 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:16px 0 0}
+
+/* Tab bar */
+nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; border-top:1.5px solid var(--pink-soft); display:grid; grid-template-columns:repeat(5,1fr); padding:6px max(6px, env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px, env(safe-area-inset-left,0px))}
+nav.tabs button{border:0; background:none; display:grid; justify-items:center; gap:2px; padding:6px 0; font:700 11px var(--f-caps); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-radius:12px; position:relative}
+nav.tabs svg{width:24px; height:24px}
+nav.tabs button[aria-current="page"]{color:var(--green); background:var(--blush)}
+nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px; height:18px; border-radius:9px; background:var(--pink-btn); color:#fff; font:700 11px/18px var(--f-body); padding:0 5px}
+
+.toast{position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,16px); background:var(--cocoa); color:#fff; padding:11px 18px; border-radius:999px; font-weight:700; font-size:14.5px; opacity:0; transition:.25s; z-index:40; pointer-events:none; width:max-content; max-width:calc(100vw - 32px); text-align:center}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+.toast.bad{background:#B42D55}
+.gate{margin-top:40px; text-align:center}
+@media (max-width:380px){ .two{grid-template-columns:1fr} }
+@media (prefers-reduced-motion: reduce){ *,*::before,*::after{transition-duration:.001ms!important} }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="/admin/">CMS <small>Admin</small></a>
+    <span class="who" id="who"></span>
+    <a class="viewsite" href="/" target="_blank" rel="noopener">View site</a>
+  </div>
+</header>
+
+<main class="wrap" id="main"></main>
+
+<nav class="tabs" aria-label="Admin sections">
+  <button data-tab="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>Orders<span class="badge" id="openBadge" hidden></span></button>
+  <button data-tab="specials"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>Specials</button>
+  <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
+  <button data-tab="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-5-5-8 8"/></svg>Media</button>
+  <button data-tab="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Menu</button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ Helpers ============ */
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => n == null ? "" : "$" + (Math.round(n*100) % 100 ? Number(n).toFixed(2) : String(Math.round(n)));
+const MAX_UPLOAD = 100 * 1024 * 1024;
+const UPLOAD_TYPES = ["image/jpeg","image/png","image/webp","video/mp4"];
+let tt;
+function toast(msg, bad=false){ const t = $("#toast"); t.textContent = msg; t.classList.toggle("bad", bad); t.classList.add("on"); clearTimeout(tt); tt = setTimeout(()=>t.classList.remove("on"), bad ? 4200 : 2200); }
+function prettyDate(v, opts={weekday:"short", month:"short", day:"numeric"}){ if (!v) return ""; const [y,m,d] = v.slice(0,10).split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US", opts); }
+function ago(iso){ const d = new Date(iso); return d.toLocaleString("en-US", {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); }
+
+class ApiError extends Error { constructor(msg, status){ super(msg); this.status = status; } }
+async function api(method, path, body){
+  const res = await fetch("/api/admin/" + path, {
+    method, credentials:"same-origin",
+    headers: body !== undefined ? {"Content-Type":"application/json", Accept:"application/json"} : {Accept:"application/json"},
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok){
+    if (res.status === 401 || res.status === 503) showGate(data.error);
+    throw new ApiError(data.error || `Request failed (${res.status})`, res.status);
+  }
+  return data;
+}
+function upload(file, onProgress){
+  return new Promise((resolve, reject) => {
+    if (!UPLOAD_TYPES.includes(file.type)) return reject(new Error("Only mp4, jpg, png and webp files can be uploaded"));
+    if (file.size > MAX_UPLOAD) return reject(new Error("Files must be 100 MB or smaller"));
+    const x = new XMLHttpRequest();
+    x.open("PUT", "/api/admin/upload");
+    x.setRequestHeader("Content-Type", file.type);
+    x.upload.onprogress = e => e.lengthComputable && onProgress && onProgress(e.loaded / e.total);
+    x.onload = () => { let d = {}; try{ d = JSON.parse(x.responseText); }catch(e){}
+      x.status < 300 ? resolve(d) : reject(new Error(d.error || `Upload failed (${x.status})`)); };
+    x.onerror = () => reject(new Error("Upload failed. Check your connection."));
+    x.send(file);
+  });
+}
+function showGate(msg){
+  $("#main").innerHTML = `<div class="card gate"><h3>Please sign in again</h3><p class="meta">${esc(msg || "Your admin session ended.")}</p><a class="btn btn-rose" href="/admin/">Sign in</a></div>`;
+}
+
+/* ============ Tabs ============ */
+let tab = (location.hash.slice(1) || "orders");
+const TABS = {orders: renderOrders, specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu};
+function go(t){
+  if (!TABS[t]) t = "orders";
+  tab = t; history.replaceState(null, "", "#" + t);
+  $$("nav.tabs button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+  window.scrollTo(0, 0);
+  TABS[t]().catch(e => { if (e.status !== 401 && e.status !== 503) $("#main").innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p></div>`; });
+}
+$$("nav.tabs button").forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
+
+/* ============ Orders ============ */
+let orderFilter = "open";
+async function renderOrders(){
+  const {orders} = await api("GET", "orders?filter=" + orderFilter);
+  if (orderFilter === "open") setBadge(orders.length);
+  $("#main").innerHTML = `
+    <h1 class="page">Orders <span class="sub">${orders.length} ${orderFilter === "open" ? "open" : "total"}</span></h1>
+    <div class="bar">
+      <button class="chip" data-f="open" aria-pressed="${orderFilter==="open"}">Open</button>
+      <button class="chip" data-f="all" aria-pressed="${orderFilter==="all"}">All</button>
+      <button class="btn btn-ghost btn-sm spacer" id="refresh">Refresh</button>
+    </div>
+    ${orders.length ? orders.map(orderCard).join("") : `<p class="empty">${orderFilter === "open" ? "No open orders. Time for a cookie. ♥" : "No orders yet."}</p>`}`;
+  $$("[data-f]").forEach(b => b.addEventListener("click", () => { orderFilter = b.dataset.f; renderOrders(); }));
+  $("#refresh").addEventListener("click", renderOrders);
+  $$("[data-toggle]").forEach(inp => inp.addEventListener("change", async () => {
+    const [id, field] = inp.dataset.toggle.split("|");
+    inp.disabled = true;
+    try{
+      const {order} = await api("PATCH", "orders/" + encodeURIComponent(id), {[field]: inp.checked});
+      toast(`${id}: ${field === "paid" ? (order.paid ? "marked paid" : "marked unpaid") : (order.confirmed ? "confirmed" : "unconfirmed")}`);
+      $(`[data-order="${CSS.escape(id)}"] .status`).innerHTML = statusTags(order);
+    }catch(e){ inp.checked = !inp.checked; toast(e.message, true); }
+    inp.disabled = false;
+  }));
+}
+function statusTags(o){
+  return `${o.confirmed ? `<span class="tag green">Confirmed</span>` : `<span class="tag">New</span>`} ${o.paid ? `<span class="tag green">Paid</span>` : `<span class="tag warn">Unpaid</span>`}`
+    + (o.email_status === "failed" ? ` <span class="tag warn" title="The notification email didn't send">Email failed</span>` : "");
+}
+function orderCard(o){
+  const digits = o.phone.replace(/[^\d+]/g, "");
+  return `<article class="card" data-order="${esc(o.id)}">
+    <div class="row"><h3>${esc(o.name)}</h3><span class="price spacer">${money(o.total)}</span></div>
+    <div class="meta">${esc(o.id)} · placed ${esc(ago(o.created_at))}</div>
+    <div class="row" style="margin-top:6px"><b>Wanted ${esc(prettyDate(o.wanted_date))}</b><span class="meta">· ${o.fulfillment === "delivery" ? "Delivery" : "Pickup"}</span></div>
+    <div class="status" style="margin-top:6px">${statusTags(o)}</div>
+    <ul class="items">${o.items.map(l => `<li><span>${l.qty} ×</span><span>${esc(l.name)}${l.detail ? `<small>${esc(l.detail)}</small>` : ""}</span><span>${money(l.line_cents/100)}</span></li>`).join("")}</ul>
+    ${o.dietary ? `<p style="margin:8px 0 0"><span class="tag">${esc(o.dietary)}</span></p>` : ""}
+    ${o.notes ? `<p style="margin:8px 0 0; white-space:pre-wrap"><b>Notes:</b> ${esc(o.notes)}</p>` : ""}
+    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(o.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a></div>
+    <div class="toggles">
+      <label class="switch"><input type="checkbox" data-toggle="${esc(o.id)}|confirmed" ${o.confirmed ? "checked" : ""}> Confirmed</label>
+      <label class="switch"><input type="checkbox" data-toggle="${esc(o.id)}|paid" ${o.paid ? "checked" : ""}> Paid</label>
+    </div>
+  </article>`;
+}
+function setBadge(n){ const b = $("#openBadge"); b.hidden = !n; b.textContent = n; }
+
+/* ============ Schema-driven CRUD (specials, events) ============ */
+const SPECIALS = {
+  path: "specials", listKey: "specials", one: "special", title: "Specials", noun: "special",
+  sub: "Cookie of the Month and specials show on the home page while they're on and in their dates.",
+  fields: [
+    {name:"kind", label:"Type", type:"select", options:[["special","Special"],["cotm","Cookie of the Month"]]},
+    {name:"title", label:"Title", type:"text", required:true, max:120},
+    {name:"body", label:"Description", type:"textarea", max:1000},
+    {name:"price", label:"Price ($)", type:"money", hint:"Leave empty if it can't be ordered online."},
+    {name:"image_key", label:"Photo", type:"image", preview:"image"},
+    {pair:[{name:"starts", label:"Starts", type:"date"}, {name:"ends", label:"Ends", type:"date"}]},
+    {name:"active", label:"Show on the site", type:"switch", default:true},
+  ],
+  card: s => `<div class="row"><h3>${esc(s.title)}</h3>${s.price != null ? `<span class="price spacer">${money(s.price)}</span>` : ""}</div>
+    <div class="row" style="margin-top:6px">${s.kind === "cotm" ? `<span class="tag">Cookie of the Month</span>` : `<span class="tag">Special</span>`}
+      ${s.active ? `<span class="tag green">On</span>` : `<span class="tag warn">Off</span>`}
+      ${s.starts || s.ends ? `<span class="meta">${s.starts ? esc(prettyDate(s.starts)) : "Now"} → ${s.ends ? esc(prettyDate(s.ends)) : "no end"}</span>` : ""}</div>
+    ${s.body ? `<p style="margin:8px 0 0">${esc(s.body)}</p>` : ""}
+    ${s.image ? `<img class="thumb" src="${esc(s.image)}" alt="" loading="lazy">` : ""}`,
+  isOff: s => !s.active,
+};
+const EVENTS = {
+  path: "events", listKey: "events", one: "event", title: "Events", noun: "event",
+  sub: "Upcoming events show on the home page until their date passes.",
+  fields: [
+    {name:"title", label:"Title", type:"text", required:true, max:120},
+    {name:"date", label:"Date", type:"date", required:true},
+    {name:"body", label:"Details", type:"textarea", max:1000},
+    {name:"flyer_key", label:"Flyer", type:"image", preview:"flyer"},
+    {name:"rsvp_url", label:"RSVP link", type:"url", hint:"Optional. Must start with https://"},
+  ],
+  card: e => `<div class="row"><h3>${esc(e.title)}</h3></div>
+    <div class="row" style="margin-top:4px"><b>${esc(prettyDate(e.date, {weekday:"long", month:"long", day:"numeric", year:"numeric"}))}</b>
+      ${e.date < todayStr() ? `<span class="tag warn">Past</span>` : `<span class="tag green">Upcoming</span>`}</div>
+    ${e.body ? `<p style="margin:8px 0 0">${esc(e.body)}</p>` : ""}
+    ${e.rsvp_url ? `<p class="meta" style="margin:6px 0 0; overflow-wrap:anywhere">RSVP: ${esc(e.rsvp_url)}</p>` : ""}
+    ${e.flyer ? `<img class="thumb" src="${esc(e.flyer)}" alt="" loading="lazy">` : ""}`,
+  isOff: e => e.date < todayStr(),
+};
+function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+
+async function renderCrud(cfg, editing){
+  const data = await api("GET", cfg.path);
+  const rows = data[cfg.listKey];
+  $("#main").innerHTML = `
+    <h1 class="page">${cfg.title}</h1>
+    <p class="meta" style="margin:0 0 12px">${cfg.sub}</p>
+    <div class="bar"><button class="btn btn-rose" id="addNew">+ New ${cfg.noun}</button></div>
+    <div id="formSlot"></div>
+    ${rows.length ? rows.map(r => `<article class="card ${cfg.isOff(r) ? "off" : ""}" data-id="${r.id}">${cfg.card(r)}
+      <div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-edit="${r.id}">Edit</button><button class="btn btn-danger btn-sm" data-del="${r.id}">Delete</button></div></article>`).join("")
+      : `<p class="empty">No ${cfg.noun}s yet.</p>`}`;
+  $("#addNew").addEventListener("click", () => openForm(cfg, null));
+  $$("[data-edit]").forEach(b => b.addEventListener("click", () => openForm(cfg, rows.find(r => r.id === +b.dataset.edit))));
+  $$("[data-del]").forEach(b => b.addEventListener("click", async () => {
+    const r = rows.find(x => x.id === +b.dataset.del);
+    if (!confirm(`Delete "${r.title}"? This can't be undone.`)) return;
+    try{ await api("DELETE", `${cfg.path}/${r.id}`); toast("Deleted"); renderCrud(cfg); }catch(e){ toast(e.message, true); }
+  }));
+  if (editing !== undefined) openForm(cfg, editing);
+}
+
+function fieldHtml(f, v){
+  const id = "f_" + f.name;
+  if (f.pair) return `<div class="two">${f.pair.map(p => fieldHtml(p, v)).join("")}</div>`;
+  const val = v?.[f.name] ?? (f.default ?? "");
+  const hint = f.hint ? `<span class="hint">${esc(f.hint)}</span>` : "";
+  switch (f.type){
+    case "select": return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" name="${f.name}">${f.options.map(([k,l]) => `<option value="${k}" ${val===k?"selected":""}>${l}</option>`).join("")}</select>${hint}</div>`;
+    case "textarea": return `<div class="field"><label for="${id}">${f.label}</label><textarea id="${id}" name="${f.name}" maxlength="${f.max||1000}">${esc(val)}</textarea>${hint}</div>`;
+    case "money": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${val ?? ""}">${hint}</div>`;
+    case "date": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="date" value="${esc(val)}" ${f.required?"required":""}>${hint}</div>`;
+    case "url": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="url" inputmode="url" placeholder="https://" value="${esc(val)}">${hint}</div>`;
+    case "switch": return `<label class="switch"><input type="checkbox" name="${f.name}" ${val === true || val === 1 ? "checked" : ""}> ${f.label}</label>`;
+    case "image": {
+      const url = v?.[f.preview];
+      return `<div class="field"><span class="lbl">${f.label}</span><div class="upl" data-upl="${f.name}">
+        <input type="hidden" name="${f.name}" value="${esc(val)}">
+        <img alt="" ${url ? `src="${esc(url)}"` : "hidden"}>
+        <div class="progress" hidden><i></i></div>
+        <div class="row"><label class="btn btn-ghost btn-sm">${url ? "Change photo" : "Add photo"}<input type="file" accept="image/jpeg,image/png,image/webp" hidden></label>
+          <button type="button" class="btn btn-danger btn-sm" data-clear ${url ? "" : "hidden"}>Remove</button></div>
+        <span class="hint">JPG, PNG or WebP, up to 100 MB.</span></div></div>`;
+    }
+    default: return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" value="${esc(val)}" maxlength="${f.max||200}" ${f.required?"required":""}>${hint}</div>`;
+  }
+}
+function wireUploads(root){
+  $$("[data-upl]", root).forEach(box => {
+    const hidden = $("input[type=hidden]", box), img = $("img", box), file = $("input[type=file]", box), bar = $(".progress", box), clear = $("[data-clear]", box);
+    file.addEventListener("change", async () => {
+      const f = file.files[0]; if (!f) return;
+      bar.hidden = false; $("i", bar).style.width = "0";
+      try{
+        const r = await upload(f, p => $("i", bar).style.width = (p*100) + "%");
+        hidden.value = r.key; img.src = r.url; img.hidden = false; clear.hidden = false; toast("Photo uploaded");
+      }catch(e){ toast(e.message, true); }
+      bar.hidden = true; file.value = "";
+    });
+    clear.addEventListener("click", () => { hidden.value = ""; img.hidden = true; img.removeAttribute("src"); clear.hidden = true; });
+  });
+}
+function openForm(cfg, row){
+  const slot = $("#formSlot");
+  const flat = cfg.fields.flatMap(f => f.pair || [f]);
+  slot.innerHTML = `<form class="card edit" novalidate>
+    <h3>${row ? "Edit " + cfg.noun : "New " + cfg.noun}</h3>
+    ${cfg.fields.map(f => fieldHtml(f, row)).join("")}
+    <p class="err" hidden></p>
+    <div class="row"><button class="btn btn-rose" type="submit">Save</button><button class="btn btn-ghost" type="button" data-cancel>Cancel</button></div>
+  </form>`;
+  const form = $("form", slot);
+  wireUploads(form);
+  $("[data-cancel]", form).addEventListener("click", () => slot.innerHTML = "");
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const body = {};
+    for (const f of flat){
+      const el = form.elements[f.name];
+      body[f.name] = f.type === "switch" ? el.checked : el.value.trim();
+      if (f.required && !body[f.name]){ return showErr(form, `${f.label} is required`); }
+    }
+    const btn = $("[type=submit]", form); btn.disabled = true; btn.textContent = "Saving…";
+    try{
+      await api(row ? "PUT" : "POST", row ? `${cfg.path}/${row.id}` : cfg.path, body);
+      toast(row ? "Saved" : `${cfg.noun[0].toUpperCase() + cfg.noun.slice(1)} added`);
+      renderCrud(cfg);
+    }catch(err){ showErr(form, err.message); btn.disabled = false; btn.textContent = "Save"; }
+  });
+  slot.scrollIntoView({behavior:"smooth", block:"start"});
+  $("input:not([type=hidden]), select, textarea", form)?.focus({preventScroll:true});
+}
+function showErr(form, msg){ const p = $(".err", form); p.textContent = msg; p.hidden = false; }
+
+/* ============ Media ============ */
+let mediaKind = "photo";
+async function renderMedia(){
+  const {media} = await api("GET", "media");
+  $("#main").innerHTML = `
+    <h1 class="page">Media</h1>
+    <p class="meta" style="margin:0 0 12px">Featured videos and Instagram links become the <b>Tip of the Week</b> (newest first). Featured photos show under it.</p>
+    <form class="card edit" id="mediaForm" novalidate>
+      <h3>Add media</h3>
+      <div class="bar" style="margin:0">
+        ${[["photo","Photo"],["video","Video"],["instagram","Instagram link"]].map(([k,l]) => `<button type="button" class="chip" data-kind="${k}" aria-pressed="${mediaKind===k}">${l}</button>`).join("")}
+      </div>
+      <div class="field" id="fileField" ${mediaKind==="instagram"?"hidden":""}>
+        <label for="mFile">${mediaKind === "video" ? "Video (MP4, up to 100 MB)" : "Photo (JPG, PNG or WebP)"}</label>
+        <input id="mFile" type="file" accept="${mediaKind === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"}">
+        <div class="progress" hidden><i></i></div>
+      </div>
+      <div class="field" id="urlField" ${mediaKind==="instagram"?"":"hidden"}>
+        <label for="mUrl">Instagram post or reel link</label>
+        <input id="mUrl" type="url" inputmode="url" placeholder="https://www.instagram.com/reel/…">
+      </div>
+      <div class="field"><label for="mCap">Caption</label><input id="mCap" maxlength="300" placeholder="Tip of the Week: …"></div>
+      <label class="switch"><input type="checkbox" id="mFeat" checked> Feature on the home page</label>
+      <p class="err" hidden></p>
+      <div class="row"><button class="btn btn-rose" type="submit">Add</button></div>
+    </form>
+    ${media.length ? media.map(mediaCard).join("") : `<p class="empty">No media yet.</p>`}`;
+  $$("[data-kind]").forEach(b => b.addEventListener("click", () => { mediaKind = b.dataset.kind; renderMedia(); }));
+  const form = $("#mediaForm");
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = $("[type=submit]", form); btn.disabled = true;
+    try{
+      let key_or_url;
+      if (mediaKind === "instagram"){
+        key_or_url = $("#mUrl").value.trim();
+        if (!key_or_url) throw new Error("Paste the Instagram link first");
+      } else {
+        const f = $("#mFile").files[0];
+        if (!f) throw new Error("Choose a file first");
+        const bar = $("#fileField .progress"); bar.hidden = false; btn.textContent = "Uploading…";
+        const r = await upload(f, p => $("i", bar).style.width = (p*100) + "%");
+        if (r.kind !== mediaKind) throw new Error(`That's a ${r.kind}, not a ${mediaKind}`);
+        key_or_url = r.key;
+      }
+      await api("POST", "media", {kind: mediaKind, key_or_url, caption: $("#mCap").value.trim(), featured: $("#mFeat").checked});
+      toast("Added"); renderMedia();
+    }catch(err){ showErr(form, err.message); btn.disabled = false; btn.textContent = "Add"; }
+  });
+  $$("[data-feat]").forEach(inp => inp.addEventListener("change", async () => {
+    inp.disabled = true;
+    try{ await api("PATCH", "media/" + inp.dataset.feat, {featured: inp.checked}); toast(inp.checked ? "Featured" : "Not featured"); }
+    catch(e){ inp.checked = !inp.checked; toast(e.message, true); }
+    inp.disabled = false;
+  }));
+  $$("[data-mdel]").forEach(b => b.addEventListener("click", async () => {
+    if (!confirm("Delete this media? The file is removed too.")) return;
+    try{ await api("DELETE", "media/" + b.dataset.mdel); toast("Deleted"); renderMedia(); }catch(e){ toast(e.message, true); }
+  }));
+}
+function mediaCard(m){
+  const body = m.kind === "photo" ? `<img class="thumb" src="${esc(m.url)}" alt="" loading="lazy">`
+    : m.kind === "video" ? `<video class="thumb" src="${esc(m.url)}#t=0.1" controls playsinline preload="metadata"></video>`
+    : `<p class="meta" style="margin:8px 0 0; overflow-wrap:anywhere">${esc(m.url)}</p>`;
+  const size = m.size_bytes ? ` · ${(m.size_bytes/1048576).toFixed(m.size_bytes > 1048576 ? 1 : 2)} MB` : "";
+  return `<article class="card ${m.featured ? "" : "off"}">
+    <div class="row"><span class="tag">${m.kind === "instagram" ? "Instagram" : m.kind}</span><span class="meta">${esc(ago(m.created_at))}${size}</span></div>
+    ${m.caption ? `<p style="margin:8px 0 0; font:400 17px/1.35 var(--f-hand)">${esc(m.caption)}</p>` : ""}
+    ${body}
+    <div class="row" style="margin-top:10px"><label class="switch"><input type="checkbox" data-feat="${m.id}" ${m.featured ? "checked" : ""}> Featured</label>
+      <button class="btn btn-danger btn-sm spacer" data-mdel="${m.id}">Delete</button></div>
+  </article>`;
+}
+
+/* ============ Menu ============ */
+async function renderMenu(){
+  const {menu} = await api("GET", "menu");
+  const items = menu.filter(m => m.kind === "item"), flavors = menu.filter(m => m.kind === "flavor");
+  const row = m => `<div class="mrow" data-key="${esc(m.key)}"><b>${esc(m.name)}</b>
+    ${m.kind === "item" ? `<span class="dollar">$<input type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${m.price}" aria-label="Price for ${esc(m.name)}"></span>` : `<span></span>`}
+    <label class="switch" title="Available"><input type="checkbox" ${m.active ? "checked" : ""} aria-label="${esc(m.name)} available"><span>Available</span></label></div>`;
+  $("#main").innerHTML = `
+    <h1 class="page">Menu</h1>
+    <p class="meta" style="margin:0 0 12px">Prices save when you leave the box. Switch something off to hide it from the site and stop new orders for it.</p>
+    <section class="card"><p class="subhead" style="margin-top:0">Prices</p>${items.map(row).join("")}</section>
+    <section class="card"><p class="subhead" style="margin-top:0">Flavors</p>${flavors.map(row).join("")}</section>`;
+  $$(".mrow").forEach(r => {
+    const key = r.dataset.key, price = $("input[type=number]", r), act = $("input[type=checkbox]", r);
+    const save = async (body, revert) => {
+      try{ const {item} = await api("PUT", "menu/" + encodeURIComponent(key), body); toast(`${item.name}: ${"price" in body ? money(item.price) : (item.active ? "on" : "off")}`); if (price) price.value = item.price; }
+      catch(e){ revert(); toast(e.message, true); }
+    };
+    if (price){ let last = price.value; price.addEventListener("change", () => { const prev = last; last = price.value; save({price: price.value}, () => { price.value = last = prev; }); }); }
+    act.addEventListener("change", () => save({active: act.checked}, () => { act.checked = !act.checked; }));
+  });
+}
+
+/* ============ Boot ============ */
+(async () => {
+  try{
+    const me = await api("GET", "me");
+    $("#who").textContent = me.email;
+    go(tab);
+    api("GET", "orders?filter=open").then(d => setBadge(d.orders.length)).catch(()=>{});
+  }catch(e){ if (e.status !== 401 && e.status !== 503) showGate(e.message); }
+})();
+</script>
+</body>
+</html>
