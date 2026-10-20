@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CMS Cookie Co. &amp; More</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Fresh-baked, made-to-order cookies from Shaun Marie Schwartz in South Lyon, Michigan. Build a box, order a tasting flight, or request cookie cakes, cupcakes and custom designs.">
+<meta name="theme-color" content="#FFF6F4">
+<meta property="og:title" content="CMS Cookie Co. &amp; More">
+<meta property="og:description" content="Cookies making smiles with every bite. Build your box and pre-order from Shaun in South Lyon, MI.">
+<meta property="og:image" content="assets/og-image.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Caveat+Brush&family=Figtree:wght@400;500;600;700&display=swap">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Bakery","name":"CMS Cookie Co. & More","slogan":"Cookies Making Smiles with every bite","founder":"Shaun Marie Schwartz","telephone":"+1-734-755-0533","email":"cmscookieco3more@gmail.com","address":{"@type":"PostalAddress","addressLocality":"South Lyon","addressRegion":"MI","addressCountry":"US"},"priceRange":"$","image":"assets/og-image.jpg"}
+</script>
+<style>
+/* Layout: a bakery counter you scroll past — hero with a cookie you can bite, a kraft box you fill by tapping, then a short order slip. */
+:root{
+  --bg:#FFF6F4; --surface:#FFFFFF; --blush:#FBE3E5; --ink:#3B2219; --muted:#7E5E52;
+  --rose:#E26A82; --rose-btn:#C4405D; --on-rose:#FFFFFF;
+  --dough:#E8B878; --kraft:#C99467; --kraft-dk:#A8744A; --line:rgba(59,34,25,.13);
+  --shadow:0 18px 40px -22px rgba(92,40,30,.45);
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Figtree", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-hand:"Caveat Brush", "Comic Sans MS", cursive;
+  --r:18px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#21130E; --surface:#2E1C15; --blush:#3D2420; --ink:#FBEDE7; --muted:#CDB0A4;
+  --rose:#F28CA2; --rose-btn:#EE7F98; --on-rose:#2A120C;
+  --dough:#D9A866; --kraft:#8E643F; --kraft-dk:#6E4A2C; --line:rgba(251,237,231,.14);
+  --shadow:0 18px 40px -22px rgba(0,0,0,.8); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#21130E; --surface:#2E1C15; --blush:#3D2420; --ink:#FBEDE7; --muted:#CDB0A4;
+  --rose:#F28CA2; --rose-btn:#EE7F98; --on-rose:#2A120C;
+  --dough:#D9A866; --kraft:#8E643F; --kraft-dk:#6E4A2C; --line:rgba(251,237,231,.14);
+  --shadow:0 18px 40px -22px rgba(0,0,0,.8); color-scheme:dark;}
+
+*,*::before,*::after{box-sizing:border-box}
+html{overflow-x:clip; scroll-behavior:smooth; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0; background:var(--bg); color:var(--ink); font:400 17px/1.6 var(--f-body); -webkit-font-smoothing:antialiased; overflow-x:hidden}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:60; background:var(--bg)}
+img{max-width:100%; height:auto; display:block}
+h1,h2,h3{font-family:var(--f-display); line-height:1.02; letter-spacing:-.02em; margin:0; text-wrap:balance}
+p{margin:0}
+a{color:inherit}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:3px solid var(--rose); outline-offset:3px; border-radius:8px}
+[hidden]{display:none!important}
+.wrap{max-width:1160px; margin:0 auto; padding-left:max(18px, env(safe-area-inset-left,0px)); padding-right:max(18px, env(safe-area-inset-right,0px))}
+.hand{font-family:var(--f-hand); color:var(--rose); font-weight:400; letter-spacing:0}
+.eyebrow{font:700 12.5px/1 var(--f-body); letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+.section{padding-block:clamp(56px,9vw,104px)}
+.section-head{display:grid; gap:12px; margin-bottom:clamp(26px,4vw,40px); max-width:640px}
+.section-head h2{font-size:clamp(34px,5.4vw,58px); font-weight:800}
+.section-head p{color:var(--muted); font-size:18px}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* Buttons */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; border:0; border-radius:999px; padding:15px 24px; font-weight:700; font-size:16px; text-decoration:none; transition:transform .18s ease, box-shadow .18s ease, background .18s}
+.btn-rose{background:var(--rose-btn); color:var(--on-rose); box-shadow:0 10px 24px -12px var(--rose-btn)}
+.btn-rose:hover{transform:translateY(-2px)}
+.btn-ghost{background:transparent; border:1.5px solid var(--line); color:var(--ink)}
+.btn-ghost:hover{border-color:var(--ink)}
+.btn[disabled]{opacity:.45; cursor:not-allowed; transform:none!important}
+.btn-sm{padding:10px 16px; font-size:14.5px}
+
+/* Header */
+.top{position:sticky; top:env(safe-area-inset-top,0px); z-index:50; background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid transparent; transition:border-color .2s}
+.top.scrolled{border-bottom-color:var(--line)}
+.top .wrap{display:flex; align-items:center; gap:18px; height:68px}
+.brand{display:flex; align-items:center; gap:10px; text-decoration:none; margin-right:auto; min-width:0}
+.brand img{width:40px; height:auto}
+.brand span{font:800 19px/1 var(--f-display); letter-spacing:-.02em; white-space:nowrap}
+.brand small{font:400 22px/1 var(--f-hand); color:var(--rose); margin-left:2px}
+.nav{display:flex; gap:22px}
+.nav a{text-decoration:none; font-weight:600; font-size:15px; color:var(--muted)}
+.nav a:hover{color:var(--ink)}
+.cart-btn{position:relative; display:inline-flex; align-items:center; gap:8px; border:0; background:var(--ink); color:var(--bg); border-radius:999px; padding:10px 16px; font-weight:700; font-size:15px}
+.cart-btn .count{min-width:22px; height:22px; border-radius:11px; background:var(--rose); color:var(--on-rose); font-size:12.5px; display:grid; place-items:center; padding:0 6px}
+.cart-btn.bump{animation:bump .45s ease}
+@keyframes bump{30%{transform:scale(1.12)}60%{transform:scale(.96)}}
+@media (max-width:820px){.nav{display:none}}
+@media (max-width:420px){.brand span{font-size:16px} .brand small{display:none} .hide-sm{display:none}}
+
+/* Hero */
+.hero{padding-block:clamp(30px,6vw,72px) clamp(40px,6vw,70px); position:relative}
+.hero .wrap{display:grid; grid-template-columns:1.1fr .9fr; gap:clamp(24px,5vw,64px); align-items:center}
+.hero-copy{display:grid; gap:22px; min-width:0}
+.hero h1{font-size:clamp(46px,8.2vw,104px); font-weight:800}
+.hero h1 .hand{display:block; font-size:.62em; line-height:1.05; margin-top:.08em; transform:rotate(-2deg); transform-origin:left}
+.hero .lede{font-size:clamp(17px,2vw,20px); color:var(--muted); max-width:30em}
+.hero-ctas{display:flex; flex-wrap:wrap; gap:12px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:600; padding:7px 12px; border-radius:999px; background:var(--blush); color:var(--ink)}
+.chip svg{width:14px;height:14px}
+.biteable{position:relative; display:grid; place-items:center; aspect-ratio:1; max-width:520px; width:100%; justify-self:center}
+.biteable .halo{position:absolute; inset:6%; border-radius:50%; background:radial-gradient(circle at 50% 45%, var(--blush), transparent 68%)}
+.biteable button{position:relative; border:0; background:none; padding:0; width:82%; aspect-ratio:1; border-radius:50%; transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.biteable button:active{transform:scale(.96) rotate(-3deg)}
+.biteable svg{width:100%; height:100%; filter:drop-shadow(0 22px 26px rgba(92,40,30,.28)); animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px) rotate(3deg)}}
+.bite-note{position:absolute; right:2%; top:4%; transform:rotate(8deg); font:400 25px/1.05 var(--f-hand); color:var(--rose); text-align:center; pointer-events:none}
+.bite-note svg{width:44px; height:34px; display:block; margin:4px auto 0; filter:none; animation:none}
+.crumb{position:absolute; width:8px; height:8px; border-radius:40%; background:var(--dough); pointer-events:none; animation:crumb .9s ease-out forwards}
+@keyframes crumb{to{transform:translate(var(--dx),var(--dy)) rotate(220deg); opacity:0}}
+.bite-reset{position:absolute; bottom:4%; left:50%; transform:translateX(-50%); white-space:nowrap}
+@media (max-width:860px){ .hero .wrap{grid-template-columns:1fr} .biteable{max-width:360px; order:-1} .bite-note{font-size:21px} }
+
+/* Ribbon */
+.ribbon{background:var(--rose-btn); color:var(--on-rose); overflow:hidden; transform:rotate(-1.2deg); margin-block:6px; padding-block:12px}
+.ribbon-track{display:flex; gap:38px; width:max-content; animation:slide 38s linear infinite; font:700 17px/1 var(--f-display); letter-spacing:.01em}
+.ribbon-track span{display:inline-flex; gap:38px; align-items:center; white-space:nowrap}
+.ribbon-track span::after{content:"♥"; font-size:14px; opacity:.8}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* Flavors */
+.flavors{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.flavor{background:var(--surface); border-radius:var(--r); padding:22px 20px 20px; display:grid; gap:12px; grid-template-rows:auto auto 1fr auto; box-shadow:var(--shadow); transition:transform .25s ease}
+.flavor:hover{transform:translateY(-4px) rotate(-.6deg)}
+.flavor .cookie{width:min(170px,80%); justify-self:center; transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.flavor:hover .cookie{transform:rotate(24deg) scale(1.04)}
+.flavor h3{font-size:22px; font-weight:800}
+.flavor p{color:var(--muted); font-size:15px; line-height:1.5}
+.flavor-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:6px; border-top:1px dashed var(--line)}
+.price{font:800 21px/1 var(--f-display)}
+.price small{font:500 13px var(--f-body); color:var(--muted); margin-left:3px}
+.add-dot{width:42px; height:42px; border-radius:50%; border:0; background:var(--ink); color:var(--bg); display:grid; place-items:center; transition:transform .2s}
+.add-dot:hover{transform:rotate(90deg)}
+.add-dot svg{width:18px; height:18px}
+@media (max-width:980px){.flavors{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:460px){.flavors{grid-template-columns:1fr 1fr; gap:12px} .flavor{padding:16px 14px} .flavor h3{font-size:18px} .flavor p{display:none}}
+
+/* Box builder */
+.builder-band{background:var(--blush)}
+.builder{display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(24px,4vw,56px); align-items:start}
+.boxwrap{position:relative; min-width:0}
+.box{position:relative; background:linear-gradient(180deg,var(--kraft),var(--kraft-dk)); border-radius:22px; padding:clamp(14px,2.6vw,24px); box-shadow:inset 0 2px 0 rgba(255,255,255,.25), var(--shadow)}
+.box::before{content:""; position:absolute; inset:0; border-radius:inherit; opacity:.18; background-image:radial-gradient(rgba(0,0,0,.6) 1px, transparent 1.2px); background-size:7px 7px; pointer-events:none}
+.box-label{position:absolute; top:-16px; left:50%; transform:translateX(-50%) rotate(-2deg); background:var(--surface); color:var(--ink); padding:6px 16px; border-radius:999px; font:400 22px/1 var(--f-hand); box-shadow:var(--shadow); white-space:nowrap}
+.slots{position:relative; display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(8px,1.6vw,14px); padding-top:14px}
+.slots.six{grid-template-columns:repeat(3,1fr)}
+.slot{aspect-ratio:1; border-radius:50%; border:0; padding:6%; background:rgba(60,30,15,.28); box-shadow:inset 0 6px 10px rgba(0,0,0,.25); display:grid; place-items:center; position:relative}
+.slot svg{width:100%; height:100%; filter:drop-shadow(0 5px 6px rgba(0,0,0,.3))}
+.slot.filled{background:rgba(60,30,15,.18)}
+.slot.pop svg{animation:drop .42s cubic-bezier(.3,1.5,.5,1)}
+@keyframes drop{from{transform:translateY(-40px) scale(.6) rotate(-40deg); opacity:0}}
+.slot .x{position:absolute; top:2%; right:2%; width:24px; height:24px; border-radius:50%; background:var(--surface); color:var(--ink); display:grid; place-items:center; font-size:14px; font-weight:800; opacity:0; transition:opacity .15s; box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.slot.filled:hover .x, .slot.filled:focus-visible .x{opacity:1}
+.slot-empty{font:400 18px var(--f-hand); color:rgba(255,240,225,.6)}
+.controls{display:grid; gap:22px; min-width:0}
+.seg{display:inline-grid; grid-template-columns:1fr 1fr; background:var(--surface); border-radius:999px; padding:5px; gap:4px; box-shadow:var(--shadow)}
+.seg button{border:0; background:transparent; border-radius:999px; padding:11px 14px; font-weight:700; font-size:15px; display:grid; gap:2px; line-height:1.1}
+.seg button small{font-weight:500; color:var(--muted); font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+.seg button[aria-pressed="true"] small{color:inherit; opacity:.75}
+.picker{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.pick{display:flex; align-items:center; gap:10px; text-align:left; background:var(--surface); border:2px solid transparent; border-radius:16px; padding:10px 12px; transition:border-color .15s, transform .15s; min-width:0}
+.pick:hover{border-color:var(--rose)}
+.pick:active{transform:scale(.97)}
+.pick svg{width:46px; height:46px; flex:none}
+.pick b{display:block; font-size:14.5px; line-height:1.2}
+.pick span{font-size:12.5px; color:var(--muted)}
+.pick .n{margin-left:auto; min-width:28px; height:28px; border-radius:14px; background:var(--blush); display:grid; place-items:center; font-weight:800; font-size:14px; flex:none}
+.pick[disabled]{opacity:.5; cursor:not-allowed}
+.tools{display:flex; flex-wrap:wrap; gap:8px}
+.tools .btn{background:var(--surface)}
+.box-total{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; background:var(--surface); border-radius:18px; padding:16px 18px; box-shadow:var(--shadow)}
+.box-total .meter{flex:1 1 140px; display:grid; gap:6px}
+.bar{height:8px; border-radius:4px; background:var(--blush); overflow:hidden}
+.bar i{display:block; height:100%; width:0; background:var(--rose-btn); border-radius:inherit; transition:width .3s ease}
+.box-total .status{font-size:14px; color:var(--muted)}
+@media (max-width:900px){.builder{grid-template-columns:1fr}}
+@media (max-width:400px){.picker{grid-template-columns:1fr}}
+
+/* Quick picks */
+.picks{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+.card{background:var(--surface); border-radius:var(--r); padding:24px; display:grid; gap:14px; grid-template-rows:auto auto 1fr auto; box-shadow:var(--shadow); min-width:0}
+.card .art{height:120px; display:flex; align-items:center; justify-content:center; gap:4px}
+.card .art svg{height:100%; width:auto}
+.card h3{font-size:24px; font-weight:800}
+.card p{color:var(--muted); font-size:15.5px}
+.card .opts{display:flex; flex-wrap:wrap; gap:8px}
+.card-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.opt{border:1.5px solid var(--line); background:transparent; border-radius:999px; padding:8px 14px; font-weight:700; font-size:14px}
+.opt[aria-pressed="true"]{border-color:var(--ink); background:var(--ink); color:var(--bg)}
+@media (max-width:900px){.picks{grid-template-columns:1fr}}
+
+/* Specials */
+.specials{display:grid; grid-template-columns:1fr 1fr; gap:clamp(24px,4vw,56px); align-items:start}
+.menu-list{display:grid; gap:0; border-top:1.5px solid var(--ink)}
+.menu-list li{list-style:none; display:flex; align-items:baseline; gap:12px; padding:15px 2px; border-bottom:1px solid var(--line)}
+.menu-list li b{font:700 19px/1.25 var(--f-display)}
+.menu-list li span{margin-left:auto; color:var(--muted); font-size:14px; white-space:nowrap}
+.menu-list{padding:0; margin:0}
+.diet{display:grid; gap:12px; background:var(--surface); border-radius:var(--r); padding:22px; box-shadow:var(--shadow)}
+.diet .badges{display:flex; gap:10px; flex-wrap:wrap}
+.diet .badges span{display:inline-flex; align-items:center; gap:8px; font-weight:700; border:1.5px solid var(--ink); border-radius:999px; padding:7px 14px; font-size:14.5px}
+.diet small{color:var(--muted); font-size:13.5px; line-height:1.55}
+.request{display:grid; gap:16px}
+.req-chips{display:flex; flex-wrap:wrap; gap:8px}
+@media (max-width:900px){.specials{grid-template-columns:1fr}}
+
+/* Forms */
+.field{display:grid; gap:6px}
+.field label{font-weight:700; font-size:14px}
+.field input,.field select,.field textarea{width:100%; font:inherit; font-size:16px; color:var(--ink); background:var(--bg); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px}
+.field textarea{min-height:92px; resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--rose)}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+@media (max-width:460px){.row2{grid-template-columns:1fr}}
+.checks{display:flex; flex-wrap:wrap; gap:8px}
+.checks label{display:inline-flex; align-items:center; gap:8px; border:1.5px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:600; font-size:14.5px; cursor:pointer}
+.checks input{accent-color:var(--rose-btn); width:16px; height:16px}
+.err{color:var(--rose-btn); font-weight:600; font-size:14px}
+
+/* About */
+.about{display:grid; grid-template-columns:.85fr 1.15fr; gap:clamp(28px,5vw,72px); align-items:center}
+.polaroid{background:var(--surface); padding:12px 12px 52px; border-radius:6px; transform:rotate(-3deg); box-shadow:var(--shadow); position:relative; max-width:440px; justify-self:center; width:100%}
+.polaroid img{border-radius:3px; aspect-ratio:4/5; object-fit:cover; object-position:50% 40%; width:100%}
+.polaroid figcaption{position:absolute; bottom:12px; left:0; right:0; text-align:center; font:400 24px var(--f-hand); color:var(--ink)}
+.about-copy{display:grid; gap:18px; min-width:0}
+.about-copy h2{font-size:clamp(34px,5vw,56px); font-weight:800}
+.about-copy p{font-size:18px; color:var(--muted); max-width:34em}
+.about-copy .sig{font:400 34px/1 var(--f-hand); color:var(--rose)}
+@media (max-width:860px){.about{grid-template-columns:1fr} .polaroid{max-width:340px}}
+
+/* How it works */
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px; counter-reset:s}
+.step{display:grid; gap:8px; padding-top:18px; border-top:2px solid var(--ink)}
+.step::before{counter-increment:s; content:counter(s); font:800 44px/1 var(--f-display); color:var(--rose)}
+.step b{font:700 19px/1.25 var(--f-display)}
+.step p{color:var(--muted); font-size:15.5px}
+@media (max-width:900px){.steps{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.steps{grid-template-columns:1fr}}
+
+/* Footer */
+.foot{background:var(--ink); color:var(--bg); padding-block:64px 40px}
+.foot .wrap{display:grid; gap:36px}
+.foot-top{display:grid; grid-template-columns:1.2fr 1fr; gap:32px; align-items:end}
+.foot h2{font-size:clamp(36px,6vw,72px); font-weight:800}
+.foot h2 .hand{color:var(--rose)}
+.contact{display:grid; gap:10px}
+.contact a,.contact div{display:flex; align-items:center; gap:12px; text-decoration:none; font-weight:600; font-size:17px}
+.contact svg{width:20px; height:20px; flex:none; color:var(--rose)}
+.contact a:hover{text-decoration:underline}
+.foot-bottom{display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; font-size:14px; opacity:.75; border-top:1px solid color-mix(in srgb, var(--bg) 25%, transparent); padding-top:22px}
+@media (max-width:760px){.foot-top{grid-template-columns:1fr}}
+
+/* Drawer + dialog */
+.scrim{position:fixed; inset:0; background:rgba(30,12,8,.45); z-index:70; opacity:0; transition:opacity .25s; pointer-events:none}
+.scrim.on{opacity:1; pointer-events:auto}
+.drawer{position:fixed; top:0; right:0; bottom:0; width:min(460px,100%); background:var(--bg); z-index:80; transform:translateX(104%); transition:transform .35s cubic-bezier(.2,.9,.3,1); display:flex; flex-direction:column; box-shadow:-20px 0 50px -20px rgba(0,0,0,.4); padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); padding-right:env(safe-area-inset-right,0px)}
+.drawer.on{transform:none}
+.drawer-head{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--line)}
+.drawer-head h2{font-size:26px; font-weight:800}
+.icon-btn{width:40px; height:40px; border-radius:50%; border:1.5px solid var(--line); background:transparent; display:grid; place-items:center}
+.icon-btn svg{width:18px; height:18px}
+.drawer-body{flex:1; overflow-y:auto; padding:18px 20px; display:grid; gap:18px; align-content:start}
+.drawer-foot{padding:16px 20px 20px; border-top:1px solid var(--line); display:grid; gap:12px; background:var(--surface)}
+.line-item{display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center}
+.line-item .thumb{width:52px; height:52px}
+.line-item .thumb svg{width:100%; height:100%}
+.line-item b{display:block; font-size:15.5px; line-height:1.25}
+.line-item small{color:var(--muted); font-size:13px; display:block; line-height:1.35}
+.line-item .right{display:grid; justify-items:end; gap:6px}
+.qty{display:inline-flex; align-items:center; border:1.5px solid var(--line); border-radius:999px}
+.qty button{border:0; background:none; width:30px; height:30px; font-weight:800; font-size:16px}
+.qty span{min-width:20px; text-align:center; font-weight:700; font-size:14px}
+.sum{display:flex; justify-content:space-between; align-items:baseline; font:800 22px var(--f-display)}
+.sum small{font:500 13px var(--f-body); color:var(--muted)}
+.empty{text-align:center; display:grid; gap:12px; justify-items:center; padding:28px 0; color:var(--muted)}
+.empty svg{width:120px; height:120px}
+.msg-preview{white-space:pre-wrap; font:500 14px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background:var(--surface); border:1px dashed var(--line); border-radius:14px; padding:14px; max-height:240px; overflow:auto}
+.send-grid{display:grid; gap:10px}
+.done{display:grid; gap:14px; text-align:center; justify-items:center}
+.done .big{font:800 30px/1.1 var(--f-display)}
+.copybox{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; font-weight:700}
+
+/* Sticky mobile order bar */
+.orderbar{position:fixed; left:0; right:0; bottom:0; z-index:45; padding:10px max(14px, env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(14px, env(safe-area-inset-left,0px)); transform:translateY(120%); transition:transform .3s ease; pointer-events:none}
+.orderbar.on{transform:none; pointer-events:auto}
+.orderbar button{width:100%; justify-content:space-between; padding:16px 22px; font-size:16.5px}
+@media (min-width:821px){.orderbar{display:none}}
+
+.toast{position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:999px; font-weight:700; font-size:15px; opacity:0; transition:.25s; z-index:90; pointer-events:none; white-space:nowrap}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Shared cookie gradients -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="g-cc" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#F2CB8C"/><stop offset=".7" stop-color="#DDA35E"/><stop offset="1" stop-color="#B9773A"/></radialGradient>
+    <radialGradient id="g-dcc" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#7A4B33"/><stop offset=".75" stop-color="#5A3423"/><stop offset="1" stop-color="#3E2216"/></radialGradient>
+    <radialGradient id="g-dcss" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#EBC083"/><stop offset=".7" stop-color="#CF9450"/><stop offset="1" stop-color="#A86A31"/></radialGradient>
+    <radialGradient id="g-fs" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#FBEAD0"/><stop offset=".75" stop-color="#F0D3A8"/><stop offset="1" stop-color="#D9AE76"/></radialGradient>
+    <radialGradient id="g-frost" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FBD9DF"/></radialGradient>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#hero" aria-label="CMS Cookie Co. and More, home">
+      <img src="assets/cookie-mark.png" alt="" width="40" height="32">
+      <span>CMS Cookie Co.<small>&amp; More</small></span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#flavors">Flavors</a>
+      <a href="#build">Build a box</a>
+      <a href="#extras">Flights &amp; minis</a>
+      <a href="#specials">Custom orders</a>
+      <a href="#about">Meet Shaun</a>
+    </nav>
+    <button class="cart-btn" id="cartBtn" aria-label="Open your order">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>
+      <span class="hide-sm">Order</span>
+      <span class="count tnum" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<main>
+<section class="hero" id="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="eyebrow">Homemade · Pre-order · South Lyon, Michigan</span>
+      <h1>Cookies making smiles <span class="hand">with every bite.</span></h1>
+      <p class="lede">Shaun bakes every batch to order. Pick your flavors, fill a box, and send it straight to her. She'll text you back to confirm pickup or delivery.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-rose" href="#build">Build your box
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-ghost" href="#extras">Try the $10 tasting flight</a>
+      </div>
+      <div class="chips">
+        <span class="chip">Dozen $25</span><span class="chip">Half dozen $13</span><span class="chip">Single $4</span><span class="chip">Gluten-free &amp; dairy-free options</span>
+      </div>
+    </div>
+    <div class="biteable" id="biteable">
+      <div class="halo"></div>
+      <button id="biteBtn" aria-label="Take a bite of the cookie"></button>
+      <div class="bite-note" id="biteNote" aria-hidden="true">tap for<br>a bite
+        <svg viewBox="0 0 44 34" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M38 4C30 6 14 10 8 28M8 28l-2-9M8 28l9-4"/></svg>
+      </div>
+      <button class="btn btn-sm btn-ghost bite-reset" id="biteReset" hidden>Bake another</button>
+    </div>
+  </div>
+</section>
+
+<div class="ribbon" aria-hidden="true">
+  <div class="ribbon-track" id="ribbon"></div>
+</div>
+
+<section class="section" id="flavors">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">The lineup</span>
+      <h2>Four flavors. <span class="hand">More coming soon!</span></h2>
+      <p>Tap + to add a single cookie, or fill a box below and mix them however you like.</p>
+    </div>
+    <div class="flavors" id="flavorGrid"></div>
+  </div>
+</section>
+
+<section class="section builder-band" id="build">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Build your box</span>
+      <h2>Fill it your way.</h2>
+      <p>Choose a half dozen or a dozen, then tap flavors to drop them in. Tap a cookie in the box to take it back out.</p>
+    </div>
+    <div class="builder">
+      <div class="boxwrap">
+        <div class="box">
+          <div class="box-label" id="boxLabel">a dozen, made with love</div>
+          <div class="slots" id="slots" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Box size">
+          <button id="size6" aria-pressed="false" data-size="6">Half dozen<small class="tnum">6 cookies · $13</small></button>
+          <button id="size12" aria-pressed="true" data-size="12">Dozen<small class="tnum">12 cookies · $25</small></button>
+        </div>
+        <div class="picker" id="picker"></div>
+        <div class="tools">
+          <button class="btn btn-sm btn-ghost" id="mixEven">Even mix</button>
+          <button class="btn btn-sm btn-ghost" id="surprise">Surprise me</button>
+          <button class="btn btn-sm btn-ghost" id="clearBox">Empty the box</button>
+        </div>
+        <div class="box-total">
+          <div class="meter">
+            <div class="bar"><i id="boxBar"></i></div>
+            <span class="status tnum" id="boxStatus">0 of 12 in the box</span>
+          </div>
+          <span class="price tnum" id="boxPrice">$25</span>
+          <button class="btn btn-rose" id="addBox" disabled>Add box to order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="extras">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Flights, minis &amp; gifts</span>
+      <h2>Can't decide? <span class="hand">Try them all.</span></h2>
+    </div>
+    <div class="picks">
+      <article class="card">
+        <div class="art" id="artFlight"></div>
+        <h3>Cookie Tasting Flight</h3>
+        <p>One of each flavor, boxed together. The best way to find your favorite.</p>
+        <div class="card-foot"><span class="price tnum">$10</span><button class="btn btn-rose btn-sm" data-add="flight">Add flight</button></div>
+      </article>
+      <article class="card">
+        <div class="art" id="artMini"></div>
+        <h3>Mini Cookie Lunch Box</h3>
+        <p>Bite-size cookies for lunch boxes, snacks, parties and on-the-go.</p>
+        <div class="opts" role="group" aria-label="Lunch box size">
+          <button class="opt" aria-pressed="true" data-mini="12">12 minis · $12</button>
+          <button class="opt" aria-pressed="false" data-mini="24">24 minis · $20</button>
+        </div>
+        <div class="card-foot"><span class="price tnum" id="miniPrice">$12</span><button class="btn btn-rose btn-sm" data-add="mini">Add lunch box</button></div>
+      </article>
+      <article class="card">
+        <div class="art" id="artGram"></div>
+        <h3>Cookie Gram</h3>
+        <p>A sweet surprise for someone else. Add who it's for and your message when you check out.</p>
+        <div class="card-foot"><span class="price tnum">$9</span><button class="btn btn-rose btn-sm" data-add="gram">Send a cookie gram</button></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section builder-band" id="specials">
+  <div class="wrap">
+    <div class="specials">
+      <div>
+        <div class="section-head">
+          <span class="eyebrow">Upon request</span>
+          <h2>Cakes, cupcakes, <span class="hand">&amp; more.</span></h2>
+          <p>Birthdays, showers, team treats. Custom designs, colors and themes are available. Tell Shaun what you're celebrating and she'll quote it.</p>
+        </div>
+        <ul class="menu-list">
+          <li><b>Cookie Cake Bites</b><span>by request</span></li>
+          <li><b>Cookie Cupcakes</b><span>by request</span></li>
+          <li><b>Mini Cookie Cakes</b><span>by request</span></li>
+          <li><b>Cookie Sheet Cakes</b><span>by request</span></li>
+          <li><b>Baking &amp; cooking lessons</b><span>by request</span></li>
+          <li><b>Host a cooking party</b><span>by request</span></li>
+        </ul>
+      </div>
+      <div class="request">
+        <form class="diet" id="reqForm" novalidate>
+          <h3 style="font-size:26px;font-weight:800">Request a custom order</h3>
+          <div class="field">
+            <span style="font-weight:700;font-size:14px">What are you interested in?</span>
+            <div class="checks" id="reqChecks"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="rqName">Your name</label><input id="rqName" autocomplete="name" required></div>
+            <div class="field"><label for="rqPhone">Phone</label><input id="rqPhone" type="tel" autocomplete="tel" inputmode="tel" required></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="rqDate">Event date</label><input id="rqDate" type="date"></div>
+            <div class="field"><label for="rqCount">Guests / servings</label><input id="rqCount" inputmode="numeric" placeholder="about 20"></div>
+          </div>
+          <div class="field"><label for="rqNotes">Tell Shaun about it</label><textarea id="rqNotes" placeholder="Theme, colors, flavors, allergies…"></textarea></div>
+          <p class="err" id="rqErr" hidden></p>
+          <button class="btn btn-rose" type="submit">Send request to Shaun</button>
+        </form>
+        <div class="diet">
+          <div class="badges"><span>Gluten-free</span><span>Dairy-free</span></div>
+          <p style="font-weight:600">Shaun can make select items gluten-free or dairy-free. Just ask when you order.</p>
+          <small><b>Important:</b> While extreme care is taken during preparation, all products are made in a home kitchen where wheat, milk, eggs and other common allergens are present. Products may come into contact with allergens.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="wrap about">
+    <figure class="polaroid" style="margin:0">
+      <img src="assets/shaun-market.jpg" alt="Shaun smiling behind her market table full of boxed cookies, wearing a Cookie Dealer t-shirt" loading="lazy" decoding="async" width="900" height="1125">
+      <figcaption>Market day!</figcaption>
+    </figure>
+    <div class="about-copy">
+      <span class="eyebrow">Meet the baker</span>
+      <h2>Hi, I'm Shaun.</h2>
+      <p>I'm the owner and chef behind CMS Cookie Co. &amp; More. Every cookie is baked by hand in my kitchen in South Lyon, packed with care, and made to bring a smile.</p>
+      <p>Thank you for supporting homemade and for helping my dream come true, one cookie at a time.</p>
+      <span class="sig">Shaun Marie Schwartz</span>
+    </div>
+  </div>
+</section>
+
+<section class="section builder-band">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">How ordering works</span>
+      <h2>Fresh, not sitting on a shelf.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><b>Pick your cookies</b><p>Fill a box, grab a flight, or add singles.</p></div>
+      <div class="step"><b>Send your order</b><p>Tell us when you'd like it. Your order goes straight to Shaun.</p></div>
+      <div class="step"><b>Shaun confirms</b><p>She texts you back to set pickup or delivery.</p></div>
+      <div class="step"><b>Pay your way</b><p>Venmo, Cash App, or at pickup.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot" id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <h2>Ready to order <span class="hand">or running low?</span></h2>
+      <div class="contact">
+        <a href="sms:+17347550533"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Text or call (734) 755-0533</a>
+        <a href="mailto:cmscookieco3more@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>cmscookieco3more@gmail.com</a>
+        <a href="https://www.instagram.com/cmscookieco/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>@CMSCookieCo</a>
+        <a href="https://venmo.com/u/ShaunSchwartz1" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h4l2 10 5-10h3l-7 14H9z"/></svg>Venmo @ShaunSchwartz1</a>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>South Lyon, Michigan</div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Baked with love, delivered with care.</span>
+      <span>© <span id="yr">2026</span> CMS Cookie Co. &amp; More · Thank you for supporting a small local business!</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobile order bar -->
+<div class="orderbar" id="orderbar"><button class="btn btn-rose" id="orderbarBtn"><span>View your order</span><span class="tnum" id="orderbarTotal">$0</span></button></div>
+
+<!-- Order drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+  <div class="drawer-head">
+    <h2 id="drawerTitle">Your order</h2>
+    <button class="icon-btn" id="closeDrawer" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+
+  <!-- Step 1: cart -->
+  <div class="drawer-body" id="stepCart"></div>
+
+  <!-- Step 2: details -->
+  <form class="drawer-body" id="stepDetails" hidden novalidate>
+    <div class="row2">
+      <div class="field"><label for="oName">Your name</label><input id="oName" autocomplete="name" required></div>
+      <div class="field"><label for="oPhone">Phone</label><input id="oPhone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="oDate">When do you need it?</label><input id="oDate" type="date" required></div>
+      <div class="field"><label for="oHow">Pickup or delivery</label>
+        <select id="oHow"><option>Pickup</option><option>Delivery (ask Shaun)</option></select></div>
+    </div>
+    <div class="field">
+      <span style="font-weight:700;font-size:14px">Dietary requests</span>
+      <div class="checks">
+        <label><input type="checkbox" id="oGF"> Gluten-free</label>
+        <label><input type="checkbox" id="oDF"> Dairy-free</label>
+      </div>
+    </div>
+    <div class="field"><label for="oNotes">Notes for Shaun</label><textarea id="oNotes" placeholder="Cookie gram recipient and message, allergies, colors…"></textarea></div>
+    <p class="err" id="oErr" hidden></p>
+  </form>
+
+  <!-- Step 3: send -->
+  <div class="drawer-body" id="stepSend" hidden></div>
+
+  <div class="drawer-foot" id="drawerFoot"></div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ Settings Shaun (or Tom) can change ============ */
+const CONFIG = {
+  phone: "+17347550533",
+  phonePretty: "(734) 755-0533",
+  email: "cmscookieco3more@gmail.com",
+  venmo: "ShaunSchwartz1",
+  // Optional: paste a Formspree (or similar) form URL here, e.g. "https://formspree.io/f/abcdwxyz".
+  // When set, orders are delivered to Shaun's inbox automatically with one tap.
+  orderEndpoint: "",
+  leadDays: 2 // earliest date a customer can pick
+};
+const PRICES = { single:4, box6:13, box12:25, flight:10, mini12:12, mini24:20, gram:9 };
+const FLAVORS = [
+  {id:"cc",   name:"Chocolate Chip",          short:"Choc Chip",    blurb:"The classic. Golden edges, soft middle, chocolate in every bite."},
+  {id:"dcc",  name:"Double Chocolate Chip",   short:"Double Choc",  blurb:"Chocolate dough loaded with even more chocolate chips."},
+  {id:"dcss", name:"Dark Chocolate Sea Salt", short:"Sea Salt",     blurb:"Dark chocolate chunks finished with flaky sea salt."},
+  {id:"fs",   name:"Frosted Sugar Cookie",    short:"Frosted Sugar",blurb:"Soft sugar cookie, a thick swirl of frosting, sprinkles on top."}
+];
+const REQUESTS = ["Cookie Cake Bites","Cookie Cupcakes","Mini Cookie Cakes","Cookie Sheet Cake","Custom design / theme","Baking or cooking lesson","Cooking party"];
+
+/* ============ Helpers ============ */
+const $ = s => document.querySelector(s);
+const money = n => "$" + (Math.round(n*100)/100).toString();
+const fl = id => FLAVORS.find(f => f.id === id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+function rng(seed){ let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = s * 16807 % 2147483647) / 2147483647; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ============ Cookie drawings ============ */
+let uid = 0;
+function blob(r, R, cx, cy, n, amp){
+  const pts = [];
+  for (let i=0;i<n;i++){ const a = i/n*Math.PI*2; const rr = R*(1 + (r()-.5)*amp); pts.push([cx+Math.cos(a)*rr, cy+Math.sin(a)*rr]); }
+  let d = "";
+  for (let i=0;i<n;i++){
+    const p0 = pts[(i-1+n)%n], p1 = pts[i], p2 = pts[(i+1)%n], p3 = pts[(i+2)%n];
+    if (i===0) d += `M${p1[0].toFixed(1)},${p1[1].toFixed(1)}`;
+    const c1 = [p1[0]+(p2[0]-p0[0])/6, p1[1]+(p2[1]-p0[1])/6], c2 = [p2[0]-(p3[0]-p1[0])/6, p2[1]-(p3[1]-p1[1])/6];
+    d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d + "Z";
+}
+function cookieSVG(flavor, seed=7, opts={}){
+  const r = rng(seed*97 + flavor.length*13);
+  const id = "ck" + (++uid);
+  const edge = {cc:"#A9692F", dcc:"#2F1A11", dcss:"#93592A", fs:"#C9975D"}[flavor];
+  let inner = `<path d="${blob(r,44,50,50,14,.07)}" fill="url(#g-${flavor})" stroke="${edge}" stroke-width="1.6"/>`;
+  // texture cracks
+  for (let i=0;i<5;i++){ const a=r()*6.28, d=10+r()*22; const x=50+Math.cos(a)*d, y=50+Math.sin(a)*d;
+    inner += `<path d="M${x.toFixed(1)},${y.toFixed(1)} q${(r()*8-4).toFixed(1)},${(r()*6-3).toFixed(1)} ${(r()*10-5).toFixed(1)},${(r()*8-4).toFixed(1)}" stroke="${edge}" stroke-opacity=".28" stroke-width="1.1" fill="none" stroke-linecap="round"/>`; }
+  if (flavor === "fs"){
+    inner += `<path d="${blob(r,31,50,49,11,.12)}" fill="url(#g-frost)"/>`;
+    const sp = ["#E8577A","#F6A5B7","#F48FA8","#ffffff","#E0607A"];
+    for (let i=0;i<26;i++){ const a=r()*6.28, d=Math.sqrt(r())*25; const x=50+Math.cos(a)*d, y=49+Math.sin(a)*d;
+      inner += `<rect x="${(x-2.4).toFixed(1)}" y="${(y-.8).toFixed(1)}" width="4.8" height="1.6" rx=".8" fill="${sp[i%sp.length]}" transform="rotate(${(r()*180).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }
+  } else {
+    const chip = flavor==="dcc" ? "#24120B" : "#3B2015";
+    const count = flavor==="dcss" ? 8 : 13;
+    for (let i=0;i<count;i++){ const a=r()*6.28, d=Math.sqrt(r())*33; const x=50+Math.cos(a)*d, y=50+Math.sin(a)*d;
+      const s = flavor==="dcss" ? 4.5+r()*3 : 2.6+r()*2;
+      inner += `<path d="${blob(r,s,x,y,6,.35)}" fill="${chip}"/>`;
+      inner += `<circle cx="${(x-s*.3).toFixed(1)}" cy="${(y-s*.3).toFixed(1)}" r="${(s*.28).toFixed(1)}" fill="#fff" opacity=".18"/>`; }
+    if (flavor==="dcc"){ for (let i=0;i<5;i++){ const a=r()*6.28, d=Math.sqrt(r())*30; inner += `<circle cx="${(50+Math.cos(a)*d).toFixed(1)}" cy="${(50+Math.sin(a)*d).toFixed(1)}" r="1.9" fill="#F6E9DA"/>`; } }
+    if (flavor==="dcss"){ for (let i=0;i<16;i++){ const a=r()*6.28, d=Math.sqrt(r())*34; const x=50+Math.cos(a)*d, y=50+Math.sin(a)*d;
+      inner += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(1.4+r()*1.6).toFixed(1)}" height="${(1.2+r()*1.2).toFixed(1)}" fill="#FFFFFF" opacity=".92" transform="rotate(${(r()*90).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; } }
+  }
+  if (opts.heart){ inner += `<path d="M50 60c-9-6-14-10-14-16a7 7 0 0 1 14-2a7 7 0 0 1 14 2c0 6-5 10-14 16z" fill="#F5A3B2" stroke="#5B3524" stroke-width="2.2" stroke-linejoin="round"/>`; }
+  let mask = "";
+  if (opts.bites && opts.bites.length){
+    mask = `<mask id="${id}m"><rect width="100" height="100" fill="#fff"/>${opts.bites.map(b=>`<circle cx="${b[0]}" cy="${b[1]}" r="${b[2]}" fill="#000"/>`).join("")}</mask>`;
+  }
+  const label = opts.label ? `role="img" aria-label="${esc(opts.label)}"` : `aria-hidden="true"`;
+  return `<svg viewBox="0 0 100 100" ${label}>${mask}<g ${mask?`mask="url(#${id}m)"`:""}>${inner}</g></svg>`;
+}
+const miniStack = (ids, h) => ids.map((f,i)=>`<span style="display:inline-block;height:${h}px;width:${h}px;margin-left:${i?-h*0.22:0}px;transform:rotate(${(i*23)%40-20}deg)">${cookieSVG(f, 30+i)}</span>`).join("");
+
+/* ============ Cart ============ */
+let cart = store.get("cms-cart", []);
+function saveCart(){ store.set("cms-cart", cart); renderCartBadge(); if (drawerOpen && step==="cart") renderCart(); }
+function addItem(item){
+  const found = cart.find(c => c.key === item.key);
+  if (found) found.qty += 1; else cart.push({...item, qty:1});
+  saveCart(); toast(`Added: ${item.name}`);
+  const b = $("#cartBtn"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
+}
+const total = () => cart.reduce((s,c)=>s + c.price*c.qty, 0);
+const itemCount = () => cart.reduce((s,c)=>s + c.qty, 0);
+function renderCartBadge(){
+  $("#cartCount").textContent = itemCount();
+  $("#orderbarTotal").textContent = money(total());
+  $("#orderbar").classList.toggle("on", cart.length > 0 && !drawerOpen);
+}
+
+/* ============ Hero bite ============ */
+const biteBtn = $("#biteBtn");
+let bites = [];
+const BITE_SPOTS = [[86,22,13],[94,55,14],[74,88,14],[30,92,15],[6,62,15],[12,22,16],[50,4,16],[50,50,40]];
+function drawHero(){ biteBtn.innerHTML = cookieSVG("cc", 3, {heart:true, bites, label:"A chocolate chip cookie with a pink heart in the middle"}); }
+biteBtn.addEventListener("click", e => {
+  if (bites.length >= BITE_SPOTS.length) return;
+  bites.push(BITE_SPOTS[bites.length]); drawHero();
+  $("#biteNote").hidden = true;
+  const box = $("#biteable").getBoundingClientRect(), b = biteBtn.getBoundingClientRect();
+  const s = BITE_SPOTS[bites.length-1];
+  const ox = b.left - box.left + b.width*s[0]/100, oy = b.top - box.top + b.height*s[1]/100;
+  for (let i=0;i<9;i++){
+    const c = document.createElement("i"); c.className="crumb";
+    c.style.left = ox+"px"; c.style.top = oy+"px";
+    c.style.setProperty("--dx", (Math.random()*120-60)+"px"); c.style.setProperty("--dy", (40+Math.random()*90)+"px");
+    c.style.width = c.style.height = (4+Math.random()*7)+"px";
+    $("#biteable").appendChild(c); setTimeout(()=>c.remove(), 950);
+  }
+  if (bites.length >= BITE_SPOTS.length){ $("#biteReset").hidden = false; toast("All gone. Good thing Shaun bakes more."); }
+});
+$("#biteReset").addEventListener("click", ()=>{ bites=[]; drawHero(); $("#biteReset").hidden = true; });
+drawHero();
+
+/* ============ Ribbon ============ */
+const ribbonWords = ["Baked with love","Delivered with care","Made to order","Gluten-free & dairy-free options","Custom designs, colors & themes","Cookie cakes & cupcakes","Thank you for supporting homemade"];
+$("#ribbon").innerHTML = [0,1].map(()=>`<span>${ribbonWords.map(w=>`<span>${w}</span>`).join("")}</span>`).join("");
+
+/* ============ Flavor cards ============ */
+$("#flavorGrid").innerHTML = FLAVORS.map((f,i)=>`
+  <article class="flavor">
+    <div class="cookie">${cookieSVG(f.id, 11+i, {label:f.name+" cookie"})}</div>
+    <h3>${f.name}</h3>
+    <p>${f.blurb}</p>
+    <div class="flavor-foot"><span class="price tnum">$4<small>each</small></span>
+      <button class="add-dot" data-single="${f.id}" aria-label="Add one ${f.name} to your order"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  </article>`).join("");
+document.querySelectorAll("[data-single]").forEach(b => b.addEventListener("click", ()=>{
+  const f = fl(b.dataset.single);
+  addItem({key:"single-"+f.id, type:"single", name:f.name, detail:"Single cookie", price:PRICES.single, art:[f.id]});
+}));
+
+/* ============ Box builder ============ */
+let boxSize = 12, boxFill = [], lastPop = -1;
+function renderBox(){
+  const slots = $("#slots"); slots.className = "slots" + (boxSize===6?" six":"");
+  let html = "";
+  for (let i=0;i<boxSize;i++){
+    const f = boxFill[i];
+    html += f
+      ? `<button class="slot filled${i===lastPop?" pop":""}" data-slot="${i}" aria-label="Remove ${fl(f).name} from slot ${i+1}">${cookieSVG(f, 50+i)}<span class="x" aria-hidden="true">×</span></button>`
+      : `<div class="slot" aria-label="Empty slot"><span class="slot-empty">${i+1}</span></div>`;
+  }
+  slots.innerHTML = html; lastPop = -1;
+  slots.querySelectorAll("[data-slot]").forEach(b => b.addEventListener("click", ()=>{ boxFill.splice(+b.dataset.slot,1); renderBox(); }));
+  const n = boxFill.length, full = n === boxSize;
+  $("#boxBar").style.width = (n/boxSize*100)+"%";
+  $("#boxStatus").textContent = full ? "Box is full. Looks delicious." : `${n} of ${boxSize} in the box · ${boxSize-n} to go`;
+  $("#boxPrice").textContent = money(boxSize===6?PRICES.box6:PRICES.box12);
+  $("#addBox").disabled = !full;
+  $("#addBox").textContent = full ? "Add box to order" : `Add ${boxSize-n} more`;
+  $("#boxLabel").textContent = boxSize===6 ? "half dozen, made with love" : "a dozen, made with love";
+  $("#size6").setAttribute("aria-pressed", boxSize===6); $("#size12").setAttribute("aria-pressed", boxSize===12);
+  $("#picker").innerHTML = FLAVORS.map((f,i)=>{
+    const c = boxFill.filter(x=>x===f.id).length;
+    return `<button class="pick" data-pick="${f.id}" ${full?"disabled":""} aria-label="Add ${f.name} to the box"><span style="display:block;width:46px;height:46px">${cookieSVG(f.id, 21+i)}</span><span style="min-width:0"><b>${f.short}</b><span>${f.name===f.short?"":"tap to add"}</span></span><span class="n tnum">${c}</span></button>`;
+  }).join("");
+  document.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", ()=>{
+    if (boxFill.length >= boxSize) return;
+    boxFill.push(b.dataset.pick); lastPop = boxFill.length-1; renderBox();
+  }));
+}
+document.querySelectorAll("[data-size]").forEach(b => b.addEventListener("click", ()=>{ boxSize = +b.dataset.size; boxFill = boxFill.slice(0, boxSize); renderBox(); }));
+$("#mixEven").addEventListener("click", ()=>{ boxFill = Array.from({length:boxSize}, (_,i)=>FLAVORS[i%4].id).sort(); renderBox(); });
+$("#surprise").addEventListener("click", ()=>{ while (boxFill.length < boxSize) boxFill.push(FLAVORS[Math.floor(Math.random()*4)].id); renderBox(); });
+$("#clearBox").addEventListener("click", ()=>{ boxFill = []; renderBox(); });
+$("#addBox").addEventListener("click", ()=>{
+  const counts = FLAVORS.map(f => [f, boxFill.filter(x=>x===f.id).length]).filter(x=>x[1]);
+  const detail = counts.map(([f,c]) => `${c} ${f.short}`).join(", ");
+  const sorted = [...boxFill].sort().join("");
+  addItem({key:`box${boxSize}-${sorted}`, type:"box", name: boxSize===6 ? "Half-dozen box" : "Dozen box", detail, price: boxSize===6?PRICES.box6:PRICES.box12, art: counts.map(x=>x[0].id)});
+  boxFill = []; renderBox();
+});
+renderBox();
+
+/* ============ Extras ============ */
+$("#artFlight").innerHTML = miniStack(["cc","dcc","dcss","fs"], 84);
+$("#artMini").innerHTML = miniStack(["dcc","cc","fs","dcss","cc","dcc"], 56);
+$("#artGram").innerHTML = `<span style="height:110px;width:110px;display:block">${cookieSVG("fs", 5, {heart:true})}</span>`;
+let miniSize = 12;
+document.querySelectorAll("[data-mini]").forEach(b => b.addEventListener("click", ()=>{
+  miniSize = +b.dataset.mini;
+  document.querySelectorAll("[data-mini]").forEach(x => x.setAttribute("aria-pressed", x===b));
+  $("#miniPrice").textContent = money(miniSize===12?PRICES.mini12:PRICES.mini24);
+}));
+document.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", ()=>{
+  const t = b.dataset.add;
+  if (t==="flight") addItem({key:"flight", type:"flight", name:"Cookie Tasting Flight", detail:"One of each flavor", price:PRICES.flight, art:["cc","dcc","dcss","fs"]});
+  if (t==="mini") addItem({key:"mini"+miniSize, type:"mini", name:`Mini Cookie Lunch Box (${miniSize})`, detail:`${miniSize} mini cookies`, price: miniSize===12?PRICES.mini12:PRICES.mini24, art:["dcc","cc","fs"]});
+  if (t==="gram") addItem({key:"gram", type:"gram", name:"Cookie Gram", detail:"Add recipient & message in notes", price:PRICES.gram, art:["fs"]});
+}));
+
+/* ============ Drawer flow ============ */
+let drawerOpen = false, step = "cart", lastOrder = null;
+function openDrawer(){ drawerOpen = true; $("#drawer").classList.add("on"); $("#scrim").classList.add("on"); $("#drawer").setAttribute("aria-hidden","false"); goStep(step==="sent"?"cart":step); renderCartBadge(); setTimeout(()=>$("#closeDrawer").focus(), 50); }
+function closeDrawer(){ drawerOpen = false; $("#drawer").classList.remove("on"); $("#scrim").classList.remove("on"); $("#drawer").setAttribute("aria-hidden","true"); renderCartBadge(); }
+$("#cartBtn").addEventListener("click", openDrawer);
+$("#orderbarBtn").addEventListener("click", openDrawer);
+$("#closeDrawer").addEventListener("click", closeDrawer);
+$("#scrim").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if (e.key==="Escape" && drawerOpen) closeDrawer(); });
+
+function goStep(s){
+  step = s;
+  $("#stepCart").hidden = s!=="cart"; $("#stepDetails").hidden = s!=="details"; $("#stepSend").hidden = !(s==="send"||s==="sent");
+  $("#drawerTitle").textContent = {cart:"Your order", details:"Your details", send:"Send to Shaun", sent:"Order sent"}[s];
+  if (s==="cart") renderCart(); if (s==="details") renderDetailsFoot();
+}
+function renderCart(){
+  const el = $("#stepCart"), foot = $("#drawerFoot");
+  if (!cart.length){
+    el.innerHTML = `<div class="empty">${cookieSVG("cc", 3, {heart:true, bites:[[86,22,13],[94,55,14]]})}<p style="font:800 22px var(--f-display);color:var(--ink)">Nothing here yet</p><p>Fill a box or add a few singles to get started.</p><a class="btn btn-rose" href="#build" id="emptyGo">Build a box</a></div>`;
+    $("#emptyGo").addEventListener("click", closeDrawer);
+    foot.hidden = true; return;
+  }
+  foot.hidden = false;
+  el.innerHTML = cart.map((c,i)=>`
+    <div class="line-item">
+      <div class="thumb">${cookieSVG(c.art[0], 40+i)}</div>
+      <div style="min-width:0"><b>${esc(c.name)}</b><small>${esc(c.detail)}</small></div>
+      <div class="right"><span class="price tnum" style="font-size:17px">${money(c.price*c.qty)}</span>
+        <div class="qty"><button data-dec="${i}" aria-label="One less ${esc(c.name)}">−</button><span class="tnum">${c.qty}</span><button data-inc="${i}" aria-label="One more ${esc(c.name)}">+</button></div></div>
+    </div>`).join("") + `<a href="#build" class="btn btn-ghost btn-sm" id="keepShopping" style="justify-self:start">+ Add more cookies</a>`;
+  el.querySelectorAll("[data-inc]").forEach(b => b.addEventListener("click", ()=>{ cart[+b.dataset.inc].qty++; saveCart(); }));
+  el.querySelectorAll("[data-dec]").forEach(b => b.addEventListener("click", ()=>{ const c = cart[+b.dataset.dec]; c.qty--; if (c.qty<=0) cart.splice(+b.dataset.dec,1); saveCart(); }));
+  $("#keepShopping").addEventListener("click", closeDrawer);
+  foot.innerHTML = `<div class="sum"><span>Total <small>· pay after Shaun confirms</small></span><span class="tnum">${money(total())}</span></div>
+    <button class="btn btn-rose" id="toDetails">Continue</button>`;
+  $("#toDetails").addEventListener("click", ()=>goStep("details"));
+}
+function minDate(){ const d = new Date(); d.setDate(d.getDate()+CONFIG.leadDays); return d.toISOString().slice(0,10); }
+$("#oDate").min = minDate(); $("#rqDate").min = minDate();
+// restore details draft
+const draft = store.get("cms-details", {});
+["oName","oPhone","oNotes"].forEach(k => { if (draft[k]) $("#"+k).value = draft[k]; });
+function renderDetailsFoot(){
+  $("#drawerFoot").hidden = false;
+  $("#drawerFoot").innerHTML = `<div class="sum"><span>Total</span><span class="tnum">${money(total())}</span></div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:10px"><button class="btn btn-ghost" id="backCart">Back</button><button class="btn btn-rose" id="placeOrder">Review &amp; send</button></div>`;
+  $("#backCart").addEventListener("click", ()=>goStep("cart"));
+  $("#placeOrder").addEventListener("click", placeOrder);
+}
+function prettyDate(v){ if (!v) return "flexible"; const [y,m,d] = v.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US",{weekday:"short", month:"short", day:"numeric"}); }
+function orderId(){ const d = new Date(); return "CMS-" + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + "-" + Math.floor(100+Math.random()*900); }
+function placeOrder(){
+  const name = $("#oName").value.trim(), phone = $("#oPhone").value.trim(), date = $("#oDate").value;
+  const err = $("#oErr");
+  if (!name || phone.replace(/\D/g,"").length < 10 || !date){
+    err.textContent = !name ? "Add your name so Shaun knows who the cookies are for." : (phone.replace(/\D/g,"").length < 10 ? "Add a 10-digit phone number so Shaun can text you back." : "Pick the date you'd like your cookies.");
+    err.hidden = false; return;
+  }
+  err.hidden = true;
+  store.set("cms-details", {oName:name, oPhone:phone, oNotes:$("#oNotes").value});
+  const diet = [$("#oGF").checked&&"Gluten-free", $("#oDF").checked&&"Dairy-free"].filter(Boolean).join(", ");
+  const id = orderId();
+  const lines = cart.map(c => `• ${c.qty} × ${c.name}${c.type==="box"?` (${c.detail})`:""} — ${money(c.price*c.qty)}`).join("\n");
+  const text = `Hi Shaun! New cookie order ${id}\n\n${lines}\n\nTotal: ${money(total())}\nName: ${name}\nPhone: ${phone}\nWanted: ${prettyDate(date)} · ${$("#oHow").value}` + (diet?`\nDietary: ${diet}`:"") + ($("#oNotes").value.trim()?`\nNotes: ${$("#oNotes").value.trim()}`:"");
+  lastOrder = {id, text, total: total(), subject:`Cookie order ${id} from ${name}`};
+  showSend(lastOrder, true);
+}
+
+/* Send sheet (used by orders and custom requests) */
+function showSend(payload, isOrder){
+  if (!drawerOpen) openDrawer();
+  goStep("send");
+  const el = $("#stepSend"), foot = $("#drawerFoot"); foot.hidden = false;
+  const sms = `sms:${CONFIG.phone}?&body=${encodeURIComponent(payload.text)}`;
+  const mail = `mailto:${CONFIG.email}?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.text)}`;
+  el.innerHTML = `<p style="color:var(--muted)">Here's what Shaun will get. Send it the way that's easiest for you.</p>
+    <div class="msg-preview" id="msgText">${esc(payload.text)}</div>
+    <div class="send-grid">
+      ${CONFIG.orderEndpoint ? `<button class="btn btn-rose" id="sendDirect">Send ${isOrder?"order":"request"} now</button>` : ""}
+      <a class="btn ${CONFIG.orderEndpoint?"btn-ghost":"btn-rose"}" href="${sms}" id="sendSms">Text it to Shaun</a>
+      <a class="btn btn-ghost" href="${mail}" id="sendMail">Email it instead</a>
+      <button class="btn btn-ghost" id="copyMsg">Copy message</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--muted)">Texting opens your phone's messages app with everything filled in. Hit send there. Or text it yourself to <b>${CONFIG.phonePretty}</b>.</p>`;
+  foot.innerHTML = isOrder
+    ? `<div style="display:grid;grid-template-columns:auto 1fr;gap:10px"><button class="btn btn-ghost" id="backDetails">Back</button><button class="btn btn-rose" id="iSent">I sent it</button></div>`
+    : `<button class="btn btn-rose" id="iSent">Done</button>`;
+  if (isOrder) $("#backDetails").addEventListener("click", ()=>goStep("details"));
+  $("#iSent").addEventListener("click", ()=> isOrder ? showDone(payload) : (closeDrawer(), goStep("cart"), toast("Thanks! Shaun will be in touch.")));
+  $("#copyMsg").addEventListener("click", async ()=>{
+    try{ await navigator.clipboard.writeText(payload.text); toast("Copied. Paste it in a text to Shaun."); }
+    catch(e){ const r = document.createRange(); r.selectNodeContents($("#msgText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Copy it and send to Shaun."); }
+  });
+  if (CONFIG.orderEndpoint){
+    $("#sendDirect").addEventListener("click", async (e)=>{
+      const b = e.currentTarget; b.disabled = true; b.textContent = "Sending…";
+      try{
+        const res = await fetch(CONFIG.orderEndpoint, {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body: JSON.stringify({_subject:payload.subject, message:payload.text})});
+        if (!res.ok) throw new Error(res.status);
+        isOrder ? showDone(payload, true) : (closeDrawer(), goStep("cart"), toast("Request sent! Shaun will be in touch."));
+      }catch(err){ b.disabled = false; b.textContent = "Try again"; toast("That didn't go through. Try texting it instead."); }
+    });
+  }
+}
+function showDone(o, delivered){
+  step = "sent";
+  const venmo = `https://venmo.com/${CONFIG.venmo}?txn=pay&amount=${o.total}&note=${encodeURIComponent("CMS Cookie Co. order "+o.id)}`;
+  $("#stepSend").innerHTML = `<div class="done">
+      <div style="width:130px">${cookieSVG("fs", 9, {heart:true})}</div>
+      <div class="big">Thank you! <span class="hand">It's in the oven queue.</span></div>
+      <p style="color:var(--muted)">${delivered?"Your order went straight to Shaun.":"Once your message is sent,"} Shaun will text you to confirm the details. Your order number is</p>
+      <div class="copybox"><span class="price tnum" style="font-size:24px">${o.id}</span></div>
+      <p style="color:var(--muted);font-size:14.5px">Want to pay now? Use Venmo below, Cash App, or pay at pickup.</p>
+    </div>`;
+  $("#drawerTitle").textContent = "Order placed";
+  $("#drawerFoot").innerHTML = `<a class="btn btn-rose" href="${venmo}" target="_blank" rel="noopener">Pay ${money(o.total)} with Venmo</a><button class="btn btn-ghost" id="finish">Done</button>`;
+  $("#finish").addEventListener("click", ()=>{ closeDrawer(); step="cart"; });
+  cart = []; saveCart();
+}
+
+/* ============ Custom request form ============ */
+$("#reqChecks").innerHTML = REQUESTS.map((r,i)=>`<label><input type="checkbox" value="${esc(r)}" id="rq${i}"> ${esc(r)}</label>`).join("");
+$("#reqForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("#rqName").value.trim(), phone = $("#rqPhone").value.trim();
+  const picks = [...document.querySelectorAll("#reqChecks input:checked")].map(x=>x.value);
+  const err = $("#rqErr");
+  if (!name || phone.replace(/\D/g,"").length < 10){ err.textContent = "Add your name and a 10-digit phone number so Shaun can reach you."; err.hidden = false; return; }
+  err.hidden = true;
+  const text = `Hi Shaun! Custom order request\n\nInterested in: ${picks.join(", ")||"Not sure yet"}\nEvent date: ${prettyDate($("#rqDate").value)}\nGuests/servings: ${$("#rqCount").value||"—"}\nName: ${name}\nPhone: ${phone}` + ($("#rqNotes").value.trim()?`\nDetails: ${$("#rqNotes").value.trim()}`:"");
+  showSend({text, subject:`Custom order request from ${name}`}, false);
+});
+
+/* ============ Misc ============ */
+let tt; function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(()=>t.classList.remove("on"), 2200); }
+addEventListener("scroll", ()=>$("#top").classList.toggle("scrolled", scrollY>10), {passive:true});
+$("#yr").textContent = new Date().getFullYear();
+renderCartBadge();
+</script>
+</body>
+</html>
