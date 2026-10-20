@@ -1,5 +1,5 @@
 import { requireAdmin, AccessError } from "./access.js";
-import { TOO_MANY_ORDERS } from "./messages.js";
+import { TOO_MANY_ORDERS, HEVC_VIDEO } from "./messages.js";
 
 /* ============ Constants ============ */
 const TZ = "America/Detroit";
@@ -9,10 +9,15 @@ const UPLOAD_TYPES = {
   "image/png": { ext: "png", kind: "photo" },
   "image/webp": { ext: "webp", kind: "photo" },
   "video/mp4": { ext: "mp4", kind: "video" },
+  // iPhone .MOV: accepted only when the video track is H.264 (checked after upload), and served
+  // as video/mp4 so Chrome/Android will play it (same ISO container family).
+  "video/quicktime": { ext: "mov", kind: "video", serveAs: "video/mp4", codecCheck: true },
 };
+const MOV_SCAN_HEAD = 1024 * 1024;     // moov at the start (faststart)
+const MOV_SCAN_TAIL = 4 * 1024 * 1024; // moov at the end (iPhone default)
 const FLAVOR_IDS = ["cc", "dcc", "dcss", "fs"];
 const SHORT = { cc: "Choc Chip", dcc: "Double Choc", dcss: "Sea Salt", fs: "Frosted Sugar" };
-const MEDIA_KEY_RE = /^(img|video)\/\d{4}\/[0-9a-f-]{36}\.(jpg|png|webp|mp4)$/;
+const MEDIA_KEY_RE = /^(img|video)\/\d{4}\/[0-9a-f-]{36}\.(jpg|png|webp|mp4|mov)$/;
 const ORDER_LIMIT = 5;
 const ORDER_WINDOW_MS = 10 * 60 * 1000;
 
@@ -302,26 +307,60 @@ function sniffOk(bytes, type) {
   if (type === "image/jpeg") return b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
   if (type === "image/png") return b[0] === 0x89 && ascii(1, 3) === "PNG";
   if (type === "image/webp") return ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP";
-  if (type === "video/mp4") return ascii(4, 4) === "ftyp";
+  if (type === "video/mp4" || type === "video/quicktime") return ascii(4, 4) === "ftyp"; // brand "qt  " is fine
   return false;
+}
+
+// Video codec from the sample description: each 'stsd' box is
+// size(4) 'stsd'(4) version/flags(4) entry_count(4) entry_size(4) FORMAT(4), so the
+// fourcc sits 16 bytes after the 'stsd' tag. Anchoring on 'stsd' avoids false hits
+// from "avc1"/"hvc1" bytes that happen to appear inside compressed frames.
+const H264 = new Set(["avc1", "avc3"]);
+const HEVC = new Set(["hvc1", "hev1"]);
+function sampleEntryCodecs(bytes) {
+  const found = new Set();
+  for (let i = 0; i + 20 <= bytes.length; i++) {
+    if (bytes[i] === 0x73 && bytes[i + 1] === 0x74 && bytes[i + 2] === 0x73 && bytes[i + 3] === 0x64) { // "stsd"
+      found.add(String.fromCharCode(bytes[i + 16], bytes[i + 17], bytes[i + 18], bytes[i + 19]));
+    }
+  }
+  return found;
+}
+async function movVideoCodec(env, key, size) {
+  const ranges = size <= MOV_SCAN_HEAD + MOV_SCAN_TAIL
+    ? [{ offset: 0, length: size }]
+    : [{ offset: 0, length: MOV_SCAN_HEAD }, { suffix: MOV_SCAN_TAIL }];
+  const codecs = new Set();
+  for (const range of ranges) {
+    const part = await env.MEDIA.get(key, { range });
+    for (const c of sampleEntryCodecs(new Uint8Array(await part.arrayBuffer()))) codecs.add(c);
+  }
+  if ([...codecs].some((c) => HEVC.has(c))) return "hevc";
+  if ([...codecs].some((c) => H264.has(c))) return "h264";
+  return null;
 }
 
 async function uploadMedia(request, env) {
   const type = (request.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
   const spec = UPLOAD_TYPES[type];
-  if (!spec) throw new HttpError(415, "Only mp4, jpg, png and webp files can be uploaded");
+  if (!spec) throw new HttpError(415, "Only mp4, mov, jpg, png and webp files can be uploaded");
   const len = Number(request.headers.get("Content-Length"));
   if (!len) throw new HttpError(411, "Upload size is required");
   if (len > MAX_UPLOAD_BYTES) throw new HttpError(413, "Files must be 100 MB or smaller");
   const key = `${spec.kind === "video" ? "video" : "img"}/${todayLocal().slice(0, 4)}/${crypto.randomUUID()}.${spec.ext}`;
-  await env.MEDIA.put(key, request.body, { httpMetadata: { contentType: type } });
+  const contentType = spec.serveAs || type;
+  await env.MEDIA.put(key, request.body, { httpMetadata: { contentType } });
   const head = await env.MEDIA.get(key, { range: { offset: 0, length: 16 } });
   const bytes = new Uint8Array(await head.arrayBuffer());
   if (!sniffOk(bytes, type)) {
     await env.MEDIA.delete(key);
     throw new HttpError(415, "That file doesn't look like a real " + spec.ext.toUpperCase());
   }
-  return json({ ok: true, key, url: mediaUrl(key), kind: spec.kind, content_type: type, size: head.size }, 201);
+  if (spec.codecCheck && (await movVideoCodec(env, key, head.size)) !== "h264") {
+    await env.MEDIA.delete(key);
+    throw new HttpError(415, HEVC_VIDEO);
+  }
+  return json({ ok: true, key, url: mediaUrl(key), kind: spec.kind, content_type: contentType, size: head.size }, 201);
 }
 
 async function assertMediaKey(env, key, kind, field) {

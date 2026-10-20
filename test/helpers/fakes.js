@@ -33,16 +33,21 @@ export function fakeD1() {
 
 export function fakeR2() {
   const objects = new Map();
+  const reads = []; // byte ranges read back, so tests can check we never pull the whole file
   return {
-    objects,
+    objects, reads,
     async put(key, body, opts = {}) {
       const bytes = body instanceof Uint8Array ? body : new Uint8Array(await new Response(body).arrayBuffer());
       objects.set(key, { bytes, contentType: opts.httpMetadata?.contentType });
     },
     async head(key) { const o = objects.get(key); return o ? { size: o.bytes.length, httpMetadata: { contentType: o.contentType } } : null; },
-    async get(key) {
+    async get(key, opts = {}) {
       const o = objects.get(key); if (!o) return null;
-      return { size: o.bytes.length, arrayBuffer: async () => o.bytes.buffer.slice(0, 16) };
+      const size = o.bytes.length, r = opts.range || {};
+      const start = r.suffix != null ? Math.max(0, size - r.suffix) : (r.offset ?? 0);
+      const end = r.suffix != null ? size : Math.min(size, start + (r.length ?? size));
+      reads.push({ key, start, end });
+      return { size, arrayBuffer: async () => o.bytes.slice(start, end).buffer };
     },
     async delete(key) { objects.delete(key); },
   };
