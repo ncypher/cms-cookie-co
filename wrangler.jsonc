@@ -13,6 +13,11 @@
     "not_found_handling": "404-page"
   },
 
+  // Only reachable through the custom domains below (which sit behind Access for /admin).
+  // A *.workers.dev URL would skip Access, so keep it off.
+  "workers_dev": false,
+  "preview_urls": false,
+
   // Custom domains are attached on `wrangler deploy` (see DEPLOY.md). Ignored by `wrangler dev`.
   "routes": [
     { "pattern": "cmscookieco3more.com", "custom_domain": true },
@@ -23,8 +28,8 @@
     {
       "binding": "DB",
       "database_name": "cms",
-      // Replace with the id printed by `wrangler d1 create cms` (DEPLOY.md step 2).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Production D1 (created 2026-10-20).
+      "database_id": "2463eae5-4d26-46c0-a508-8bfec2d56ec8",
       "migrations_dir": "migrations"
     }
   ],
@@ -53,8 +58,8 @@
     "NOTIFY_FROM": "orders@cmscookieco3more.com",
     "SITE_ORIGIN": "https://cmscookieco3more.com",
     // Cloudflare Access (Zero Trust). Set both before deploying; /admin fails closed while empty.
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ACCESS_TEAM_DOMAIN": "wandering-firefly-b425.cloudflareaccess.com",
+    "ACCESS_AUD": "6b0a16ee88498bb971d50275a36b34b5801b38ab8a7042c947a4dbf98fe3d6ce"
     // ADMIN_EMAILS (optional extra allowlist on top of the Access policy) is a secret so the
     // emails stay out of this public repo: `npx wrangler secret put ADMIN_EMAILS` (DEPLOY.md).
   },
