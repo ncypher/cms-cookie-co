@@ -58,7 +58,7 @@
     "NOTIFY_FROM": "orders@cmscookieco3more.com",
     "SITE_ORIGIN": "https://cmscookieco3more.com",
     // Cloudflare Access (Zero Trust). Set both before deploying; /admin fails closed while empty.
-    "ACCESS_TEAM_DOMAIN": "wandering-firefly-b425.cloudflareaccess.com",
+    "ACCESS_TEAM_DOMAIN": "cmscookieco.cloudflareaccess.com",
     "ACCESS_AUD": "6b0a16ee88498bb971d50275a36b34b5801b38ab8a7042c947a4dbf98fe3d6ce"
     // ADMIN_EMAILS (optional extra allowlist on top of the Access policy) is a secret so the
     // emails stay out of this public repo: `npx wrangler secret put ADMIN_EMAILS` (DEPLOY.md).
