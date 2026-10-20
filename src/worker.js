@@ -1,4 +1,5 @@
 import { requireAdmin, AccessError } from "./access.js";
+import { TOO_MANY_ORDERS } from "./messages.js";
 
 /* ============ Constants ============ */
 const TZ = "America/Detroit";
@@ -12,10 +13,12 @@ const UPLOAD_TYPES = {
 const FLAVOR_IDS = ["cc", "dcc", "dcss", "fs"];
 const SHORT = { cc: "Choc Chip", dcc: "Double Choc", dcss: "Sea Salt", fs: "Frosted Sugar" };
 const MEDIA_KEY_RE = /^(img|video)\/\d{4}\/[0-9a-f-]{36}\.(jpg|png|webp|mp4)$/;
+const ORDER_LIMIT = 5;
+const ORDER_WINDOW_MS = 10 * 60 * 1000;
 
 /* ============ Helpers ============ */
 class HttpError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
+  constructor(status, message, headers = {}) { super(message); this.status = status; this.headers = headers; }
 }
 const json = (data, status = 200, headers = {}) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } });
@@ -205,7 +208,26 @@ function newOrderId() {
   return `CMS-${d}-${n}`;
 }
 
+// Salted hash of the caller's IP: enough to count orders per device without storing the address.
+async function clientHash(request, env) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${env.RATE_LIMIT_SALT || "cms-cookie-co"}|${ip}`));
+  return [...new Uint8Array(digest).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function enforceOrderLimit(env, hash) {
+  if (env.ORDER_LIMITER) {
+    const { success } = await env.ORDER_LIMITER.limit({ key: hash });
+    if (!success) throw new HttpError(429, TOO_MANY_ORDERS, { "Retry-After": "60" });
+  }
+  const since = new Date(Date.now() - ORDER_WINDOW_MS).toISOString();
+  const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE client_hash = ?1 AND created_at >= ?2").bind(hash, since).first();
+  if ((recent?.n ?? 0) >= ORDER_LIMIT) throw new HttpError(429, TOO_MANY_ORDERS, { "Retry-After": "600" });
+}
+
 async function createOrder(request, env) {
+  const hash = await clientHash(request, env);
+  await enforceOrderLimit(env, hash);
   const body = await readJson(request);
   if (body.website) return json({ ok: true, id: newOrderId(), total: 0 }, 201); // honeypot: pretend success
   const name = str(body.name, { max: 80, required: true, field: "Name" });
@@ -224,9 +246,9 @@ async function createOrder(request, env) {
     id = newOrderId();
     try {
       await env.DB.prepare(
-        `INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, items_json, total_cents)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`
-      ).bind(id, name, phone, body.date, fulfillment, dietary, notes, JSON.stringify(lines), total_cents).run();
+        `INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, items_json, total_cents, client_hash)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`
+      ).bind(id, name, phone, body.date, fulfillment, dietary, notes, JSON.stringify(lines), total_cents, hash).run();
       break;
     } catch (e) {
       if (attempt === 4 || !String(e.message).includes("UNIQUE")) throw e;
@@ -312,6 +334,19 @@ async function assertMediaKey(env, key, kind, field) {
   return { key, head };
 }
 
+// Delete an R2 object once nothing in D1 points at it any more (specials, events or media).
+async function deleteMediaIfUnused(env, key) {
+  if (!key || !MEDIA_KEY_RE.test(key)) return false;
+  const ref = await env.DB.prepare(
+    `SELECT (SELECT COUNT(*) FROM specials WHERE image_key = ?1)
+          + (SELECT COUNT(*) FROM events WHERE flyer_key = ?1)
+          + (SELECT COUNT(*) FROM media WHERE key_or_url = ?1) AS n`
+  ).bind(key).first();
+  if ((ref?.n ?? 0) > 0) return false;
+  await env.MEDIA.delete(key);
+  return true;
+}
+
 const shapeOrder = (o) => ({ ...o, items: JSON.parse(o.items_json), items_json: undefined, total: dollars(o.total_cents), confirmed: !!o.confirmed, paid: !!o.paid });
 const shapeAdminSpecial = (s) => ({ ...s, price: dollars(s.price_cents), image: mediaUrl(s.image_key), active: !!s.active });
 const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key) });
@@ -382,13 +417,16 @@ async function adminApi(request, env, path, admin) {
       if (m === "POST") {
         row = await DB.prepare(`INSERT INTO specials (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...vals).first();
       } else {
+        const prev = await DB.prepare("SELECT image_key FROM specials WHERE id = ?1").bind(Number(id)).first();
         row = await DB.prepare(`UPDATE specials SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE id = ?${cols.length + 1} RETURNING *`).bind(...vals, Number(id)).first();
         if (!row) throw new HttpError(404, "Special not found");
+        if (prev?.image_key && prev.image_key !== row.image_key) await deleteMediaIfUnused(env, prev.image_key);
       }
       return json({ special: shapeAdminSpecial(row) }, m === "POST" ? 201 : 200);
     }
     if (m === "DELETE" && id) {
-      await DB.prepare("DELETE FROM specials WHERE id = ?1").bind(Number(id)).run();
+      const row = await DB.prepare("DELETE FROM specials WHERE id = ?1 RETURNING image_key").bind(Number(id)).first();
+      await deleteMediaIfUnused(env, row?.image_key);
       return json({ ok: true });
     }
   }
@@ -405,13 +443,16 @@ async function adminApi(request, env, path, admin) {
       if (m === "POST") {
         row = await DB.prepare(`INSERT INTO events (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...vals).first();
       } else {
+        const prev = await DB.prepare("SELECT flyer_key FROM events WHERE id = ?1").bind(Number(id)).first();
         row = await DB.prepare(`UPDATE events SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE id = ?${cols.length + 1} RETURNING *`).bind(...vals, Number(id)).first();
         if (!row) throw new HttpError(404, "Event not found");
+        if (prev?.flyer_key && prev.flyer_key !== row.flyer_key) await deleteMediaIfUnused(env, prev.flyer_key);
       }
       return json({ event: shapeAdminEvent(row) }, m === "POST" ? 201 : 200);
     }
     if (m === "DELETE" && id) {
-      await DB.prepare("DELETE FROM events WHERE id = ?1").bind(Number(id)).run();
+      const row = await DB.prepare("DELETE FROM events WHERE id = ?1 RETURNING flyer_key").bind(Number(id)).first();
+      await deleteMediaIfUnused(env, row?.flyer_key);
       return json({ ok: true });
     }
   }
@@ -449,7 +490,7 @@ async function adminApi(request, env, path, admin) {
     }
     if (m === "DELETE" && id) {
       const row = await DB.prepare("DELETE FROM media WHERE id = ?1 RETURNING *").bind(Number(id)).first();
-      if (row && row.kind !== "instagram") await env.MEDIA.delete(row.key_or_url);
+      if (row && row.kind !== "instagram") await deleteMediaIfUnused(env, row.key_or_url);
       return json({ ok: true });
     }
   }
@@ -520,7 +561,7 @@ export default {
     try {
       return await route(request, env);
     } catch (e) {
-      if (e instanceof HttpError) return withSecurityHeaders(json({ error: e.message }, e.status));
+      if (e instanceof HttpError) return withSecurityHeaders(json({ error: e.message }, e.status, e.headers));
       console.error("unhandled", e?.stack || e);
       return withSecurityHeaders(json({ error: "Something went wrong. Please try again or text Shaun." }, 500));
     }

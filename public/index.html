@@ -865,6 +865,7 @@ function showSend(payload, isOrder){
         const res = await fetch(CONFIG.orderEndpoint, {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"},
           body: JSON.stringify({...payload.details, items: cart.map(toApiItem)})});
         const data = await res.json().catch(()=>({}));
+        if (res.status === 429){ b.textContent = "Text Shaun instead"; toast(data.error || "Too many orders from this device, please text Shaun at " + CONFIG.phonePretty); return; }
         if (!res.ok) throw new Error(data.error || "That didn't go through.");
         showDone({...payload, id:data.id, total:data.total}, true);
       }catch(err){ b.disabled = false; b.textContent = "Try again"; toast(`${err.message} You can text it instead.`); }

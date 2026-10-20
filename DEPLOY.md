@@ -89,6 +89,12 @@ The Worker doesn't trust the route. Every `/admin` and `/api/admin/*` request mu
 
 ## 5. Deploy
 
+Orders are rate-limited per device: the `ORDER_LIMITER` binding allows 5 attempts per minute, and D1 caps it at 5 orders per 10 minutes. The device is identified by a salted hash of its IP; the raw IP is never stored. Set the salt once:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))" | npx wrangler secret put RATE_LIMIT_SALT
+```
+
 ```sh
 npx wrangler deploy --dry-run    # builds and validates; creates nothing
 npx wrangler deploy
