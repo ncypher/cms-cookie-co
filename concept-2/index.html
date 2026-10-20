@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CMS Cookie Co. Flyer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Pre-order cookies from CMS Cookie Co. & More in South Lyon, MI. Dozen $25, half dozen $13, tasting flight $10, mini cookie lunch boxes and cookie grams.">
+<meta name="theme-color" content="#FFF9F2">
+<meta property="og:title" content="Pre-Order Cookies! · CMS Cookie Co.">
+<meta property="og:description" content="Cookies making smiles. Order your cookies today from Shaun in South Lyon, MI.">
+<meta property="og:image" content="../assets/og-image.jpg">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;500;600;700&family=Josefin+Sans:wght@400;600;700&family=Kalam:wght@400;700&family=Kaushan+Script&display=swap">
+<style>
+/* Layout: Shaun's printed flyer, brought to life — cream paper, pink-ribboned panels in two columns, green display type, and every price is a button. Deliberately single (light) theme, like paper. */
+:root{
+  --paper:#FFF9F2; --panel:#FFFDF9; --green:#1F4A37; --pink:#E54F7C; --pink-soft:#F7C3D0; --pink-line:#F1AFC0; --cocoa:#4A2A1E;
+  /* shared-component aliases */
+  --bg:var(--paper); --surface:#FFFFFF; --blush:#FCE6EC; --ink:var(--cocoa); --muted:#7C5A4E;
+  --rose:var(--pink); --rose-btn:#D63F6D; --on-rose:#FFFFFF;
+  --dough:#E8B878; --kraft:#C99467; --kraft-dk:#A8744A; --line:rgba(74,42,30,.14);
+  --shadow:0 14px 30px -20px rgba(110,40,50,.45);
+  --f-display:"Abril Fatface", Georgia, "Times New Roman", serif;
+  --f-script:"Kaushan Script", "Brush Script MT", cursive;
+  --f-hand:"Kalam", "Comic Sans MS", cursive;
+  --f-caps:"Josefin Sans", "Futura", "Century Gothic", sans-serif;
+  --f-body:"Figtree", "Helvetica Neue", Arial, sans-serif;
+  --r:16px;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{overflow-x:clip; scroll-behavior:smooth}
+body{margin:0; background:var(--paper); color:var(--cocoa); font:400 17px/1.55 var(--f-body); -webkit-font-smoothing:antialiased}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:60; background:var(--paper)}
+img{max-width:100%; height:auto; display:block}
+h1,h2,h3{margin:0; font-weight:400; text-wrap:balance}
+p{margin:0}
+a{color:inherit}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:3px solid var(--pink); outline-offset:3px; border-radius:8px}
+[hidden]{display:none!important}
+.tnum{font-variant-numeric:tabular-nums}
+.sheet{max-width:1120px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); padding-block:18px 0}
+
+/* Buttons */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; border:0; border-radius:999px; padding:15px 24px; font-weight:700; font-size:16px; text-decoration:none; transition:transform .18s ease, box-shadow .18s ease, background .18s}
+.btn-rose{background:var(--rose-btn); color:var(--on-rose); box-shadow:0 10px 24px -12px var(--rose-btn)}
+.btn-rose:hover{transform:translateY(-2px)}
+.btn-ghost{background:transparent; border:1.5px solid var(--line); color:var(--ink)}
+.btn-ghost:hover{border-color:var(--ink)}
+.btn[disabled]{opacity:.45; cursor:not-allowed; transform:none!important}
+.btn-sm{padding:10px 16px; font-size:14.5px}
+
+.cart-btn{position:relative; display:inline-flex; align-items:center; gap:8px; border:0; border-radius:999px; padding:10px 16px; font-weight:700; font-size:15px}
+.cart-btn .count{min-width:22px; height:22px; border-radius:11px; background:var(--rose); color:var(--on-rose); font-size:12.5px; display:grid; place-items:center; padding:0 6px}
+.cart-btn.bump{animation:bump .45s ease}
+@keyframes bump{30%{transform:scale(1.12)}60%{transform:scale(.96)}}
+/* Box builder */
+.builder-band{background:var(--blush)}
+.builder{display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(24px,4vw,56px); align-items:start}
+.boxwrap{position:relative; min-width:0}
+.box{position:relative; background:linear-gradient(180deg,var(--kraft),var(--kraft-dk)); border-radius:22px; padding:clamp(14px,2.6vw,24px); box-shadow:inset 0 2px 0 rgba(255,255,255,.25), var(--shadow)}
+.box::before{content:""; position:absolute; inset:0; border-radius:inherit; opacity:.18; background-image:radial-gradient(rgba(0,0,0,.6) 1px, transparent 1.2px); background-size:7px 7px; pointer-events:none}
+.box-label{position:absolute; top:-16px; left:50%; transform:translateX(-50%) rotate(-2deg); background:var(--surface); color:var(--ink); padding:6px 16px; border-radius:999px; font:400 22px/1 var(--f-hand); box-shadow:var(--shadow); white-space:nowrap}
+.slots{position:relative; display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(8px,1.6vw,14px); padding-top:14px}
+.slots.six{grid-template-columns:repeat(3,1fr)}
+.slot{aspect-ratio:1; border-radius:50%; border:0; padding:6%; background:rgba(60,30,15,.28); box-shadow:inset 0 6px 10px rgba(0,0,0,.25); display:grid; place-items:center; position:relative}
+.slot svg{width:100%; height:100%; filter:drop-shadow(0 5px 6px rgba(0,0,0,.3))}
+.slot.filled{background:rgba(60,30,15,.18)}
+.slot.pop svg{animation:drop .42s cubic-bezier(.3,1.5,.5,1)}
+@keyframes drop{from{transform:translateY(-40px) scale(.6) rotate(-40deg); opacity:0}}
+.slot .x{position:absolute; top:2%; right:2%; width:24px; height:24px; border-radius:50%; background:var(--surface); color:var(--ink); display:grid; place-items:center; font-size:14px; font-weight:800; opacity:0; transition:opacity .15s; box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.slot.filled:hover .x, .slot.filled:focus-visible .x{opacity:1}
+.slot-empty{font:400 18px var(--f-hand); color:rgba(255,240,225,.6)}
+.controls{display:grid; gap:22px; min-width:0}
+.seg{display:inline-grid; grid-template-columns:1fr 1fr; background:var(--surface); border-radius:999px; padding:5px; gap:4px; box-shadow:var(--shadow)}
+.seg button{border:0; background:transparent; border-radius:999px; padding:11px 14px; font-weight:700; font-size:15px; display:grid; gap:2px; line-height:1.1}
+.seg button small{font-weight:500; color:var(--muted); font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+.seg button[aria-pressed="true"] small{color:inherit; opacity:.75}
+.picker{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.pick{display:flex; align-items:center; gap:10px; text-align:left; background:var(--surface); border:2px solid transparent; border-radius:16px; padding:10px 12px; transition:border-color .15s, transform .15s; min-width:0}
+.pick:hover{border-color:var(--rose)}
+.pick:active{transform:scale(.97)}
+.pick svg{width:46px; height:46px; flex:none}
+.pick b{display:block; font-size:14.5px; line-height:1.2}
+.pick span{font-size:12.5px; color:var(--muted)}
+.pick .n{margin-left:auto; min-width:28px; height:28px; border-radius:14px; background:var(--blush); display:grid; place-items:center; font-weight:800; font-size:14px; flex:none}
+.pick[disabled]{opacity:.5; cursor:not-allowed}
+.tools{display:flex; flex-wrap:wrap; gap:8px}
+.tools .btn{background:var(--surface)}
+.box-total{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; background:var(--surface); border-radius:18px; padding:16px 18px; box-shadow:var(--shadow)}
+.box-total .meter{flex:1 1 140px; display:grid; gap:6px}
+.bar{height:8px; border-radius:4px; background:var(--blush); overflow:hidden}
+.bar i{display:block; height:100%; width:0; background:var(--rose-btn); border-radius:inherit; transition:width .3s ease}
+.box-total .status{font-size:14px; color:var(--muted)}
+@media (max-width:900px){.builder{grid-template-columns:1fr}}
+@media (max-width:400px){.picker{grid-template-columns:1fr}}
+
+/* Forms */
+.field{display:grid; gap:6px}
+.field label{font-weight:700; font-size:14px}
+.field input,.field select,.field textarea{width:100%; font:inherit; font-size:16px; color:var(--ink); background:var(--bg); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px}
+.field textarea{min-height:92px; resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--rose)}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+@media (max-width:460px){.row2{grid-template-columns:1fr}}
+.checks{display:flex; flex-wrap:wrap; gap:8px}
+.checks label{display:inline-flex; align-items:center; gap:8px; border:1.5px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:600; font-size:14.5px; cursor:pointer}
+.checks input{accent-color:var(--rose-btn); width:16px; height:16px}
+.err{color:var(--rose-btn); font-weight:600; font-size:14px}
+
+/* Drawer + dialog */
+.scrim{position:fixed; inset:0; background:rgba(30,12,8,.45); z-index:70; opacity:0; transition:opacity .25s; pointer-events:none}
+.scrim.on{opacity:1; pointer-events:auto}
+.drawer{position:fixed; top:0; right:0; bottom:0; width:min(460px,100%); background:var(--bg); z-index:80; transform:translateX(104%); transition:transform .35s cubic-bezier(.2,.9,.3,1); display:flex; flex-direction:column; box-shadow:-20px 0 50px -20px rgba(0,0,0,.4); padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); padding-right:env(safe-area-inset-right,0px)}
+.drawer.on{transform:none}
+.drawer-head{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid var(--line)}
+.drawer-head h2{font-size:26px; font-weight:800}
+.icon-btn{width:40px; height:40px; border-radius:50%; border:1.5px solid var(--line); background:transparent; display:grid; place-items:center}
+.icon-btn svg{width:18px; height:18px}
+.drawer-body{flex:1; overflow-y:auto; padding:18px 20px; display:grid; gap:18px; align-content:start}
+.drawer-foot{padding:16px 20px 20px; border-top:1px solid var(--line); display:grid; gap:12px; background:var(--surface)}
+.line-item{display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center}
+.line-item .thumb{width:52px; height:52px}
+.line-item .thumb svg{width:100%; height:100%}
+.line-item b{display:block; font-size:15.5px; line-height:1.25}
+.line-item small{color:var(--muted); font-size:13px; display:block; line-height:1.35}
+.line-item .right{display:grid; justify-items:end; gap:6px}
+.qty{display:inline-flex; align-items:center; border:1.5px solid var(--line); border-radius:999px}
+.qty button{border:0; background:none; width:30px; height:30px; font-weight:800; font-size:16px}
+.qty span{min-width:20px; text-align:center; font-weight:700; font-size:14px}
+.sum{display:flex; justify-content:space-between; align-items:baseline; font:800 22px var(--f-display)}
+.sum small{font:500 13px var(--f-body); color:var(--muted)}
+.empty{text-align:center; display:grid; gap:12px; justify-items:center; padding:28px 0; color:var(--muted)}
+.empty svg{width:120px; height:120px}
+.msg-preview{white-space:pre-wrap; font:500 14px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background:var(--surface); border:1px dashed var(--line); border-radius:14px; padding:14px; max-height:240px; overflow:auto}
+.send-grid{display:grid; gap:10px}
+.done{display:grid; gap:14px; text-align:center; justify-items:center}
+.done .big{font:800 30px/1.1 var(--f-display)}
+.copybox{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; font-weight:700}
+
+/* Sticky mobile order bar */
+.orderbar{position:fixed; left:0; right:0; bottom:0; z-index:45; padding:10px max(14px, env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(14px, env(safe-area-inset-left,0px)); transform:translateY(120%); transition:transform .3s ease; pointer-events:none}
+.orderbar.on{transform:none; pointer-events:auto}
+.orderbar button{width:100%; justify-content:space-between; padding:16px 22px; font-size:16.5px}
+@media (min-width:821px){.orderbar{display:none}}
+
+.toast{position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px); background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:999px; font-weight:700; font-size:15px; opacity:0; transition:.25s; z-index:90; pointer-events:none; white-space:nowrap}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; scroll-behavior:auto!important}
+}
+
+
+/* ---------- Concept 2 ---------- */
+.price{font:700 22px/1 var(--f-hand); color:var(--pink)}
+.switch{position:sticky; top:env(safe-area-inset-top,0px); z-index:50; background:color-mix(in srgb, var(--paper) 90%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--pink-soft)}
+.switch .in{max-width:1120px; margin:0 auto; padding:10px max(16px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px)); display:flex; align-items:center; gap:12px}
+.concepts{display:flex; gap:4px; background:var(--blush); padding:4px; border-radius:999px; font:600 13px var(--f-caps); letter-spacing:.06em; text-transform:uppercase; margin-right:auto}
+.concepts a{white-space:nowrap; padding:7px 12px; border-radius:999px; text-decoration:none; color:var(--muted)}
+.concepts a[aria-current]{background:var(--green); color:#fff}
+.cart-btn{background:var(--green)!important; color:#fff!important; white-space:nowrap}
+@media (max-width:440px){ .cart-label{display:none} .concepts a{padding:7px 10px; letter-spacing:.02em} }
+
+/* Masthead */
+.mast{display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:center; padding-block:18px 26px}
+.brandmark{display:grid; justify-items:center; gap:4px; text-align:center}
+.cms{display:flex; align-items:center; font:400 clamp(84px,13vw,150px)/.9 var(--f-display); color:var(--green); letter-spacing:-.02em}
+.cms img{width:.86em; height:auto; margin-right:-.02em; transform:rotate(-8deg); filter:drop-shadow(0 6px 8px rgba(80,40,20,.25)); transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+.brandmark:hover .cms img{transform:rotate(200deg)}
+.coco{display:flex; align-items:center; gap:14px; font:600 clamp(20px,2.8vw,30px)/1 var(--f-caps); letter-spacing:.32em; color:var(--cocoa); text-transform:uppercase}
+.coco::before,.coco::after{content:""; width:clamp(28px,5vw,60px); height:2px; background:var(--cocoa); opacity:.7}
+.smiles{font:400 clamp(30px,4.4vw,48px)/1.1 var(--f-script); color:var(--green); margin-top:6px}
+.heart{color:var(--pink); display:inline-block}
+.preorder{display:grid; justify-items:center; text-align:center; gap:6px}
+.preorder .pre{font:400 clamp(52px,8vw,92px)/.95 var(--f-script); color:var(--pink); transform:rotate(-3deg)}
+.preorder .ck{font:400 clamp(58px,9vw,104px)/.9 var(--f-display); color:var(--green); letter-spacing:.01em}
+.ribbon{display:inline-block; background:linear-gradient(180deg,#F07D9A,#E25A82); color:#fff; padding:8px 34px; clip-path:polygon(0 0,100% 0,96% 50%,100% 100%,0 100%,4% 50%); transform:rotate(-2deg); font:400 clamp(20px,2.6vw,28px)/1.2 var(--f-script)}
+.gotyou{font:600 15px var(--f-caps); letter-spacing:.12em; text-transform:uppercase; margin-top:6px}
+.circles{display:flex; gap:clamp(14px,3vw,30px); justify-content:center; align-items:flex-start; margin-top:4px}
+.circle{display:grid; justify-items:center; gap:6px; text-decoration:none; font:700 16px var(--f-caps); letter-spacing:.1em; text-transform:uppercase; border:0; background:none; padding:0}
+.circle i{width:clamp(64px,8vw,84px); aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 35% 30%,#F59AB0,#E25A82); display:grid; place-items:center; box-shadow:0 10px 18px -10px #D63F6D; transition:transform .2s}
+.circle:hover i{transform:translateY(-3px) rotate(-6deg)}
+.circle svg{width:44%; height:44%; color:#fff}
+@media (max-width:820px){ .mast{grid-template-columns:1fr; gap:30px} }
+
+/* Panels */
+.board{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start}
+.col{display:grid; gap:18px; min-width:0}
+.panel{position:relative; background:var(--panel); border:1.5px solid var(--pink-line); border-radius:var(--r); padding:40px clamp(16px,2.4vw,26px) 22px; margin-top:14px; min-width:0}
+.panel > .tag{position:absolute; top:-18px; left:50%; transform:translateX(-50%) rotate(-1.5deg); white-space:nowrap; background:linear-gradient(180deg,#F38BA4,#E7668B); color:#fff; padding:7px 30px 6px; clip-path:polygon(0 0,100% 0,95% 50%,100% 100%,0 100%,5% 50%); font:700 clamp(18px,2.2vw,24px)/1 var(--f-hand); letter-spacing:.08em; text-transform:uppercase}
+.panel > .tag::before,.panel > .tag::after{content:none}
+.hearts{position:absolute; top:-8px; font-size:16px; color:var(--pink)}
+.hearts.l{left:12%} .hearts.r{right:12%}
+@media (max-width:820px){ .board{grid-template-columns:1fr} }
+
+/* Flavors */
+.fl-grid{display:grid; grid-template-columns:repeat(4,1fr)}
+.fl{display:grid; justify-items:center; gap:8px; padding:4px 8px 10px; text-align:center; border-left:1.5px dashed var(--pink-soft); position:relative}
+.fl:first-child{border-left:0}
+.fl img{width:min(118px,100%); aspect-ratio:1; object-fit:cover; border-radius:50%; transition:transform .5s cubic-bezier(.3,1.5,.5,1)}
+.fl:hover img{transform:rotate(30deg) scale(1.06)}
+.fl b{font:400 17px/1.15 var(--f-hand); min-height:3.45em; display:grid; place-items:center}
+.fl-add{border:1.5px solid var(--pink); color:var(--pink); background:#fff; border-radius:999px; padding:5px 12px; font:700 14px var(--f-caps); letter-spacing:.06em; display:inline-flex; gap:6px; align-items:center; transition:.15s}
+.fl-add:hover{background:var(--pink); color:#fff}
+.soon{text-align:center; font:400 22px var(--f-script); color:var(--pink); margin-top:10px}
+@media (max-width:480px){ .fl-grid{grid-template-columns:1fr 1fr; row-gap:14px} .fl:nth-child(3){border-left:0} }
+
+/* Price list */
+.plist{display:grid; gap:2px; margin:0; padding:0}
+.prow{display:flex; align-items:baseline; gap:8px; width:100%; border:0; background:none; text-align:left; padding:6px 6px; border-radius:10px; font:400 clamp(18px,2.2vw,21px)/1.3 var(--f-hand); color:var(--cocoa); transition:background .15s}
+.prow:hover{background:var(--blush)}
+.prow small{font-size:.72em; color:var(--pink)}
+.prow .dots{flex:1; border-bottom:2.5px dotted rgba(74,42,30,.35); transform:translateY(-5px); min-width:20px}
+.prow .amt{font:700 1.15em var(--f-hand); color:var(--pink); white-space:nowrap}
+.prow .go{flex:none; width:26px; height:26px; border-radius:50%; background:var(--green); color:#fff; display:grid; place-items:center; font:700 16px/1 var(--f-body); align-self:center; opacity:.85}
+.prow:hover .go{opacity:1}
+.subtag{display:block; width:max-content; margin:18px auto 10px; background:linear-gradient(180deg,#F38BA4,#E7668B); color:#fff; padding:5px 24px 4px; clip-path:polygon(0 0,100% 0,95% 50%,100% 100%,0 100%,5% 50%); font:700 17px var(--f-hand); letter-spacing:.08em; text-transform:uppercase; transform:rotate(-1deg)}
+@media (max-width:520px){ .prow small{display:none} .prow{font-size:18px} }
+.upon{text-align:center; font:400 19px/1.35 var(--f-hand); color:var(--pink); margin-top:12px}
+.upon a{color:inherit}
+
+/* Contact */
+.ready{text-align:center}
+.ready h2{font:400 clamp(28px,3.4vw,38px)/1.05 var(--f-script); color:var(--green)}
+.ready h2 em{font-style:normal; color:var(--pink); display:block}
+.ready .or{font:600 16px var(--f-caps); letter-spacing:.2em; color:var(--green); display:flex; align-items:center; justify-content:center; gap:10px; margin:2px 0}
+.ready .or::before,.ready .or::after{content:""; width:40px; height:1.5px; background:var(--green)}
+.cgrid{display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:center; margin-top:16px; text-align:left}
+.qr{width:150px; padding:8px; background:#fff; border:1.5px solid var(--pink-line); border-radius:12px}
+.qr svg{width:100%; height:auto; display:block}
+.qr span{display:block; text-align:center; font:600 11.5px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; margin-top:4px; color:var(--muted)}
+.clist{display:grid; gap:10px; min-width:0}
+.clist .phone{font:400 15px var(--f-hand)}
+.clist .phone a{display:block; font:700 clamp(24px,3vw,30px)/1.1 var(--f-hand); color:var(--pink); text-decoration:none}
+.clist .row{display:flex; align-items:center; gap:10px; font-weight:600; text-decoration:none; padding-top:8px; border-top:1px solid var(--pink-soft); min-width:0; overflow-wrap:anywhere}
+.ig{width:28px; height:28px; border-radius:8px; background:linear-gradient(45deg,#F9A84D,#E1306C 55%,#9B3BD8); display:grid; place-items:center; flex:none}
+.vm{width:28px; height:28px; border-radius:7px; background:#3D95CE; color:#fff; display:grid; place-items:center; font:800 17px/1 var(--f-body); flex:none}
+.vm-big{font:800 22px/1 var(--f-body); color:#3D95CE; letter-spacing:-.02em; display:block}
+.foot-note{font:600 14px var(--f-caps); letter-spacing:.1em; text-transform:uppercase; text-align:center; margin-top:14px}
+@media (max-width:420px){ .cgrid{grid-template-columns:1fr; justify-items:center; text-align:center} .clist .row{justify-content:center} }
+
+/* Minis */
+.mini{display:grid; grid-template-columns:.85fr 1.15fr; gap:16px; align-items:center}
+.mini img{border-radius:12px; transform:rotate(-2deg)}
+.mini .lede{font:400 20px/1.3 var(--f-hand); text-align:center}
+.mini-rows{display:grid; gap:4px; margin-top:10px}
+.mini-rows .prow{font-size:18.5px; white-space:nowrap}
+@media (max-width:420px){ .mini{grid-template-columns:1fr} .mini img{max-width:240px; justify-self:center} }
+
+/* Build box panel */
+.build-panel{margin-top:32px}
+.build-panel .intro{text-align:center; font:400 20px/1.35 var(--f-hand); margin-bottom:22px}
+.build-panel .builder{grid-template-columns:1fr 1fr}
+.box{background:linear-gradient(180deg,#D8AE84,#B98A5E)!important}
+.box-label{font:400 22px/1 var(--f-script)!important; color:var(--pink)!important}
+.seg button[aria-pressed="true"]{background:var(--green)!important; color:#fff!important}
+.pick{border-color:var(--pink-soft)!important}
+.pick img{width:46px; height:46px; border-radius:50%; object-fit:cover; flex:none}
+@media (max-width:900px){ .build-panel .builder{grid-template-columns:1fr} }
+
+/* Bottom trio */
+.trio{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:stretch; margin-top:14px}
+.trio .panel{padding-top:22px; margin-top:0}
+.ptitle{font:700 22px/1.1 var(--f-hand); color:var(--pink); text-transform:uppercase; letter-spacing:.04em; text-align:center}
+.ptitle::before,.ptitle::after{content:" ♥ "; font-size:.7em}
+.flight{display:grid; gap:10px; justify-items:center; text-align:center}
+.flight .try{font:400 22px var(--f-hand)}
+.flight .big{font:700 34px/1 var(--f-hand); color:var(--pink)}
+.flight img{width:min(260px,100%); border-radius:8px; transform:rotate(-2deg)}
+.offer{list-style:none; padding:0; margin:12px 0 0; display:grid; gap:2px; font:400 17.5px/1.45 var(--f-hand)}
+.offer li::before{content:"♥"; color:var(--pink); margin-right:10px; font-size:.85em}
+.custom{font:400 18px/1.3 var(--f-hand); color:var(--pink); text-align:center; margin-top:10px}
+.diet{display:grid; gap:12px; justify-items:center; text-align:center}
+.diet .icons{display:flex; gap:22px; align-items:flex-start}
+.diet .icons div{display:grid; justify-items:center; gap:4px; font:400 18px var(--f-hand)}
+.diet .icons svg{width:62px; height:62px}
+.notice{text-align:left; font-size:13.5px; line-height:1.5}
+.notice b{display:inline-block; background:var(--pink-soft); color:#B42D55; padding:1px 10px; border-radius:4px; font:700 13px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px}
+@media (max-width:900px){ .trio{grid-template-columns:1fr} }
+
+/* Shaun + request */
+.duo{display:grid; grid-template-columns:.8fr 1.2fr; gap:18px; margin-top:32px; align-items:start}
+.meet{display:grid; gap:14px; justify-items:center; text-align:center}
+.meet img{width:100%; max-width:300px; aspect-ratio:4/5; object-fit:cover; border-radius:10px; border:8px solid #fff; box-shadow:var(--shadow); transform:rotate(-2deg)}
+.meet p{font:400 18px/1.4 var(--f-hand)}
+.meet .sig{font:400 26px var(--f-script); color:var(--pink)}
+.reqp h3{font:400 30px var(--f-script); color:var(--green); text-align:center; margin-bottom:12px}
+#reqForm{display:grid; gap:12px}
+@media (max-width:820px){ .duo{grid-template-columns:1fr} }
+
+/* Footer banner */
+.banner{margin-top:34px; background:var(--green); color:#fff; text-align:center; padding:18px 16px; clip-path:polygon(1% 8%,99% 0,100% 50%,98.5% 100%,0 92%,1% 50%); font:400 clamp(24px,3.6vw,38px)/1.2 var(--f-script)}
+.banner .heart{color:var(--pink-soft)}
+.thanks{text-align:center; font:600 clamp(13px,1.6vw,16px) var(--f-caps); letter-spacing:.14em; text-transform:uppercase; padding-block:14px 34px}
+.thanks small{display:block; letter-spacing:.06em; text-transform:none; font:500 13px var(--f-body); color:var(--muted); margin-top:8px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="g-cc" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#F2CB8C"/><stop offset=".7" stop-color="#DDA35E"/><stop offset="1" stop-color="#B9773A"/></radialGradient>
+    <radialGradient id="g-dcc" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#7A4B33"/><stop offset=".75" stop-color="#5A3423"/><stop offset="1" stop-color="#3E2216"/></radialGradient>
+    <radialGradient id="g-dcss" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#EBC083"/><stop offset=".7" stop-color="#CF9450"/><stop offset="1" stop-color="#A86A31"/></radialGradient>
+    <radialGradient id="g-fs" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#FBEAD0"/><stop offset=".75" stop-color="#F0D3A8"/><stop offset="1" stop-color="#D9AE76"/></radialGradient>
+    <radialGradient id="g-frost" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FBD9DF"/></radialGradient>
+  </defs>
+</svg>
+
+<header class="switch" id="top">
+  <div class="in">
+    <nav class="concepts" aria-label="Design concepts">
+      <a href="../">Concept 1</a>
+      <a href="./" aria-current="page">Concept 2</a>
+    </nav>
+    <button class="cart-btn" id="cartBtn" aria-label="Open your order">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>
+      <span class="cart-label">My order</span>
+      <span class="count tnum" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<main class="sheet">
+  <section class="mast">
+    <div class="brandmark">
+      <h1 class="cms" aria-label="CMS"><img src="../assets/cookie-mark.png" alt="" width="256" height="206">MS</h1>
+      <div class="coco">Cookie Co.</div>
+      <p class="smiles">Cookies Making Smiles <span class="heart">♥</span></p>
+    </div>
+    <div class="preorder">
+      <div class="pre">Pre-Order</div>
+      <div class="ck">COOKIES!</div>
+      <div class="ribbon">Order your cookies today!</div>
+      <p class="gotyou">Order, text or call — we've got you!</p>
+      <div class="circles">
+        <a class="circle" href="#build"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg></i>Order</a>
+        <span class="heart" aria-hidden="true" style="margin-top:28px">♥</span>
+        <a class="circle" href="sms:+17347550533"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i>Text</a>
+        <span class="heart" aria-hidden="true" style="margin-top:28px">♥</span>
+        <a class="circle" href="tel:+17347550533"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></i>Call</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="board">
+    <div class="col">
+      <section class="panel" id="flavors">
+        <span class="hearts l">♥</span><h2 class="tag">Our Flavors</h2><span class="hearts r">♥</span>
+        <div class="fl-grid" id="flavorGrid"></div>
+        <p class="soon">♥ New Flavors Coming Soon! ♥</p>
+      </section>
+
+      <section class="panel" id="pricing">
+        <span class="hearts l">♥</span><h2 class="tag">Pricing</h2><span class="hearts r">♥</span>
+        <div class="plist">
+          <button class="prow" data-go="12">1 Dozen <span class="dots"></span><span class="amt">$25</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-go="6">1/2 Dozen <span class="dots"></span><span class="amt">$13</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-go="each">Each <span class="dots"></span><span class="amt">$4</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-add="flight">Cookie Tasting Flight <small>(1 of each flavor)</small><span class="dots"></span><span class="amt">$10</span><span class="go" aria-hidden="true">+</span></button>
+        </div>
+        <h3 class="subtag">Specialty Item Pricing</h3>
+        <div class="plist">
+          <button class="prow" data-quick="mini12">Mini Cookie Lunch Box <small>(12)</small><span class="dots"></span><span class="amt">12 for $12</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-quick="mini24">Mini Cookie Lunch Box <small>(24)</small><span class="dots"></span><span class="amt">24 for $20</span><span class="go" aria-hidden="true">+</span></button>
+          <button class="prow" data-add="gram">Cookie Grams <span class="dots"></span><span class="amt">$9</span><span class="go" aria-hidden="true">+</span></button>
+        </div>
+        <p class="upon">Cookie Cake Bites, Cookie Cupcakes,<br>Mini Cookie Cakes &amp; Cookie Sheet Cakes<br>all still <a href="#request">Upon Request!</a> ♥</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel ready" id="contact">
+        <h2>Ready to place an order <span class="or">OR</span><em>Running low? ♥</em></h2>
+        <div class="cgrid">
+          <div class="qr"><svg viewBox="0 0 31 31" shape-rendering="crispEdges" role="img" aria-label="QR code for Shaun's Venmo"><rect width="31" height="31" fill="#fff"/><path d="M1,1h1v1h-1zM2,1h1v1h-1zM3,1h1v1h-1zM4,1h1v1h-1zM5,1h1v1h-1zM6,1h1v1h-1zM7,1h1v1h-1zM13,1h1v1h-1zM16,1h1v1h-1zM17,1h1v1h-1zM18,1h1v1h-1zM19,1h1v1h-1zM23,1h1v1h-1zM24,1h1v1h-1zM25,1h1v1h-1zM26,1h1v1h-1zM27,1h1v1h-1zM28,1h1v1h-1zM29,1h1v1h-1zM1,2h1v1h-1zM7,2h1v1h-1zM9,2h1v1h-1zM10,2h1v1h-1zM11,2h1v1h-1zM14,2h1v1h-1zM15,2h1v1h-1zM17,2h1v1h-1zM19,2h1v1h-1zM23,2h1v1h-1zM29,2h1v1h-1zM1,3h1v1h-1zM3,3h1v1h-1zM4,3h1v1h-1zM5,3h1v1h-1zM7,3h1v1h-1zM9,3h1v1h-1zM10,3h1v1h-1zM11,3h1v1h-1zM12,3h1v1h-1zM14,3h1v1h-1zM16,3h1v1h-1zM23,3h1v1h-1zM25,3h1v1h-1zM26,3h1v1h-1zM27,3h1v1h-1zM29,3h1v1h-1zM1,4h1v1h-1zM3,4h1v1h-1zM4,4h1v1h-1zM5,4h1v1h-1zM7,4h1v1h-1zM9,4h1v1h-1zM17,4h1v1h-1zM18,4h1v1h-1zM20,4h1v1h-1zM21,4h1v1h-1zM23,4h1v1h-1zM25,4h1v1h-1zM26,4h1v1h-1zM27,4h1v1h-1zM29,4h1v1h-1zM1,5h1v1h-1zM3,5h1v1h-1zM4,5h1v1h-1zM5,5h1v1h-1zM7,5h1v1h-1zM11,5h1v1h-1zM12,5h1v1h-1zM16,5h1v1h-1zM17,5h1v1h-1zM20,5h1v1h-1zM21,5h1v1h-1zM23,5h1v1h-1zM25,5h1v1h-1zM26,5h1v1h-1zM27,5h1v1h-1zM29,5h1v1h-1zM1,6h1v1h-1zM7,6h1v1h-1zM16,6h1v1h-1zM21,6h1v1h-1zM23,6h1v1h-1zM29,6h1v1h-1zM1,7h1v1h-1zM2,7h1v1h-1zM3,7h1v1h-1zM4,7h1v1h-1zM5,7h1v1h-1zM6,7h1v1h-1zM7,7h1v1h-1zM9,7h1v1h-1zM11,7h1v1h-1zM13,7h1v1h-1zM15,7h1v1h-1zM17,7h1v1h-1zM19,7h1v1h-1zM21,7h1v1h-1zM23,7h1v1h-1zM24,7h1v1h-1zM25,7h1v1h-1zM26,7h1v1h-1zM27,7h1v1h-1zM28,7h1v1h-1zM29,7h1v1h-1zM9,8h1v1h-1zM11,8h1v1h-1zM13,8h1v1h-1zM15,8h1v1h-1zM16,8h1v1h-1zM17,8h1v1h-1zM20,8h1v1h-1zM1,9h1v1h-1zM7,9h1v1h-1zM9,9h1v1h-1zM10,9h1v1h-1zM11,9h1v1h-1zM18,9h1v1h-1zM21,9h1v1h-1zM22,9h1v1h-1zM23,9h1v1h-1zM26,9h1v1h-1zM27,9h1v1h-1zM28,9h1v1h-1zM1,10h1v1h-1zM2,10h1v1h-1zM3,10h1v1h-1zM4,10h1v1h-1zM5,10h1v1h-1zM9,10h1v1h-1zM10,10h1v1h-1zM11,10h1v1h-1zM14,10h1v1h-1zM17,10h1v1h-1zM18,10h1v1h-1zM19,10h1v1h-1zM24,10h1v1h-1zM25,10h1v1h-1zM27,10h1v1h-1zM28,10h1v1h-1zM1,11h1v1h-1zM2,11h1v1h-1zM4,11h1v1h-1zM6,11h1v1h-1zM7,11h1v1h-1zM9,11h1v1h-1zM13,11h1v1h-1zM14,11h1v1h-1zM15,11h1v1h-1zM16,11h1v1h-1zM17,11h1v1h-1zM18,11h1v1h-1zM21,11h1v1h-1zM23,11h1v1h-1zM24,11h1v1h-1zM25,11h1v1h-1zM2,12h1v1h-1zM5,12h1v1h-1zM8,12h1v1h-1zM10,12h1v1h-1zM11,12h1v1h-1zM13,12h1v1h-1zM14,12h1v1h-1zM19,12h1v1h-1zM20,12h1v1h-1zM21,12h1v1h-1zM22,12h1v1h-1zM23,12h1v1h-1zM24,12h1v1h-1zM26,12h1v1h-1zM2,13h1v1h-1zM3,13h1v1h-1zM5,13h1v1h-1zM6,13h1v1h-1zM7,13h1v1h-1zM13,13h1v1h-1zM14,13h1v1h-1zM16,13h1v1h-1zM18,13h1v1h-1zM21,13h1v1h-1zM22,13h1v1h-1zM23,13h1v1h-1zM24,13h1v1h-1zM29,13h1v1h-1zM2,14h1v1h-1zM3,14h1v1h-1zM5,14h1v1h-1zM6,14h1v1h-1zM9,14h1v1h-1zM10,14h1v1h-1zM12,14h1v1h-1zM16,14h1v1h-1zM20,14h1v1h-1zM23,14h1v1h-1zM24,14h1v1h-1zM25,14h1v1h-1zM28,14h1v1h-1zM29,14h1v1h-1zM2,15h1v1h-1zM6,15h1v1h-1zM7,15h1v1h-1zM10,15h1v1h-1zM12,15h1v1h-1zM13,15h1v1h-1zM16,15h1v1h-1zM18,15h1v1h-1zM19,15h1v1h-1zM21,15h1v1h-1zM23,15h1v1h-1zM26,15h1v1h-1zM27,15h1v1h-1zM2,16h1v1h-1zM3,16h1v1h-1zM5,16h1v1h-1zM8,16h1v1h-1zM9,16h1v1h-1zM11,16h1v1h-1zM16,16h1v1h-1zM17,16h1v1h-1zM24,16h1v1h-1zM27,16h1v1h-1zM29,16h1v1h-1zM3,17h1v1h-1zM4,17h1v1h-1zM6,17h1v1h-1zM7,17h1v1h-1zM8,17h1v1h-1zM10,17h1v1h-1zM11,17h1v1h-1zM12,17h1v1h-1zM17,17h1v1h-1zM18,17h1v1h-1zM21,17h1v1h-1zM26,17h1v1h-1zM27,17h1v1h-1zM1,18h1v1h-1zM3,18h1v1h-1zM4,18h1v1h-1zM5,18h1v1h-1zM6,18h1v1h-1zM14,18h1v1h-1zM15,18h1v1h-1zM16,18h1v1h-1zM17,18h1v1h-1zM19,18h1v1h-1zM20,18h1v1h-1zM21,18h1v1h-1zM23,18h1v1h-1zM24,18h1v1h-1zM25,18h1v1h-1zM27,18h1v1h-1zM28,18h1v1h-1zM29,18h1v1h-1zM1,19h1v1h-1zM2,19h1v1h-1zM3,19h1v1h-1zM4,19h1v1h-1zM5,19h1v1h-1zM6,19h1v1h-1zM7,19h1v1h-1zM9,19h1v1h-1zM10,19h1v1h-1zM11,19h1v1h-1zM16,19h1v1h-1zM17,19h1v1h-1zM19,19h1v1h-1zM20,19h1v1h-1zM22,19h1v1h-1zM23,19h1v1h-1zM25,19h1v1h-1zM26,19h1v1h-1zM29,19h1v1h-1zM1,20h1v1h-1zM3,20h1v1h-1zM4,20h1v1h-1zM11,20h1v1h-1zM14,20h1v1h-1zM17,20h1v1h-1zM20,20h1v1h-1zM21,20h1v1h-1zM22,20h1v1h-1zM23,20h1v1h-1zM24,20h1v1h-1zM25,20h1v1h-1zM1,21h1v1h-1zM6,21h1v1h-1zM7,21h1v1h-1zM8,21h1v1h-1zM9,21h1v1h-1zM10,21h1v1h-1zM11,21h1v1h-1zM12,21h1v1h-1zM13,21h1v1h-1zM15,21h1v1h-1zM16,21h1v1h-1zM17,21h1v1h-1zM18,21h1v1h-1zM20,21h1v1h-1zM21,21h1v1h-1zM22,21h1v1h-1zM23,21h1v1h-1zM24,21h1v1h-1zM25,21h1v1h-1zM27,21h1v1h-1zM28,21h1v1h-1zM29,21h1v1h-1zM9,22h1v1h-1zM13,22h1v1h-1zM15,22h1v1h-1zM16,22h1v1h-1zM18,22h1v1h-1zM19,22h1v1h-1zM21,22h1v1h-1zM25,22h1v1h-1zM26,22h1v1h-1zM1,23h1v1h-1zM2,23h1v1h-1zM3,23h1v1h-1zM4,23h1v1h-1zM5,23h1v1h-1zM6,23h1v1h-1zM7,23h1v1h-1zM16,23h1v1h-1zM19,23h1v1h-1zM20,23h1v1h-1zM21,23h1v1h-1zM23,23h1v1h-1zM25,23h1v1h-1zM26,23h1v1h-1zM27,23h1v1h-1zM1,24h1v1h-1zM7,24h1v1h-1zM10,24h1v1h-1zM11,24h1v1h-1zM12,24h1v1h-1zM13,24h1v1h-1zM15,24h1v1h-1zM16,24h1v1h-1zM19,24h1v1h-1zM21,24h1v1h-1zM25,24h1v1h-1zM29,24h1v1h-1zM1,25h1v1h-1zM3,25h1v1h-1zM4,25h1v1h-1zM5,25h1v1h-1zM7,25h1v1h-1zM11,25h1v1h-1zM12,25h1v1h-1zM14,25h1v1h-1zM15,25h1v1h-1zM16,25h1v1h-1zM20,25h1v1h-1zM21,25h1v1h-1zM22,25h1v1h-1zM23,25h1v1h-1zM24,25h1v1h-1zM25,25h1v1h-1zM26,25h1v1h-1zM28,25h1v1h-1zM29,25h1v1h-1zM1,26h1v1h-1zM3,26h1v1h-1zM4,26h1v1h-1zM5,26h1v1h-1zM7,26h1v1h-1zM10,26h1v1h-1zM12,26h1v1h-1zM13,26h1v1h-1zM15,26h1v1h-1zM16,26h1v1h-1zM17,26h1v1h-1zM20,26h1v1h-1zM22,26h1v1h-1zM26,26h1v1h-1zM27,26h1v1h-1zM29,26h1v1h-1zM1,27h1v1h-1zM3,27h1v1h-1zM4,27h1v1h-1zM5,27h1v1h-1zM7,27h1v1h-1zM10,27h1v1h-1zM11,27h1v1h-1zM14,27h1v1h-1zM16,27h1v1h-1zM17,27h1v1h-1zM18,27h1v1h-1zM20,27h1v1h-1zM21,27h1v1h-1zM22,27h1v1h-1zM23,27h1v1h-1zM24,27h1v1h-1zM25,27h1v1h-1zM26,27h1v1h-1zM27,27h1v1h-1zM28,27h1v1h-1zM1,28h1v1h-1zM7,28h1v1h-1zM10,28h1v1h-1zM13,28h1v1h-1zM14,28h1v1h-1zM17,28h1v1h-1zM22,28h1v1h-1zM26,28h1v1h-1zM27,28h1v1h-1zM29,28h1v1h-1zM1,29h1v1h-1zM2,29h1v1h-1zM3,29h1v1h-1zM4,29h1v1h-1zM5,29h1v1h-1zM6,29h1v1h-1zM7,29h1v1h-1zM9,29h1v1h-1zM11,29h1v1h-1zM12,29h1v1h-1zM13,29h1v1h-1zM16,29h1v1h-1zM18,29h1v1h-1zM20,29h1v1h-1zM23,29h1v1h-1zM24,29h1v1h-1zM25,29h1v1h-1zM26,29h1v1h-1zM27,29h1v1h-1z" fill="#4A2A1E"/></svg><span>Scan to Venmo</span></div>
+          <div class="clist">
+            <div class="phone">Text or Call<a href="sms:+17347550533">(734) 755-0533</a></div>
+            <a class="row" href="https://www.instagram.com/cmscookieco/" target="_blank" rel="noopener"><span class="ig"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></span>@CMSCookieCo</a>
+            <a class="row" href="https://venmo.com/u/ShaunSchwartz1" target="_blank" rel="noopener"><span class="vm">v</span><span><span class="vm-big">venmo</span>@ShaunSchwartz1</span></a>
+            <a class="row" href="mailto:cmscookieco3more@gmail.com"><span class="vm" style="background:var(--pink)">@</span>cmscookieco3more@gmail.com</a>
+          </div>
+        </div>
+        <p class="foot-note">Order, text or call — we've got you! <span class="heart">♥</span></p>
+      </section>
+
+      <section class="panel" id="extras">
+        <span class="hearts l">♥</span><h2 class="tag">Mini Cookie Lunch Boxes</h2><span class="hearts r">♥</span>
+        <div class="mini">
+          <img src="../assets/lunchbox.webp" alt="Clear box of twelve mini cookies with a CMS Cookie Co. sticker" width="416" height="386" loading="lazy">
+          <div>
+            <p class="lede">Perfect for lunch boxes, snacks, parties &amp; on-the-go!</p>
+            <div class="mini-rows">
+              <button class="prow" data-quick="mini12">12 Lunch Box <span class="dots"></span><span class="amt">$12</span><span class="go" aria-hidden="true">+</span></button>
+              <button class="prow" data-quick="mini24">24 Lunch Boxes <span class="dots"></span><span class="amt">$20</span><span class="go" aria-hidden="true">+</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel build-panel" id="build">
+    <span class="hearts l">♥</span><h2 class="tag">Build Your Box</h2><span class="hearts r">♥</span>
+    <p class="intro">Pick a dozen or half dozen, then tap flavors to fill it. Mix them any way you like!</p>
+    <div class="builder">
+      <div class="boxwrap">
+        <div class="box">
+          <div class="box-label" id="boxLabel">a dozen, made with love</div>
+          <div class="slots" id="slots" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Box size">
+          <button id="size6" aria-pressed="false" data-size="6">1/2 Dozen<small class="tnum">6 cookies · $13</small></button>
+          <button id="size12" aria-pressed="true" data-size="12">1 Dozen<small class="tnum">12 cookies · $25</small></button>
+        </div>
+        <div class="picker" id="picker"></div>
+        <div class="tools">
+          <button class="btn btn-sm btn-ghost" id="mixEven">Even mix</button>
+          <button class="btn btn-sm btn-ghost" id="surprise">Surprise me</button>
+          <button class="btn btn-sm btn-ghost" id="clearBox">Empty the box</button>
+        </div>
+        <div class="box-total">
+          <div class="meter">
+            <div class="bar"><i id="boxBar"></i></div>
+            <span class="status tnum" id="boxStatus">0 of 12 in the box</span>
+          </div>
+          <span class="price tnum" id="boxPrice">$25</span>
+          <button class="btn btn-rose" id="addBox" disabled>Add box to order</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="trio">
+    <section class="panel flight">
+      <h2 class="ptitle">Cookie Tasting Flight</h2>
+      <p class="try">Try all 4 flavors!</p>
+      <p class="big">$10</p>
+      <img src="../assets/flight.webp" alt="Kraft box holding one of each of the four cookie flavors" width="488" height="372" loading="lazy">
+      <button class="btn btn-rose btn-sm" data-add="flight">Add a flight</button>
+    </section>
+    <section class="panel">
+      <h2 class="ptitle">We Offer</h2>
+      <ul class="offer">
+        <li>Cookies by the Dozen</li><li>Cookies by the Half Dozen</li><li>Individual Cookies</li><li>Cookie Tasting Flights</li><li>Mini Cookie Lunch Boxes</li><li>Cookie Grams</li><li>Cookie Cake Bites</li><li>Cookie Cupcakes</li><li>Cookie Sheet Cakes</li><li>Mini Cookie Cakes</li><li>Baking &amp; Cooking Lessons</li><li>Host a Cooking Party</li>
+      </ul>
+      <p class="custom">♥ Custom designs, colors, and themes available. ♥</p>
+    </section>
+    <section class="panel diet">
+      <h2 class="ptitle">Special Dietary Options</h2>
+      <p style="font:400 18px var(--f-hand)">We can make select items:</p>
+      <div class="icons">
+        <div><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="28" stroke="#D63F6D" stroke-width="4"/><path d="M32 50V18M32 26c-6-2-8-7-8-10 4 1 8 4 8 10zm0 0c6-2 8-7 8-10-4 1-8 4-8 10zm0 9c-6-2-8-7-8-10 4 1 8 4 8 10zm0 0c6-2 8-7 8-10-4 1-8 4-8 10z" stroke="#1F4A37" stroke-width="2.5" stroke-linejoin="round" fill="#1F4A37" fill-opacity=".85"/><path d="M13 13l38 38" stroke="#D63F6D" stroke-width="4"/></svg>Gluten-Free</div>
+        <span class="heart" style="margin-top:22px">♥</span>
+        <div><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="28" stroke="#D63F6D" stroke-width="4"/><path d="M27 14h10v6l4 7v21a2 2 0 0 1-2 2H25a2 2 0 0 1-2-2V27l4-7z" fill="#1F4A37"/><path d="M23 33h18" stroke="#FFFDF9" stroke-width="2.5"/><path d="M13 13l38 38" stroke="#D63F6D" stroke-width="4"/></svg>Dairy-Free</div>
+      </div>
+      <div class="notice"><b>Important notice:</b><br>While extreme care is taken during preparation, all products are made in a home kitchen where wheat, milk, eggs, and other common allergens are present. Therefore, products may come into contact with allergens.</div>
+    </section>
+  </div>
+
+  <div class="duo">
+    <section class="panel meet" id="about">
+      <span class="hearts l">♥</span><h2 class="tag">Meet Shaun</h2><span class="hearts r">♥</span>
+      <img src="../assets/shaun-market.jpg" alt="Shaun smiling behind her market table full of boxed cookies" width="900" height="1125" loading="lazy">
+      <p>Owner &amp; Chef. Thank you for supporting homemade and helping my dream come true, 1 cookie at a time!</p>
+      <span class="sig">Shaun Marie Schwartz</span>
+    </section>
+    <section class="panel reqp" id="request">
+      <span class="hearts l">♥</span><h2 class="tag">Upon Request</h2><span class="hearts r">♥</span>
+      <h3>Cakes, cupcakes, lessons &amp; parties</h3>
+      <form id="reqForm" novalidate>
+        <div class="field">
+          <span style="font-weight:700;font-size:14px">What are you interested in?</span>
+          <div class="checks" id="reqChecks"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="rqName">Your name</label><input id="rqName" autocomplete="name" required></div>
+          <div class="field"><label for="rqPhone">Phone</label><input id="rqPhone" type="tel" autocomplete="tel" inputmode="tel" required></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="rqDate">Event date</label><input id="rqDate" type="date"></div>
+          <div class="field"><label for="rqCount">Guests / servings</label><input id="rqCount" inputmode="numeric" placeholder="about 20"></div>
+        </div>
+        <div class="field"><label for="rqNotes">Tell Shaun about it</label><textarea id="rqNotes" placeholder="Theme, colors, flavors, allergies…"></textarea></div>
+        <p class="err" id="rqErr" hidden></p>
+        <button class="btn btn-rose" type="submit">Send request to Shaun</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="banner"><span class="heart">♥</span> Baked with love, delivered with care. <span class="heart">♥</span></div>
+  <p class="thanks">♥ Thank you for supporting a small local business! ♥<small>CMS Cookie Co. &amp; More · South Lyon, Michigan · © <span id="yr">2026</span></small></p>
+</main>
+
+<div class="orderbar" id="orderbar"><button class="btn btn-rose" id="orderbarBtn"><span>View your order</span><span class="tnum" id="orderbarTotal">$0</span></button></div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+  <div class="drawer-head">
+    <h2 id="drawerTitle" style="font:400 30px var(--f-script);color:var(--green)">Your order</h2>
+    <button class="icon-btn" id="closeDrawer" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="drawer-body" id="stepCart"></div>
+  <form class="drawer-body" id="stepDetails" hidden novalidate>
+    <div class="row2">
+      <div class="field"><label for="oName">Your name</label><input id="oName" autocomplete="name" required></div>
+      <div class="field"><label for="oPhone">Phone</label><input id="oPhone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="oDate">When do you need it?</label><input id="oDate" type="date" required></div>
+      <div class="field"><label for="oHow">Pickup or delivery</label>
+        <select id="oHow"><option>Pickup</option><option>Delivery (ask Shaun)</option></select></div>
+    </div>
+    <div class="field">
+      <span style="font-weight:700;font-size:14px">Dietary requests</span>
+      <div class="checks">
+        <label><input type="checkbox" id="oGF"> Gluten-free</label>
+        <label><input type="checkbox" id="oDF"> Dairy-free</label>
+      </div>
+    </div>
+    <div class="field"><label for="oNotes">Notes for Shaun</label><textarea id="oNotes" placeholder="Cookie gram recipient and message, allergies, colors…"></textarea></div>
+    <p class="err" id="oErr" hidden></p>
+  </form>
+  <div class="drawer-body" id="stepSend" hidden></div>
+  <div class="drawer-foot" id="drawerFoot"></div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ Settings Shaun (or Tom) can change ============ */
+const CONFIG = {
+  phone: "+17347550533",
+  phonePretty: "(734) 755-0533",
+  email: "cmscookieco3more@gmail.com",
+  venmo: "ShaunSchwartz1",
+  // Optional: paste a Formspree (or similar) form URL here, e.g. "https://formspree.io/f/abcdwxyz".
+  // When set, orders are delivered to Shaun's inbox automatically with one tap.
+  orderEndpoint: "",
+  leadDays: 2 // earliest date a customer can pick
+};
+const PRICES = { single:4, box6:13, box12:25, flight:10, mini12:12, mini24:20, gram:9 };
+const FLAVORS = [
+  {id:"cc",   name:"Chocolate Chip",          short:"Choc Chip",    blurb:"The classic. Golden edges, soft middle, chocolate in every bite."},
+  {id:"dcc",  name:"Double Chocolate Chip",   short:"Double Choc",  blurb:"Chocolate dough loaded with even more chocolate chips."},
+  {id:"dcss", name:"Dark Chocolate Sea Salt", short:"Sea Salt",     blurb:"Dark chocolate chunks finished with flaky sea salt."},
+  {id:"fs",   name:"Frosted Sugar Cookie",    short:"Frosted Sugar",blurb:"Soft sugar cookie, a thick swirl of frosting, sprinkles on top."}
+];
+const REQUESTS = ["Cookie Cake Bites","Cookie Cupcakes","Mini Cookie Cakes","Cookie Sheet Cake","Custom design / theme","Baking or cooking lesson","Cooking party"];
+
+/* ============ Helpers ============ */
+const $ = s => document.querySelector(s);
+const money = n => "$" + (Math.round(n*100)/100).toString();
+const fl = id => FLAVORS.find(f => f.id === id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+function rng(seed){ let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = s * 16807 % 2147483647) / 2147483647; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ============ Cookie drawings ============ */
+let uid = 0;
+function blob(r, R, cx, cy, n, amp){
+  const pts = [];
+  for (let i=0;i<n;i++){ const a = i/n*Math.PI*2; const rr = R*(1 + (r()-.5)*amp); pts.push([cx+Math.cos(a)*rr, cy+Math.sin(a)*rr]); }
+  let d = "";
+  for (let i=0;i<n;i++){
+    const p0 = pts[(i-1+n)%n], p1 = pts[i], p2 = pts[(i+1)%n], p3 = pts[(i+2)%n];
+    if (i===0) d += `M${p1[0].toFixed(1)},${p1[1].toFixed(1)}`;
+    const c1 = [p1[0]+(p2[0]-p0[0])/6, p1[1]+(p2[1]-p0[1])/6], c2 = [p2[0]-(p3[0]-p1[0])/6, p2[1]-(p3[1]-p1[1])/6];
+    d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d + "Z";
+}
+function cookieSVG(flavor, seed=7, opts={}){
+  const r = rng(seed*97 + flavor.length*13);
+  const id = "ck" + (++uid);
+  const edge = {cc:"#A9692F", dcc:"#2F1A11", dcss:"#93592A", fs:"#C9975D"}[flavor];
+  let inner = `<path d="${blob(r,44,50,50,14,.07)}" fill="url(#g-${flavor})" stroke="${edge}" stroke-width="1.6"/>`;
+  // texture cracks
+  for (let i=0;i<5;i++){ const a=r()*6.28, d=10+r()*22; const x=50+Math.cos(a)*d, y=50+Math.sin(a)*d;
+    inner += `<path d="M${x.toFixed(1)},${y.toFixed(1)} q${(r()*8-4).toFixed(1)},${(r()*6-3).toFixed(1)} ${(r()*10-5).toFixed(1)},${(r()*8-4).toFixed(1)}" stroke="${edge}" stroke-opacity=".28" stroke-width="1.1" fill="none" stroke-linecap="round"/>`; }
+  if (flavor === "fs"){
+    inner += `<path d="${blob(r,31,50,49,11,.12)}" fill="url(#g-frost)"/>`;
+    const sp = ["#E8577A","#F6A5B7","#F48FA8","#ffffff","#E0607A"];
+    for (let i=0;i<26;i++){ const a=r()*6.28, d=Math.sqrt(r())*25; const x=50+Math.cos(a)*d, y=49+Math.sin(a)*d;
+      inner += `<rect x="${(x-2.4).toFixed(1)}" y="${(y-.8).toFixed(1)}" width="4.8" height="1.6" rx=".8" fill="${sp[i%sp.length]}" transform="rotate(${(r()*180).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }
+  } else {
+    const chip = flavor==="dcc" ? "#24120B" : "#3B2015";
+    const count = flavor==="dcss" ? 8 : 13;
+    for (let i=0;i<count;i++){ const a=r()*6.28, d=Math.sqrt(r())*33; const x=50+Math.cos(a)*d, y=50+Math.sin(a)*d;
+      const s = flavor==="dcss" ? 4.5+r()*3 : 2.6+r()*2;
+      inner += `<path d="${blob(r,s,x,y,6,.35)}" fill="${chip}"/>`;
+      inner += `<circle cx="${(x-s*.3).toFixed(1)}" cy="${(y-s*.3).toFixed(1)}" r="${(s*.28).toFixed(1)}" fill="#fff" opacity=".18"/>`; }
+    if (flavor==="dcc"){ for (let i=0;i<5;i++){ const a=r()*6.28, d=Math.sqrt(r())*30; inner += `<circle cx="${(50+Math.cos(a)*d).toFixed(1)}" cy="${(50+Math.sin(a)*d).toFixed(1)}" r="1.9" fill="#F6E9DA"/>`; } }
+    if (flavor==="dcss"){ for (let i=0;i<16;i++){ const a=r()*6.28, d=Math.sqrt(r())*34; const x=50+Math.cos(a)*d, y=50+Math.sin(a)*d;
+      inner += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(1.4+r()*1.6).toFixed(1)}" height="${(1.2+r()*1.2).toFixed(1)}" fill="#FFFFFF" opacity=".92" transform="rotate(${(r()*90).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; } }
+  }
+  if (opts.heart){ inner += `<path d="M50 60c-9-6-14-10-14-16a7 7 0 0 1 14-2a7 7 0 0 1 14 2c0 6-5 10-14 16z" fill="#F5A3B2" stroke="#5B3524" stroke-width="2.2" stroke-linejoin="round"/>`; }
+  let mask = "";
+  if (opts.bites && opts.bites.length){
+    mask = `<mask id="${id}m"><rect width="100" height="100" fill="#fff"/>${opts.bites.map(b=>`<circle cx="${b[0]}" cy="${b[1]}" r="${b[2]}" fill="#000"/>`).join("")}</mask>`;
+  }
+  const label = opts.label ? `role="img" aria-label="${esc(opts.label)}"` : `aria-hidden="true"`;
+  return `<svg viewBox="0 0 100 100" ${label}>${mask}<g ${mask?`mask="url(#${id}m)"`:""}>${inner}</g></svg>`;
+}
+const miniStack = (ids, h) => ids.map((f,i)=>`<span style="display:inline-block;height:${h}px;width:${h}px;margin-left:${i?-h*0.22:0}px;transform:rotate(${(i*23)%40-20}deg)">${cookieSVG(f, 30+i)}</span>`).join("");
+
+/* ============ Cart ============ */
+let cart = store.get("cms-cart", []);
+function saveCart(){ store.set("cms-cart", cart); renderCartBadge(); if (drawerOpen && step==="cart") renderCart(); }
+function addItem(item){
+  const found = cart.find(c => c.key === item.key);
+  if (found) found.qty += 1; else cart.push({...item, qty:1});
+  saveCart(); toast(`Added: ${item.name}`);
+  const b = $("#cartBtn"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump");
+}
+const total = () => cart.reduce((s,c)=>s + c.price*c.qty, 0);
+const itemCount = () => cart.reduce((s,c)=>s + c.qty, 0);
+function renderCartBadge(){
+  $("#cartCount").textContent = itemCount();
+  $("#orderbarTotal").textContent = money(total());
+  $("#orderbar").classList.toggle("on", cart.length > 0 && !drawerOpen);
+}
+
+/* ============ Box builder ============ */
+let boxSize = 12, boxFill = [], lastPop = -1;
+function renderBox(){
+  const slots = $("#slots"); slots.className = "slots" + (boxSize===6?" six":"");
+  let html = "";
+  for (let i=0;i<boxSize;i++){
+    const f = boxFill[i];
+    html += f
+      ? `<button class="slot filled${i===lastPop?" pop":""}" data-slot="${i}" aria-label="Remove ${fl(f).name} from slot ${i+1}">${cookieSVG(f, 50+i)}<span class="x" aria-hidden="true">×</span></button>`
+      : `<div class="slot" aria-label="Empty slot"><span class="slot-empty">${i+1}</span></div>`;
+  }
+  slots.innerHTML = html; lastPop = -1;
+  slots.querySelectorAll("[data-slot]").forEach(b => b.addEventListener("click", ()=>{ boxFill.splice(+b.dataset.slot,1); renderBox(); }));
+  const n = boxFill.length, full = n === boxSize;
+  $("#boxBar").style.width = (n/boxSize*100)+"%";
+  $("#boxStatus").textContent = full ? "Box is full. Looks delicious." : `${n} of ${boxSize} in the box · ${boxSize-n} to go`;
+  $("#boxPrice").textContent = money(boxSize===6?PRICES.box6:PRICES.box12);
+  $("#addBox").disabled = !full;
+  $("#addBox").textContent = full ? "Add box to order" : `Add ${boxSize-n} more`;
+  $("#boxLabel").textContent = boxSize===6 ? "half dozen, made with love" : "a dozen, made with love";
+  $("#size6").setAttribute("aria-pressed", boxSize===6); $("#size12").setAttribute("aria-pressed", boxSize===12);
+  $("#picker").innerHTML = FLAVORS.map((f,i)=>{
+    const c = boxFill.filter(x=>x===f.id).length;
+    return `<button class="pick" data-pick="${f.id}" ${full?"disabled":""} aria-label="Add ${f.name} to the box"><span style="display:block;width:46px;height:46px">${cookieSVG(f.id, 21+i)}</span><span style="min-width:0"><b>${f.short}</b><span>${f.name===f.short?"":"tap to add"}</span></span><span class="n tnum">${c}</span></button>`;
+  }).join("");
+  document.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", ()=>{
+    if (boxFill.length >= boxSize) return;
+    boxFill.push(b.dataset.pick); lastPop = boxFill.length-1; renderBox();
+  }));
+}
+document.querySelectorAll("[data-size]").forEach(b => b.addEventListener("click", ()=>{ boxSize = +b.dataset.size; boxFill = boxFill.slice(0, boxSize); renderBox(); }));
+$("#mixEven").addEventListener("click", ()=>{ boxFill = Array.from({length:boxSize}, (_,i)=>FLAVORS[i%4].id).sort(); renderBox(); });
+$("#surprise").addEventListener("click", ()=>{ while (boxFill.length < boxSize) boxFill.push(FLAVORS[Math.floor(Math.random()*4)].id); renderBox(); });
+$("#clearBox").addEventListener("click", ()=>{ boxFill = []; renderBox(); });
+$("#addBox").addEventListener("click", ()=>{
+  const counts = FLAVORS.map(f => [f, boxFill.filter(x=>x===f.id).length]).filter(x=>x[1]);
+  const detail = counts.map(([f,c]) => `${c} ${f.short}`).join(", ");
+  const sorted = [...boxFill].sort().join("");
+  addItem({key:`box${boxSize}-${sorted}`, type:"box", name: boxSize===6 ? "Half-dozen box" : "Dozen box", detail, price: boxSize===6?PRICES.box6:PRICES.box12, art: counts.map(x=>x[0].id)});
+  boxFill = []; renderBox();
+});
+renderBox();
+
+/* ============ Extras ============ */
+let miniSize = 12;
+document.querySelectorAll("[data-mini]").forEach(b => b.addEventListener("click", ()=>{
+  miniSize = +b.dataset.mini;
+  document.querySelectorAll("[data-mini]").forEach(x => x.setAttribute("aria-pressed", x===b));
+  $("#miniPrice").textContent = money(miniSize===12?PRICES.mini12:PRICES.mini24);
+}));
+document.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", ()=>{
+  const t = b.dataset.add;
+  if (t==="flight") addItem({key:"flight", type:"flight", name:"Cookie Tasting Flight", detail:"One of each flavor", price:PRICES.flight, art:["cc","dcc","dcss","fs"]});
+  if (t==="mini") addItem({key:"mini"+miniSize, type:"mini", name:`Mini Cookie Lunch Box (${miniSize})`, detail:`${miniSize} mini cookies`, price: miniSize===12?PRICES.mini12:PRICES.mini24, art:["dcc","cc","fs"]});
+  if (t==="gram") addItem({key:"gram", type:"gram", name:"Cookie Gram", detail:"Add recipient & message in notes", price:PRICES.gram, art:["fs"]});
+}));
+
+/* ============ Drawer flow ============ */
+let drawerOpen = false, step = "cart", lastOrder = null;
+function openDrawer(){ drawerOpen = true; $("#drawer").classList.add("on"); $("#scrim").classList.add("on"); $("#drawer").setAttribute("aria-hidden","false"); goStep(step==="sent"?"cart":step); renderCartBadge(); setTimeout(()=>$("#closeDrawer").focus(), 50); }
+function closeDrawer(){ drawerOpen = false; $("#drawer").classList.remove("on"); $("#scrim").classList.remove("on"); $("#drawer").setAttribute("aria-hidden","true"); renderCartBadge(); }
+$("#cartBtn").addEventListener("click", openDrawer);
+$("#orderbarBtn").addEventListener("click", openDrawer);
+$("#closeDrawer").addEventListener("click", closeDrawer);
+$("#scrim").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if (e.key==="Escape" && drawerOpen) closeDrawer(); });
+
+function goStep(s){
+  step = s;
+  $("#stepCart").hidden = s!=="cart"; $("#stepDetails").hidden = s!=="details"; $("#stepSend").hidden = !(s==="send"||s==="sent");
+  $("#drawerTitle").textContent = {cart:"Your order", details:"Your details", send:"Send to Shaun", sent:"Order sent"}[s];
+  if (s==="cart") renderCart(); if (s==="details") renderDetailsFoot();
+}
+function renderCart(){
+  const el = $("#stepCart"), foot = $("#drawerFoot");
+  if (!cart.length){
+    el.innerHTML = `<div class="empty">${cookieSVG("cc", 3, {heart:true, bites:[[86,22,13],[94,55,14]]})}<p style="font:800 22px var(--f-display);color:var(--ink)">Nothing here yet</p><p>Fill a box or add a few singles to get started.</p><a class="btn btn-rose" href="#build" id="emptyGo">Build a box</a></div>`;
+    $("#emptyGo").addEventListener("click", closeDrawer);
+    foot.hidden = true; return;
+  }
+  foot.hidden = false;
+  el.innerHTML = cart.map((c,i)=>`
+    <div class="line-item">
+      <div class="thumb">${cookieSVG(c.art[0], 40+i)}</div>
+      <div style="min-width:0"><b>${esc(c.name)}</b><small>${esc(c.detail)}</small></div>
+      <div class="right"><span class="price tnum" style="font-size:17px">${money(c.price*c.qty)}</span>
+        <div class="qty"><button data-dec="${i}" aria-label="One less ${esc(c.name)}">−</button><span class="tnum">${c.qty}</span><button data-inc="${i}" aria-label="One more ${esc(c.name)}">+</button></div></div>
+    </div>`).join("") + `<a href="#build" class="btn btn-ghost btn-sm" id="keepShopping" style="justify-self:start">+ Add more cookies</a>`;
+  el.querySelectorAll("[data-inc]").forEach(b => b.addEventListener("click", ()=>{ cart[+b.dataset.inc].qty++; saveCart(); }));
+  el.querySelectorAll("[data-dec]").forEach(b => b.addEventListener("click", ()=>{ const c = cart[+b.dataset.dec]; c.qty--; if (c.qty<=0) cart.splice(+b.dataset.dec,1); saveCart(); }));
+  $("#keepShopping").addEventListener("click", closeDrawer);
+  foot.innerHTML = `<div class="sum"><span>Total <small>· pay after Shaun confirms</small></span><span class="tnum">${money(total())}</span></div>
+    <button class="btn btn-rose" id="toDetails">Continue</button>`;
+  $("#toDetails").addEventListener("click", ()=>goStep("details"));
+}
+function minDate(){ const d = new Date(); d.setDate(d.getDate()+CONFIG.leadDays); return d.toISOString().slice(0,10); }
+$("#oDate").min = minDate(); $("#rqDate").min = minDate();
+// restore details draft
+const draft = store.get("cms-details", {});
+["oName","oPhone","oNotes"].forEach(k => { if (draft[k]) $("#"+k).value = draft[k]; });
+function renderDetailsFoot(){
+  $("#drawerFoot").hidden = false;
+  $("#drawerFoot").innerHTML = `<div class="sum"><span>Total</span><span class="tnum">${money(total())}</span></div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:10px"><button class="btn btn-ghost" id="backCart">Back</button><button class="btn btn-rose" id="placeOrder">Review &amp; send</button></div>`;
+  $("#backCart").addEventListener("click", ()=>goStep("cart"));
+  $("#placeOrder").addEventListener("click", placeOrder);
+}
+function prettyDate(v){ if (!v) return "flexible"; const [y,m,d] = v.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US",{weekday:"short", month:"short", day:"numeric"}); }
+function orderId(){ const d = new Date(); return "CMS-" + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + "-" + Math.floor(100+Math.random()*900); }
+function placeOrder(){
+  const name = $("#oName").value.trim(), phone = $("#oPhone").value.trim(), date = $("#oDate").value;
+  const err = $("#oErr");
+  if (!name || phone.replace(/\D/g,"").length < 10 || !date){
+    err.textContent = !name ? "Add your name so Shaun knows who the cookies are for." : (phone.replace(/\D/g,"").length < 10 ? "Add a 10-digit phone number so Shaun can text you back." : "Pick the date you'd like your cookies.");
+    err.hidden = false; return;
+  }
+  err.hidden = true;
+  store.set("cms-details", {oName:name, oPhone:phone, oNotes:$("#oNotes").value});
+  const diet = [$("#oGF").checked&&"Gluten-free", $("#oDF").checked&&"Dairy-free"].filter(Boolean).join(", ");
+  const id = orderId();
+  const lines = cart.map(c => `• ${c.qty} × ${c.name}${c.type==="box"?` (${c.detail})`:""} — ${money(c.price*c.qty)}`).join("\n");
+  const text = `Hi Shaun! New cookie order ${id}\n\n${lines}\n\nTotal: ${money(total())}\nName: ${name}\nPhone: ${phone}\nWanted: ${prettyDate(date)} · ${$("#oHow").value}` + (diet?`\nDietary: ${diet}`:"") + ($("#oNotes").value.trim()?`\nNotes: ${$("#oNotes").value.trim()}`:"");
+  lastOrder = {id, text, total: total(), subject:`Cookie order ${id} from ${name}`};
+  showSend(lastOrder, true);
+}
+
+/* Send sheet (used by orders and custom requests) */
+function showSend(payload, isOrder){
+  if (!drawerOpen) openDrawer();
+  goStep("send");
+  const el = $("#stepSend"), foot = $("#drawerFoot"); foot.hidden = false;
+  const sms = `sms:${CONFIG.phone}?&body=${encodeURIComponent(payload.text)}`;
+  const mail = `mailto:${CONFIG.email}?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.text)}`;
+  el.innerHTML = `<p style="color:var(--muted)">Here's what Shaun will get. Send it the way that's easiest for you.</p>
+    <div class="msg-preview" id="msgText">${esc(payload.text)}</div>
+    <div class="send-grid">
+      ${CONFIG.orderEndpoint ? `<button class="btn btn-rose" id="sendDirect">Send ${isOrder?"order":"request"} now</button>` : ""}
+      <a class="btn ${CONFIG.orderEndpoint?"btn-ghost":"btn-rose"}" href="${sms}" id="sendSms">Text it to Shaun</a>
+      <a class="btn btn-ghost" href="${mail}" id="sendMail">Email it instead</a>
+      <button class="btn btn-ghost" id="copyMsg">Copy message</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--muted)">Texting opens your phone's messages app with everything filled in. Hit send there. Or text it yourself to <b>${CONFIG.phonePretty}</b>.</p>`;
+  foot.innerHTML = isOrder
+    ? `<div style="display:grid;grid-template-columns:auto 1fr;gap:10px"><button class="btn btn-ghost" id="backDetails">Back</button><button class="btn btn-rose" id="iSent">I sent it</button></div>`
+    : `<button class="btn btn-rose" id="iSent">Done</button>`;
+  if (isOrder) $("#backDetails").addEventListener("click", ()=>goStep("details"));
+  $("#iSent").addEventListener("click", ()=> isOrder ? showDone(payload) : (closeDrawer(), goStep("cart"), toast("Thanks! Shaun will be in touch.")));
+  $("#copyMsg").addEventListener("click", async ()=>{
+    try{ await navigator.clipboard.writeText(payload.text); toast("Copied. Paste it in a text to Shaun."); }
+    catch(e){ const r = document.createRange(); r.selectNodeContents($("#msgText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Copy it and send to Shaun."); }
+  });
+  if (CONFIG.orderEndpoint){
+    $("#sendDirect").addEventListener("click", async (e)=>{
+      const b = e.currentTarget; b.disabled = true; b.textContent = "Sending…";
+      try{
+        const res = await fetch(CONFIG.orderEndpoint, {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body: JSON.stringify({_subject:payload.subject, message:payload.text})});
+        if (!res.ok) throw new Error(res.status);
+        isOrder ? showDone(payload, true) : (closeDrawer(), goStep("cart"), toast("Request sent! Shaun will be in touch."));
+      }catch(err){ b.disabled = false; b.textContent = "Try again"; toast("That didn't go through. Try texting it instead."); }
+    });
+  }
+}
+function showDone(o, delivered){
+  step = "sent";
+  const venmo = `https://venmo.com/${CONFIG.venmo}?txn=pay&amount=${o.total}&note=${encodeURIComponent("CMS Cookie Co. order "+o.id)}`;
+  $("#stepSend").innerHTML = `<div class="done">
+      <div style="width:130px">${cookieSVG("fs", 9, {heart:true})}</div>
+      <div class="big">Thank you! <span class="hand">It's in the oven queue.</span></div>
+      <p style="color:var(--muted)">${delivered?"Your order went straight to Shaun.":"Once your message is sent,"} Shaun will text you to confirm the details. Your order number is</p>
+      <div class="copybox"><span class="price tnum" style="font-size:24px">${o.id}</span></div>
+      <p style="color:var(--muted);font-size:14.5px">Want to pay now? Use Venmo below, Cash App, or pay at pickup.</p>
+    </div>`;
+  $("#drawerTitle").textContent = "Order placed";
+  $("#drawerFoot").innerHTML = `<a class="btn btn-rose" href="${venmo}" target="_blank" rel="noopener">Pay ${money(o.total)} with Venmo</a><button class="btn btn-ghost" id="finish">Done</button>`;
+  $("#finish").addEventListener("click", ()=>{ closeDrawer(); step="cart"; });
+  cart = []; saveCart();
+}
+
+/* ============ Custom request form ============ */
+$("#reqChecks").innerHTML = REQUESTS.map((r,i)=>`<label><input type="checkbox" value="${esc(r)}" id="rq${i}"> ${esc(r)}</label>`).join("");
+$("#reqForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("#rqName").value.trim(), phone = $("#rqPhone").value.trim();
+  const picks = [...document.querySelectorAll("#reqChecks input:checked")].map(x=>x.value);
+  const err = $("#rqErr");
+  if (!name || phone.replace(/\D/g,"").length < 10){ err.textContent = "Add your name and a 10-digit phone number so Shaun can reach you."; err.hidden = false; return; }
+  err.hidden = true;
+  const text = `Hi Shaun! Custom order request\n\nInterested in: ${picks.join(", ")||"Not sure yet"}\nEvent date: ${prettyDate($("#rqDate").value)}\nGuests/servings: ${$("#rqCount").value||"—"}\nName: ${name}\nPhone: ${phone}` + ($("#rqNotes").value.trim()?`\nDetails: ${$("#rqNotes").value.trim()}`:"");
+  showSend({text, subject:`Custom order request from ${name}`}, false);
+});
+
+/* ============ Misc ============ */
+let tt; function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(()=>t.classList.remove("on"), 2200); }
+addEventListener("scroll", ()=>$("#top").classList.toggle("scrolled", scrollY>10), {passive:true});
+$("#yr").textContent = new Date().getFullYear();
+renderCartBadge();
+
+
+/* ============ Concept 2 extras ============ */
+const PHOTO = {cc:"../assets/f-cc.webp", dcc:"../assets/f-dcc.webp", dcss:"../assets/f-dcss.webp", fs:"../assets/f-fs.webp"};
+$("#flavorGrid").innerHTML = FLAVORS.map(f=>`
+  <div class="fl"><img src="${PHOTO[f.id]}" alt="${f.name}" width="220" height="226">
+    <b>${f.name}</b>
+    <button class="fl-add" data-single="${f.id}" aria-label="Add one ${f.name}, $4">+ $4</button></div>`).join("");
+document.querySelectorAll("[data-single]").forEach(b => b.addEventListener("click", ()=>{
+  const f = fl(b.dataset.single);
+  addItem({key:"single-"+f.id, type:"single", name:f.name, detail:"Single cookie", price:PRICES.single, art:[f.id]});
+}));
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", ()=>{
+  const g = b.dataset.go;
+  if (g === "each"){ $("#flavors").scrollIntoView({behavior:"smooth", block:"center"}); toast("Tap + under any flavor to add one."); return; }
+  document.querySelector(`[data-size="${g}"]`).click();
+  $("#build").scrollIntoView({behavior:"smooth", block:"start"});
+}));
+document.querySelectorAll("[data-quick]").forEach(b => b.addEventListener("click", ()=>{
+  const n = b.dataset.quick === "mini24" ? 24 : 12;
+  addItem({key:"mini"+n, type:"mini", name:`Mini Cookie Lunch Box (${n})`, detail:`${n} mini cookies`, price: n===12?PRICES.mini12:PRICES.mini24, art:["dcc","cc","fs"]});
+}));
+// flavor photos in the box picker
+function photoPicker(){ document.querySelectorAll("#picker .pick").forEach(p=>{ const s = p.querySelector("span"); if (s && s.querySelector("svg")) s.innerHTML = `<img src="${PHOTO[p.dataset.pick]}" alt="">`; }); }
+new MutationObserver(photoPicker).observe($("#picker"), {childList:true}); photoPicker();
+</script>
+</body>
+</html>

@@ -2,7 +2,15 @@
 
 Website for Shaun Marie Schwartz's home bakery in South Lyon, MI. One static page (`index.html`) with no build step, made for GitHub Pages.
 
-## What's on the page
+## Two design concepts
+- **Concept 1** (`/index.html`): modern bakery look, tap-to-bite hero cookie, dark mode.
+- **Concept 2** (`/concept-2/`): Shaun's printed flyer brought to life — same prices, panels, ribbons, Venmo QR, and every price line is a button.
+
+Both share the same cart (an order started on one shows on the other) and the same checkout. Pick a winner, then move it to the root and delete the other.
+
+`concept-2/index.html` is generated from `concept-2/src.html` plus the shared CSS/JS in the root `index.html`; if you edit Concept 2 by hand, edit `index.html` there directly and delete `src.html`.
+
+## What's on the page (Concept 1)
 - Hero with a cookie visitors can tap to "bite"
 - Flavor lineup with one-tap add ($4 singles)
 - **Build a box**: half dozen ($13) or dozen ($25), mix flavors by tapping, "Even mix" / "Surprise me"
