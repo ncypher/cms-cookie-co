@@ -1,0 +1,60 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cms-cookie-co",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+
+  // Static site lives in ./public. The Worker runs first on every request so it can
+  // redirect www, gate /admin behind Cloudflare Access, and add security headers.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page"
+  },
+
+  // Custom domains are attached on `wrangler deploy` (see DEPLOY.md). Ignored by `wrangler dev`.
+  "routes": [
+    { "pattern": "cmscookieco3more.com", "custom_domain": true },
+    { "pattern": "www.cmscookieco3more.com", "custom_domain": true }
+  ],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cms",
+      // Replace with the id printed by `wrangler d1 create cms` (DEPLOY.md step 2).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "cms-media" }
+  ],
+
+  // Order notifications. The destination must be a verified Email Routing address.
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_destination_addresses": ["cmscookieco3more@gmail.com"],
+      "allowed_sender_addresses": ["orders@cmscookieco3more.com"]
+    }
+  ],
+
+  "vars": {
+    "NOTIFY_TO": "cmscookieco3more@gmail.com",
+    "NOTIFY_FROM": "orders@cmscookieco3more.com",
+    "SITE_ORIGIN": "https://cmscookieco3more.com",
+    // Cloudflare Access (Zero Trust). Set both before deploying; /admin fails closed while empty.
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
+    // ADMIN_EMAILS (optional extra allowlist on top of the Access policy) is a secret so the
+    // emails stay out of this public repo: `npx wrangler secret put ADMIN_EMAILS` (DEPLOY.md).
+  },
+
+  "observability": { "enabled": true },
+
+  // wrangler dev otherwise rewrites request URLs to the first route's host (cmscookieco3more.com).
+  "dev": { "ip": "127.0.0.1", "port": 8787, "local_protocol": "http", "upstream_protocol": "http", "host": "localhost" }
+}

@@ -1,0 +1,3 @@
+# Copy to .dev.vars for `wrangler dev`. Never set this in production.
+# Lets /admin work on localhost without Cloudflare Access. It is ignored on any non-localhost hostname.
+ACCESS_DEV_BYPASS=true

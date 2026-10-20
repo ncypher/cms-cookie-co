@@ -1,0 +1,14 @@
+{
+  "name": "cms-cookie-co",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:migrate:local": "wrangler d1 migrations apply cms --local",
+    "test": "node --test test/*.test.js",
+    "seed:dev": "node scripts/seed-dev.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
+  }
+}
