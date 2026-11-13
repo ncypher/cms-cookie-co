@@ -373,23 +373,37 @@ async function assertMediaKey(env, key, kind, field) {
   return { key, head };
 }
 
-// Delete an R2 object once nothing in D1 points at it any more (specials, events or media).
-async function deleteMediaIfUnused(env, key) {
-  if (!key || !MEDIA_KEY_RE.test(key)) return false;
-  const ref = await env.DB.prepare(
-    `SELECT (SELECT COUNT(*) FROM specials WHERE image_key = ?1)
-          + (SELECT COUNT(*) FROM events WHERE flyer_key = ?1)
-          + (SELECT COUNT(*) FROM media WHERE key_or_url = ?1) AS n`
-  ).bind(key).first();
-  if ((ref?.n ?? 0) > 0) return false;
-  await env.MEDIA.delete(key);
-  return true;
+// Every column that can point at an R2 object. An object is deleted once none of them do.
+const MEDIA_REFS = [
+  ["specials", "image_key"], ["specials", "image_orig_key"],
+  ["events", "flyer_key"], ["events", "flyer_orig_key"],
+  ["media", "key_or_url"], ["media", "orig_key"],
+];
+async function deleteMediaIfUnused(env, ...keys) {
+  let deleted = 0;
+  for (const key of new Set(keys)) {
+    if (!key || !MEDIA_KEY_RE.test(key)) continue;
+    const ref = await env.DB.prepare(`SELECT ${MEDIA_REFS.map(([t, c]) => `(SELECT COUNT(*) FROM ${t} WHERE ${c} = ?1)`).join(" + ")} AS n`).bind(key).first();
+    if ((ref?.n ?? 0) > 0) continue;
+    await env.MEDIA.delete(key);
+    deleted++;
+  }
+  return deleted;
 }
+// After an update, drop whichever of the row's old files it no longer uses.
+const releaseReplaced = (env, prev, row, cols) => deleteMediaIfUnused(env, ...cols.filter((c) => prev?.[c] && prev[c] !== row[c]).map((c) => prev[c]));
 
 const shapeOrder = (o) => ({ ...o, items: JSON.parse(o.items_json), items_json: undefined, total: dollars(o.total_cents), confirmed: !!o.confirmed, paid: !!o.paid });
-const shapeAdminSpecial = (s) => ({ ...s, price: dollars(s.price_cents), image: mediaUrl(s.image_key), active: !!s.active });
-const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key) });
-const shapeAdminMedia = (m) => ({ ...m, url: m.kind === "instagram" ? m.key_or_url : mediaUrl(m.key_or_url), featured: !!m.featured });
+const shapeAdminSpecial = (s) => ({ ...s, price: dollars(s.price_cents), image: mediaUrl(s.image_key), image_orig: mediaUrl(s.image_orig_key), active: !!s.active });
+const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key), flyer_orig: mediaUrl(e.flyer_orig_key) });
+const shapeAdminMedia = (m) => ({ ...m, url: m.kind === "instagram" ? m.key_or_url : mediaUrl(m.key_or_url), orig: mediaUrl(m.orig_key), featured: !!m.featured });
+
+// A framed photo and its untouched original travel together; an original without a photo is dropped.
+async function photoPair(env, b, keyField, origField, label) {
+  const key = (await assertMediaKey(env, b[keyField], "photo", label))?.key ?? null;
+  const orig = key ? (await assertMediaKey(env, b[origField], "photo", label))?.key ?? null : null;
+  return { [keyField]: key, [origField]: orig };
+}
 
 async function specialFromBody(env, b) {
   return {
@@ -397,7 +411,7 @@ async function specialFromBody(env, b) {
     title: str(b.title, { max: 120, required: true, field: "Title" }),
     body: str(b.body, { max: 1000, field: "Description" }),
     price_cents: priceToCents(b.price),
-    image_key: (await assertMediaKey(env, b.image_key, "photo", "Image"))?.key ?? null,
+    ...(await photoPair(env, b, "image_key", "image_orig_key", "Image")),
     starts: optDate(b.starts, "Start date"),
     ends: optDate(b.ends, "End date"),
     active: bool01(b.active ?? true),
@@ -409,7 +423,7 @@ async function eventFromBody(env, b) {
     title: str(b.title, { max: 120, required: true, field: "Title" }),
     date: b.date,
     body: str(b.body, { max: 1000, field: "Details" }),
-    flyer_key: (await assertMediaKey(env, b.flyer_key, "photo", "Flyer"))?.key ?? null,
+    ...(await photoPair(env, b, "flyer_key", "flyer_orig_key", "Flyer")),
     rsvp_url: httpsUrl(b.rsvp_url, "RSVP link"),
   };
 }
@@ -456,16 +470,16 @@ async function adminApi(request, env, path, admin) {
       if (m === "POST") {
         row = await DB.prepare(`INSERT INTO specials (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...vals).first();
       } else {
-        const prev = await DB.prepare("SELECT image_key FROM specials WHERE id = ?1").bind(Number(id)).first();
+        const prev = await DB.prepare("SELECT image_key, image_orig_key FROM specials WHERE id = ?1").bind(Number(id)).first();
         row = await DB.prepare(`UPDATE specials SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE id = ?${cols.length + 1} RETURNING *`).bind(...vals, Number(id)).first();
         if (!row) throw new HttpError(404, "Special not found");
-        if (prev?.image_key && prev.image_key !== row.image_key) await deleteMediaIfUnused(env, prev.image_key);
+        await releaseReplaced(env, prev, row, ["image_key", "image_orig_key"]);
       }
       return json({ special: shapeAdminSpecial(row) }, m === "POST" ? 201 : 200);
     }
     if (m === "DELETE" && id) {
-      const row = await DB.prepare("DELETE FROM specials WHERE id = ?1 RETURNING image_key").bind(Number(id)).first();
-      await deleteMediaIfUnused(env, row?.image_key);
+      const row = await DB.prepare("DELETE FROM specials WHERE id = ?1 RETURNING image_key, image_orig_key").bind(Number(id)).first();
+      await deleteMediaIfUnused(env, row?.image_key, row?.image_orig_key);
       return json({ ok: true });
     }
   }
@@ -482,16 +496,16 @@ async function adminApi(request, env, path, admin) {
       if (m === "POST") {
         row = await DB.prepare(`INSERT INTO events (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...vals).first();
       } else {
-        const prev = await DB.prepare("SELECT flyer_key FROM events WHERE id = ?1").bind(Number(id)).first();
+        const prev = await DB.prepare("SELECT flyer_key, flyer_orig_key FROM events WHERE id = ?1").bind(Number(id)).first();
         row = await DB.prepare(`UPDATE events SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE id = ?${cols.length + 1} RETURNING *`).bind(...vals, Number(id)).first();
         if (!row) throw new HttpError(404, "Event not found");
-        if (prev?.flyer_key && prev.flyer_key !== row.flyer_key) await deleteMediaIfUnused(env, prev.flyer_key);
+        await releaseReplaced(env, prev, row, ["flyer_key", "flyer_orig_key"]);
       }
       return json({ event: shapeAdminEvent(row) }, m === "POST" ? 201 : 200);
     }
     if (m === "DELETE" && id) {
-      const row = await DB.prepare("DELETE FROM events WHERE id = ?1 RETURNING flyer_key").bind(Number(id)).first();
-      await deleteMediaIfUnused(env, row?.flyer_key);
+      const row = await DB.prepare("DELETE FROM events WHERE id = ?1 RETURNING flyer_key, flyer_orig_key").bind(Number(id)).first();
+      await deleteMediaIfUnused(env, row?.flyer_key, row?.flyer_orig_key);
       return json({ ok: true });
     }
   }
@@ -505,7 +519,7 @@ async function adminApi(request, env, path, admin) {
       const b = await readJson(request);
       const kind = ["photo", "video", "instagram"].includes(b.kind) ? b.kind : null;
       if (!kind) throw new HttpError(400, "Kind must be photo, video or instagram");
-      let keyOrUrl, contentType = null, size = null;
+      let keyOrUrl, contentType = null, size = null, origKey = null;
       if (kind === "instagram") {
         keyOrUrl = httpsUrl(b.key_or_url, "Instagram link", ["www.instagram.com", "instagram.com"]);
         if (!keyOrUrl) throw new HttpError(400, "Instagram link is required");
@@ -513,14 +527,27 @@ async function adminApi(request, env, path, admin) {
         const r = await assertMediaKey(env, b.key_or_url, kind, "File");
         if (!r) throw new HttpError(400, "Upload a file first");
         keyOrUrl = r.key; contentType = r.head.httpMetadata?.contentType ?? null; size = r.head.size;
+        if (kind === "photo") origKey = (await assertMediaKey(env, b.orig_key, "photo", "Original photo"))?.key ?? null;
       }
       const row = await DB.prepare(
-        "INSERT INTO media (kind, key_or_url, caption, featured, content_type, size_bytes) VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING *"
-      ).bind(kind, keyOrUrl, str(b.caption, { max: 300, field: "Caption" }), bool01(b.featured), contentType, size).first();
+        "INSERT INTO media (kind, key_or_url, caption, featured, content_type, size_bytes, orig_key) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING *"
+      ).bind(kind, keyOrUrl, str(b.caption, { max: 300, field: "Caption" }), bool01(b.featured), contentType, size, origKey).first();
       return json({ media: shapeAdminMedia(row) }, 201);
     }
     if (m === "PATCH" && id) {
       const b = await readJson(request);
+      if ("key_or_url" in b) { // "Edit photo": swap in the re-framed picture (photos only)
+        const prev = await DB.prepare("SELECT * FROM media WHERE id = ?1").bind(Number(id)).first();
+        if (!prev) throw new HttpError(404, "Media not found");
+        if (prev.kind !== "photo") throw new HttpError(400, "Only photos can be edited");
+        const r = await assertMediaKey(env, b.key_or_url, "photo", "Photo");
+        if (!r) throw new HttpError(400, "Upload a photo first");
+        const orig = (await assertMediaKey(env, b.orig_key, "photo", "Original photo"))?.key ?? null;
+        const row = await DB.prepare("UPDATE media SET key_or_url = ?1, orig_key = ?2, content_type = ?3, size_bytes = ?4 WHERE id = ?5 RETURNING *")
+          .bind(r.key, orig, r.head.httpMetadata?.contentType ?? null, r.head.size, Number(id)).first();
+        await releaseReplaced(env, prev, row, ["key_or_url", "orig_key"]);
+        return json({ media: shapeAdminMedia(row) });
+      }
       const row = await DB.prepare(
         "UPDATE media SET caption = COALESCE(?1, caption), featured = COALESCE(?2, featured) WHERE id = ?3 RETURNING *"
       ).bind("caption" in b ? str(b.caption, { max: 300, field: "Caption" }) ?? "" : null, "featured" in b ? bool01(b.featured) : null, Number(id)).first();
@@ -529,7 +556,7 @@ async function adminApi(request, env, path, admin) {
     }
     if (m === "DELETE" && id) {
       const row = await DB.prepare("DELETE FROM media WHERE id = ?1 RETURNING *").bind(Number(id)).first();
-      if (row && row.kind !== "instagram") await deleteMediaIfUnused(env, row.key_or_url);
+      if (row && row.kind !== "instagram") await deleteMediaIfUnused(env, row.key_or_url, row.orig_key);
       return json({ ok: true });
     }
   }

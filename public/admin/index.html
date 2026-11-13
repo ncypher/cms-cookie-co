@@ -18,7 +18,8 @@
 <meta name="application-name" content="CMS Admin">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;500;600;700&family=Josefin+Sans:wght@600;700&family=Kalam:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;500;600;700&family=Josefin+Sans:wght@600;700&family=Kalam:wght@400;700&family=Kaushan+Script&display=swap">
+<script type="module" src="/admin/studio.js"></script>
 <style>
 /* Admin: same flyer paper, pink ribbons and green type as the public site, laid out for one thumb on a phone. */
 :root{
@@ -58,6 +59,11 @@ h1.page .sub{font:500 14px var(--f-body); color:var(--muted)}
 .tag.green{background:#E3F0E8; color:var(--ok)} .tag.warn{background:#FFE9C7; color:#8A5200}
 .price{font:700 22px/1 var(--f-hand); color:var(--pink)}
 .thumb{width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin-top:10px; background:#eee}
+/* Same shapes the public site shows, so what Shaun frames is what she sees here. */
+.thumb.circle{width:160px; max-height:none; aspect-ratio:1; border-radius:50%}
+.thumb.square{width:200px; max-height:none; aspect-ratio:1}
+.thumb.wide{max-height:none; aspect-ratio:4/3}
+.thumb.whole{width:auto; max-width:100%; max-height:320px; object-fit:contain; background:none}
 video.thumb{background:#000}
 
 .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:999px; padding:12px 18px; font-weight:700; font-size:15px; text-decoration:none; min-height:44px}
@@ -93,6 +99,8 @@ form.edit, .field, .field > *{min-width:0}
 .two{display:grid; grid-template-columns:1fr 1fr; gap:12px}
 .upl{display:grid; gap:8px}
 .upl img, .upl video{max-width:100%; max-height:180px; border-radius:10px; object-fit:cover}
+.upl img.thumb{margin-top:0}
+.upl .row .btn{flex:1 1 auto}
 .progress{height:8px; border-radius:4px; background:var(--blush); overflow:hidden}
 .progress i{display:block; height:100%; width:0; background:var(--pink-btn); transition:width .2s}
 .err{color:#B42D55; font-weight:600; font-size:14px}
@@ -288,7 +296,8 @@ const SPECIALS = {
     {name:"title", label:"Title", type:"text", required:true, max:120},
     {name:"body", label:"Description", type:"textarea", max:1000},
     {name:"price", label:"Price ($)", type:"money", hint:"Leave empty if it can't be ordered online."},
-    {name:"image_key", label:"Photo", type:"image", preview:"image"},
+    {name:"image_key", orig:"image_orig_key", label:"Photo", type:"image", preview:"image", origPreview:"image_orig",
+      shape: form => form.elements.kind.value === "cotm" ? "circle" : "wide", price: form => form.elements.price.value},
     {pair:[{name:"starts", label:"Starts", type:"date"}, {name:"ends", label:"Ends", type:"date"}]},
     {name:"active", label:"Show on the site", type:"switch", default:true},
   ],
@@ -297,7 +306,7 @@ const SPECIALS = {
       ${s.active ? `<span class="tag green">On</span>` : `<span class="tag warn">Off</span>`}
       ${s.starts || s.ends ? `<span class="meta">${s.starts ? esc(prettyDate(s.starts)) : "Now"} → ${s.ends ? esc(prettyDate(s.ends)) : "no end"}</span>` : ""}</div>
     ${s.body ? `<p style="margin:8px 0 0">${esc(s.body)}</p>` : ""}
-    ${s.image ? `<img class="thumb" src="${esc(s.image)}" alt="" loading="lazy">` : ""}`,
+    ${s.image ? `<img class="thumb ${s.kind === "cotm" ? "circle" : "wide"}" src="${esc(s.image)}" alt="" loading="lazy">` : ""}`,
   isOff: s => !s.active,
 };
 const EVENTS = {
@@ -307,7 +316,7 @@ const EVENTS = {
     {name:"title", label:"Title", type:"text", required:true, max:120},
     {name:"date", label:"Date", type:"date", required:true},
     {name:"body", label:"Details", type:"textarea", max:1000},
-    {name:"flyer_key", label:"Flyer", type:"image", preview:"flyer"},
+    {name:"flyer_key", orig:"flyer_orig_key", label:"Flyer", type:"image", preview:"flyer", origPreview:"flyer_orig", shape: () => "whole"},
     {name:"rsvp_url", label:"RSVP link", type:"url", hint:"Optional. Must start with https://"},
   ],
   card: e => `<div class="row"><h3>${esc(e.title)}</h3></div>
@@ -315,7 +324,7 @@ const EVENTS = {
       ${e.date < todayStr() ? `<span class="tag warn">Past</span>` : `<span class="tag green">Upcoming</span>`}</div>
     ${e.body ? `<p style="margin:8px 0 0">${esc(e.body)}</p>` : ""}
     ${e.rsvp_url ? `<p class="meta" style="margin:6px 0 0; overflow-wrap:anywhere">RSVP: ${esc(e.rsvp_url)}</p>` : ""}
-    ${e.flyer ? `<img class="thumb" src="${esc(e.flyer)}" alt="" loading="lazy">` : ""}`,
+    ${e.flyer ? `<img class="thumb whole" src="${esc(e.flyer)}" alt="" loading="lazy">` : ""}`,
   isOff: e => e.date < todayStr(),
 };
 function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
@@ -353,32 +362,70 @@ function fieldHtml(f, v){
     case "date": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="date" value="${esc(val)}" ${f.required?"required":""}>${hint}</div>`;
     case "url": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="url" inputmode="url" placeholder="https://" value="${esc(val)}">${hint}</div>`;
     case "switch": return `<label class="switch"><input type="checkbox" name="${f.name}" ${val === true || val === 1 ? "checked" : ""}> ${f.label}</label>`;
-    case "image": {
-      const url = v?.[f.preview];
-      return `<div class="field"><span class="lbl">${f.label}</span><div class="upl" data-upl="${f.name}">
-        <input type="hidden" name="${f.name}" value="${esc(val)}">
-        <img alt="" ${url ? `src="${esc(url)}"` : "hidden"}>
-        <div class="progress" hidden><i></i></div>
-        <div class="row"><label class="btn btn-ghost btn-sm">${url ? "Change photo" : "Add photo"}<input type="file" accept="image/jpeg,image/png,image/webp" hidden></label>
-          <button type="button" class="btn btn-danger btn-sm" data-clear ${url ? "" : "hidden"}>Remove</button></div>
-        <span class="hint">JPG, PNG or WebP, up to 100 MB.</span></div></div>`;
-    }
+    case "image": return photoFieldHtml(f, v);
     default: return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" value="${esc(val)}" maxlength="${f.max||200}" ${f.required?"required":""}>${hint}</div>`;
   }
 }
-function wireUploads(root){
+/* ============ Photos: every pick or snap goes through the Photo Studio ============ */
+// Shape = how the public site shows it: circle (Cookie of the Month, flavors), square (treats, gallery),
+// wide 4:3 (specials), whole (event flyers, never cropped).
+const SHAPE_HINT = {circle:"Shows as a circle on the site.", square:"Shows as a square on the site.", wide:"Shows as a wide 4×3 picture on the site.", whole:"The whole flyer shows on the site. Nothing gets cut off."};
+function photoButtons(hasPhoto){
+  return `<div class="row">
+    <label class="btn btn-ghost btn-sm">📷 Take photo<input type="file" accept="image/*" capture="environment" hidden data-pick></label>
+    <label class="btn btn-ghost btn-sm">🖼️ ${hasPhoto ? "Choose another" : "Choose photo"}<input type="file" accept="image/*" hidden data-pick></label>
+    <button type="button" class="btn btn-ghost btn-sm" data-editphoto ${hasPhoto ? "" : "hidden"}>✏️ Edit photo</button>
+    <button type="button" class="btn btn-danger btn-sm" data-clear ${hasPhoto ? "" : "hidden"}>Remove</button></div>`;
+}
+function photoFieldHtml(f, v){
+  const url = v?.[f.preview], orig = v?.[f.origPreview];
+  return `<div class="field"><span class="lbl">${f.label}</span><div class="upl" data-upl="${f.name}">
+    <input type="hidden" name="${f.name}" value="${esc(v?.[f.name] ?? "")}">
+    <input type="hidden" name="${f.orig}" value="${esc(v?.[f.orig] ?? "")}">
+    <img class="thumb" alt="" ${url ? `src="${esc(url)}"` : "hidden"} data-orig="${esc(orig || "")}">
+    <div class="progress" hidden><i></i></div>
+    ${photoButtons(!!url)}
+    <span class="hint" data-shapehint></span></div></div>`;
+}
+// Opens the studio, uploads the framed photo (and the untouched original when there's a new one).
+// Resolves to {key, origKey, url} or null if cancelled.
+async function studioUpload({source, shape, price, keepOrigKey, bar}){
+  if (!window.PhotoStudio) throw new Error("The photo tool is still loading. Try again in a moment.");
+  const r = await window.PhotoStudio.open({source, shape, price});
+  if (!r) return null;
+  if (bar){ bar.hidden = false; $("i", bar).style.width = "0"; }
+  const parts = r.original ? 2 : 1; let done = 0;
+  const prog = p => { if (bar) $("i", bar).style.width = ((done + p) / parts * 100) + "%"; };
+  try{
+    const photo = await upload(r.photo, prog); done = 1;
+    const origKey = r.original ? (await upload(r.original, prog)).key : keepOrigKey || null;
+    return {key: photo.key, url: photo.url, origKey};
+  } finally { if (bar) bar.hidden = true; }
+}
+function wireUploads(root, fields){
   $$("[data-upl]", root).forEach(box => {
-    const hidden = $("input[type=hidden]", box), img = $("img", box), file = $("input[type=file]", box), bar = $(".progress", box), clear = $("[data-clear]", box);
-    file.addEventListener("change", async () => {
-      const f = file.files[0]; if (!f) return;
-      bar.hidden = false; $("i", bar).style.width = "0";
+    const f = fields.find(x => x.name === box.dataset.upl);
+    const [hidden, origHidden] = $$("input[type=hidden]", box), img = $("img", box), bar = $(".progress", box);
+    const shape = () => f.shape ? f.shape(root) : "square";
+    const showHint = () => { $("[data-shapehint]", box).textContent = SHAPE_HINT[shape()]; img.className = "thumb " + shape(); };
+    const refresh = has => { $("[data-editphoto]", box).hidden = !has; $("[data-clear]", box).hidden = !has; img.hidden = !has; };
+    const run = async (source, keepOrigKey) => {
       try{
-        const r = await upload(f, p => $("i", bar).style.width = (p*100) + "%");
-        hidden.value = r.key; img.src = r.url; img.hidden = false; clear.hidden = false; toast("Photo uploaded");
+        const r = await studioUpload({source, shape: shape(), price: f.price ? f.price(root) : null, keepOrigKey, bar});
+        if (!r) return;
+        hidden.value = r.key; origHidden.value = r.origKey || ""; img.src = r.url; img.dataset.orig = ""; refresh(true);
+        toast("Photo ready. Tap Save to keep it.");
       }catch(e){ toast(e.message, true); }
-      bar.hidden = true; file.value = "";
+    };
+    $$("[data-pick]", box).forEach(inp => inp.addEventListener("change", () => { const file = inp.files[0]; inp.value = ""; if (file) run(file); }));
+    $("[data-editphoto]", box).addEventListener("click", () => {
+      // Start from the untouched original when there is one; older photos open from the photo itself.
+      const origUrl = img.dataset.orig || (origHidden.value ? `/media/${origHidden.value}` : "");
+      run(origUrl ? {url: origUrl, isOriginal: true} : {url: img.src, isOriginal: false}, origHidden.value || null);
     });
-    clear.addEventListener("click", () => { hidden.value = ""; img.hidden = true; img.removeAttribute("src"); clear.hidden = true; });
+    $("[data-clear]", box).addEventListener("click", () => { hidden.value = ""; origHidden.value = ""; img.removeAttribute("src"); refresh(false); });
+    showHint();
+    root.addEventListener("change", e => { if (e.target.name === "kind") showHint(); });
   });
 }
 function openForm(cfg, row){
@@ -391,7 +438,7 @@ function openForm(cfg, row){
     <div class="row"><button class="btn btn-rose" type="submit">Save</button><button class="btn btn-ghost" type="button" data-cancel>Cancel</button></div>
   </form>`;
   const form = $("form", slot);
-  wireUploads(form);
+  wireUploads(form, flat);
   $("[data-cancel]", form).addEventListener("click", () => slot.innerHTML = "");
   form.addEventListener("submit", async e => {
     e.preventDefault();
@@ -399,6 +446,7 @@ function openForm(cfg, row){
     for (const f of flat){
       const el = form.elements[f.name];
       body[f.name] = f.type === "switch" ? el.checked : el.value.trim();
+      if (f.orig) body[f.orig] = form.elements[f.orig].value;
       if (f.required && !body[f.name]){ return showErr(form, `${f.label} is required`); }
     }
     const btn = $("[type=submit]", form); btn.disabled = true; btn.textContent = "Saving…";
@@ -425,11 +473,19 @@ async function renderMedia(){
       <div class="bar" style="margin:0">
         ${[["photo","Photo"],["video","Video"],["instagram","Instagram link"]].map(([k,l]) => `<button type="button" class="chip" data-kind="${k}" aria-pressed="${mediaKind===k}">${l}</button>`).join("")}
       </div>
-      <div class="field" id="fileField" ${mediaKind==="instagram"?"hidden":""}>
-        <label for="mFile">${mediaKind === "video" ? "Video (MP4 or MOV, up to 100 MB)" : "Photo (JPG, PNG or WebP)"}</label>
-        <input id="mFile" type="file" accept="${mediaKind === "video" ? ".mp4,.mov,video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"}">
+      <div class="field" id="fileField" ${mediaKind==="video"?"":"hidden"}>
+        <label for="mFile">Video (MP4 or MOV, up to 100 MB)</label>
+        <input id="mFile" type="file" accept=".mp4,.mov,video/mp4,video/quicktime">
         <p class="err" id="mFileErr" role="alert" hidden></p>
         <div class="progress" hidden><i></i></div>
+      </div>
+      <div class="field upl" id="photoField" ${mediaKind==="photo"?"":"hidden"}>
+        <span class="lbl">Photo</span>
+        <img class="thumb square" alt="" hidden>
+        <div class="progress" hidden><i></i></div>
+        ${photoButtons(false)}
+        <span class="hint">Shows as a square on the site.</span>
+        <p class="err" id="mPhotoErr" role="alert" hidden></p>
       </div>
       <div class="field" id="urlField" ${mediaKind==="instagram"?"":"hidden"}>
         <label for="mUrl">Instagram post or reel link</label>
@@ -444,12 +500,30 @@ async function renderMedia(){
   $$("[data-kind]").forEach(b => b.addEventListener("click", () => { mediaKind = b.dataset.kind; renderMedia(); }));
   const form = $("#mediaForm");
   $("#mFile")?.addEventListener("change", () => { $("#mFileErr").hidden = true; });
+  // Photos: framed in the studio and uploaded as soon as they're picked; Add just saves the row.
+  let mPhoto = null;
+  const pf = $("#photoField");
+  const runPhoto = async (source, keepOrigKey) => {
+    try{
+      const r = await studioUpload({source, shape:"square", keepOrigKey, bar: $(".progress", pf)});
+      if (!r) return;
+      mPhoto = r; $("#mPhotoErr").hidden = true;
+      const img = $("img", pf); img.src = r.url; img.hidden = false;
+      $("[data-editphoto]", pf).hidden = false; $("[data-clear]", pf).hidden = false;
+    }catch(e){ toast(e.message, true); }
+  };
+  $$("[data-pick]", pf).forEach(inp => inp.addEventListener("change", () => { const f = inp.files[0]; inp.value = ""; if (f) runPhoto(f); }));
+  $("[data-editphoto]", pf).addEventListener("click", () => mPhoto && runPhoto({url: `/media/${mPhoto.origKey}`, isOriginal: true}, mPhoto.origKey));
+  $("[data-clear]", pf).addEventListener("click", () => { mPhoto = null; $("img", pf).hidden = true; $("[data-editphoto]", pf).hidden = true; $("[data-clear]", pf).hidden = true; });
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const btn = $("[type=submit]", form); btn.disabled = true;
     try{
-      let key_or_url;
-      if (mediaKind === "instagram"){
+      let key_or_url, orig_key = null;
+      if (mediaKind === "photo"){
+        if (!mPhoto){ const er = $("#mPhotoErr"); er.textContent = "Take or choose a photo first."; er.hidden = false; btn.disabled = false; return; }
+        key_or_url = mPhoto.key; orig_key = mPhoto.origKey;
+      } else if (mediaKind === "instagram"){
         key_or_url = $("#mUrl").value.trim();
         if (!key_or_url) throw new Error("Paste the Instagram link first");
       } else {
@@ -469,7 +543,7 @@ async function renderMedia(){
         }
         key_or_url = r.key;
       }
-      await api("POST", "media", {kind: mediaKind, key_or_url, caption: $("#mCap").value.trim(), featured: $("#mFeat").checked});
+      await api("POST", "media", {kind: mediaKind, key_or_url, orig_key, caption: $("#mCap").value.trim(), featured: $("#mFeat").checked});
       toast("Added"); renderMedia();
     }catch(err){ showErr(form, err.message); btn.disabled = false; btn.textContent = "Add"; }
   });
@@ -479,13 +553,22 @@ async function renderMedia(){
     catch(e){ inp.checked = !inp.checked; toast(e.message, true); }
     inp.disabled = false;
   }));
+  $$("[data-medit]").forEach(b => b.addEventListener("click", async () => {
+    const m = media.find(x => x.id === +b.dataset.medit);
+    try{
+      const r = await studioUpload({source: m.orig ? {url: m.orig, isOriginal: true} : {url: m.url, isOriginal: false}, shape:"square", keepOrigKey: m.orig_key});
+      if (!r) return;
+      await api("PATCH", "media/" + m.id, {key_or_url: r.key, orig_key: r.origKey});
+      toast("Photo updated"); renderMedia();
+    }catch(e){ toast(e.message, true); }
+  }));
   $$("[data-mdel]").forEach(b => b.addEventListener("click", async () => {
     if (!confirm("Delete this media? The file is removed too.")) return;
     try{ await api("DELETE", "media/" + b.dataset.mdel); toast("Deleted"); renderMedia(); }catch(e){ toast(e.message, true); }
   }));
 }
 function mediaCard(m){
-  const body = m.kind === "photo" ? `<img class="thumb" src="${esc(m.url)}" alt="" loading="lazy">`
+  const body = m.kind === "photo" ? `<img class="thumb square" src="${esc(m.url)}" alt="" loading="lazy">`
     : m.kind === "video" ? `<video class="thumb" src="${esc(m.url)}#t=0.1" controls playsinline preload="metadata"></video>`
     : `<p class="meta" style="margin:8px 0 0; overflow-wrap:anywhere">${esc(m.url)}</p>`;
   const size = m.size_bytes ? ` · ${(m.size_bytes/1048576).toFixed(m.size_bytes > 1048576 ? 1 : 2)} MB` : "";
@@ -494,7 +577,8 @@ function mediaCard(m){
     ${m.caption ? `<p style="margin:8px 0 0; font:400 17px/1.35 var(--f-hand)">${esc(m.caption)}</p>` : ""}
     ${body}
     <div class="row" style="margin-top:10px"><label class="switch"><input type="checkbox" data-feat="${m.id}" ${m.featured ? "checked" : ""}> Featured</label>
-      <button class="btn btn-danger btn-sm spacer" data-mdel="${m.id}">Delete</button></div>
+      ${m.kind === "photo" ? `<button class="btn btn-ghost btn-sm spacer" data-medit="${m.id}">✏️ Edit photo</button>` : ""}
+      <button class="btn btn-danger btn-sm ${m.kind === "photo" ? "" : "spacer"}" data-mdel="${m.id}">Delete</button></div>
   </article>`;
 }
 

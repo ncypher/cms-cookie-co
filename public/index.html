@@ -185,7 +185,8 @@ button{font:inherit; color:inherit; cursor:pointer}
 .sp{display:grid; gap:2px}
 .sp .prow{padding-inline:4px}
 .sp p{font:400 15.5px/1.4 var(--f-body); color:var(--muted); padding-inline:6px}
-.sp img{width:100%; max-height:180px; object-fit:cover; border-radius:10px; margin-bottom:6px}
+/* Photo shapes match the admin Photo Studio frames exactly: specials 4:3, Cookie of the Month + flavors circle, gallery square, flyers whole. */
+.sp img{width:100%; aspect-ratio:4/3; height:auto; object-fit:cover; border-radius:10px; margin-bottom:6px}
 .ev-list{display:grid; gap:14px}
 .ev{display:grid; grid-template-columns:62px 1fr; gap:12px; align-items:start}
 .ev .when{display:grid; justify-items:center; align-content:center; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 35% 30%,#F59AB0,#E25A82); color:#fff; line-height:1}
@@ -193,7 +194,14 @@ button{font:inherit; color:inherit; cursor:pointer}
 .ev h3{font:700 19px/1.2 var(--f-hand); color:var(--green)}
 .ev .dow{font:600 12.5px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--pink)}
 .ev p{font-size:15px; line-height:1.45; margin-top:2px}
-.ev .flyer{display:block; margin-top:8px; width:100%; max-width:220px; border-radius:8px; border:4px solid #fff; box-shadow:var(--shadow)}
+.ev .flyer{display:block; margin-top:8px; width:100%; max-width:220px; height:auto; object-fit:contain; border-radius:8px; border:4px solid #fff; box-shadow:var(--shadow)}
+.ev .zoomable{display:inline-block; position:relative; cursor:zoom-in}
+.ev .zoomable::after{content:"Tap to enlarge"; position:absolute; right:8px; bottom:8px; background:rgba(74,42,30,.78); color:#fff; font:600 11.5px var(--f-body); padding:3px 8px; border-radius:999px}
+.zoom{border:0; padding:0; background:transparent; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0}
+.zoom::backdrop{background:rgba(30,12,8,.88)}
+.zoom[open]{display:grid; place-items:center}
+.zoom img{max-width:calc(100% - 24px); max-height:calc(100% - 90px); width:auto; height:auto; object-fit:contain; border-radius:8px; background:#fff}
+.zoom button{position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:12px; min-width:48px; min-height:48px; border-radius:999px; border:0; background:#fff; color:var(--cocoa); font-weight:700; font-size:16px; padding:0 16px}
 .ev .rsvp{margin-top:8px}
 .tip video{width:100%; border-radius:12px; background:#000; display:block}
 .tip .cap{font:400 18px/1.35 var(--f-hand); margin-top:10px; text-align:center}
@@ -595,6 +603,7 @@ button{font:inherit; color:inherit; cursor:pointer}
   <div class="drawer-foot" id="drawerFoot"></div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog class="zoom" id="zoom" aria-label="Flyer"><button type="button" id="zoomClose">Close ✕</button><img alt=""></dialog>
 
 <script>
 /* ============ Settings Shaun (or Tom) can change ============ */
@@ -902,6 +911,7 @@ $("#reqForm").addEventListener("submit", e => {
 });
 
 /* ============ Misc ============ */
+$("#zoom").addEventListener("click", () => $("#zoom").close());
 let tt; function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(()=>t.classList.remove("on"), 2200); }
 addEventListener("scroll", ()=>$("#top").classList.toggle("scrolled", scrollY>10), {passive:true});
 $("#yr").textContent = new Date().getFullYear();
@@ -978,7 +988,7 @@ function renderContent(c){
       <div class="when" aria-hidden="true"><small>${esc(longDate(e.date,{month:"short"}))}</small><b>${esc(longDate(e.date,{day:"numeric"}))}</b></div>
       <div style="min-width:0"><span class="dow">${esc(longDate(e.date,{weekday:"long", month:"long", day:"numeric"}))}</span><h3>${esc(e.title)}</h3>
         ${e.body ? `<p>${esc(e.body)}</p>` : ""}
-        ${e.flyer ? `<a href="${esc(e.flyer)}" target="_blank" rel="noopener"><img class="flyer" src="${esc(e.flyer)}" alt="Flyer for ${esc(e.title)}" loading="lazy"></a>` : ""}
+        ${e.flyer ? `<a class="zoomable" href="${esc(e.flyer)}" target="_blank" rel="noopener" data-zoom><img class="flyer" src="${esc(e.flyer)}" alt="Flyer for ${esc(e.title)}" loading="lazy"></a>` : ""}
         ${e.rsvp_url ? `<a class="btn btn-rose btn-sm rsvp" href="${esc(e.rsvp_url)}" target="_blank" rel="noopener">RSVP</a>` : ""}</div></div>`).join("");
   }
   const t = c.tip;
@@ -990,6 +1000,11 @@ function renderContent(c){
     $("#photos").innerHTML = c.photos.map(p => `<figure><img src="${esc(p.url)}" alt="${esc(p.caption||"")}" loading="lazy">${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("");
   }
   $("#news").hidden = !any;
+  // Flyers show whole; tap one to see it big.
+  document.querySelectorAll("[data-zoom]").forEach(a => a.addEventListener("click", e => {
+    const z = $("#zoom"); if (!z.showModal) return; // very old browsers just open the image
+    e.preventDefault(); const im = a.querySelector("img"); z.querySelector("img").src = a.href; z.querySelector("img").alt = im.alt; z.showModal();
+  }));
   const specials = [c.cookieOfTheMonth, ...c.specials].filter(Boolean);
   document.querySelectorAll("[data-special]").forEach(b => b.addEventListener("click", ()=>{
     const s = specials.find(x => x.id === +b.dataset.special); if (!s) return;

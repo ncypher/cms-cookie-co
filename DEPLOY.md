@@ -12,7 +12,7 @@ Wrangler commands are exact. Email Routing and Access have no Wrangler commands,
 |---|---|
 | Cloudflare account | `170f1ef57fe71799f3973d6b06c97098` (owns the cmscookieco3more.com zone) |
 | Worker | `cms-cookie-co` on `cmscookieco3more.com` + `www` (www 301 → apex); workers.dev off |
-| D1 | `cms` · `2463eae5-4d26-46c0-a508-8bfec2d56ec8` · migrations 0001–0003 applied |
+| D1 | `cms` · `2463eae5-4d26-46c0-a508-8bfec2d56ec8` · migrations 0001–0004 applied |
 | R2 | `cms-media` |
 | Access | team `cmscookieco.cloudflareaccess.com`, app **CMS Admin** (`/admin`, `/api/admin`), One-time PIN only, 1-month session, policy "Shaun and Tom" |
 | Secrets | `ADMIN_EMAILS`, `RATE_LIMIT_SALT` |
