@@ -148,3 +148,25 @@ npx wrangler d1 export cms --remote --output backup.sql   # backup of orders and
 ```
 
 Schema changes go in a new file in `migrations/`, then run `npx wrangler d1 migrations apply cms --remote` before `wrangler deploy`.
+
+## 8. Card payments with Square (off until you do this)
+
+The code is live but dark: with no `SQUARE_APP_ID` secret the site and admin look exactly as before (card row greyed "Coming soon", no card button anywhere). Card details never touch this site; customers pay on Square's own page.
+
+1. **developer.squareup.com → your app → toggle to Production.**
+   - **OAuth page:** Redirect URL = `https://cmscookieco3more.com/api/admin/square/callback` (exactly).
+   - **Webhooks → Subscriptions → Add:** URL `https://cmscookieco3more.com/api/square/webhook`, events `payment.created`, `payment.updated`, `oauth.authorization.revoked`. Copy its **Signature key**.
+2. **Worker secrets** (each one prompts for the value; nothing goes in `wrangler.jsonc`):
+   ```sh
+   npx wrangler secret put SQUARE_APP_ID                 # Production Application ID (sq0idp-…)
+   npx wrangler secret put SQUARE_APP_SECRET             # Production Application secret (sq0csp-…)
+   npx wrangler secret put SQUARE_WEBHOOK_SIGNATURE_KEY  # from step 1
+   npx wrangler secret put SQUARE_TOKEN_ENC_KEY          # a NEW 32 random bytes, base64 (see below); not the sandbox one
+   ```
+   Make the key with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Keep a copy somewhere safe: losing it only means tapping Connect Square again.
+3. **Shaun:** Admin → Payments → **Connect Square** → sign in to Square → **Allow**. Then switch **Card** on.
+4. **Prove it:** order something for $1 on the live site, pay by card, check it flips to **Paid by card**, then refund it in Square (Admin → Payments → Open Square).
+
+The Worker refreshes the Square connection daily (cron `17 9 * * *`). If Shaun removes the app in Square, the site switches card off by itself and Payments says to connect again. To turn card off for good, tap Disconnect (or delete the four secrets).
+
+Local sandbox testing: put the sandbox values in `.dev.vars` (see `.dev.vars.example`), and in the Square app's **Sandbox** OAuth page set Redirect URL `http://localhost:8787/api/admin/square/callback`. Square's sandbox Allow screen only shows while the sandbox test seller's Dashboard is open in the same browser (Developer Console → Sandbox test accounts → Open in Square Dashboard).

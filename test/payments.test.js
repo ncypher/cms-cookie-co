@@ -74,7 +74,7 @@ const html = fs.readFileSync(path.join(import.meta.dirname, "..", "public", "ind
 test("public site: pay buttons and contact panel come from the switched-on list; Venmo link format unchanged", () => {
   assert.match(html, /let PAYMENTS = \[\{id:"venmo", handle:CONFIG\.venmo\}, \{id:"cash"\}\];/, "same as before while loading / offline");
   assert.match(html, /https:\/\/venmo\.com\/\$\{encodeURIComponent\(v\.handle\)\}\?txn=pay&amount=\$\{amount\}&note=\$\{encodeURIComponent\(note\)\}/);
-  assert.match(html, /payButtons\(o\.total, "CMS Cookie Co\. order " \+ o\.id\)/);
+  assert.match(html, /payButtons\(o\.total, "CMS Cookie Co\. order " \+ o\.id, \{ref:o\.id, t:o\.pay_token\}\)/);
   assert.match(html, /import\("\/assets\/qr\.js"\)/, "QR is generated from the stored name, vendored (no CDN)");
   assert.doesNotMatch(html, /cdn|unpkg|jsdelivr/i);
   assert.match(html, /if \(Array\.isArray\(c\.payments\)\)\{ PAYMENTS = c\.payments; renderPayContact\(\); \}/);

@@ -973,22 +973,38 @@ function showSend(payload, isOrder){
         const data = await res.json().catch(()=>({}));
         if (res.status === 429){ b.textContent = "Text Shaun instead"; toast(data.error || "Too many orders from this device, please text Shaun at " + CONFIG.phonePretty); return; }
         if (!res.ok) throw new Error(data.error || "That didn't go through.");
-        showDone({...payload, id:data.id, total:data.total}, true);
+        showDone({...payload, id:data.id, total:data.total, pay_token:data.pay_token}, true);
       }catch(err){ b.disabled = false; b.textContent = "Try again"; toast(`${err.message} You can text it instead.`); }
     });
   }
 }
 /* ============ Paying Shaun (only the ways she has switched on) ============ */
-const payWay = id => PAYMENTS.find(p => p.id === id && (id === "cash" || p.handle));
+const payWay = id => PAYMENTS.find(p => p.id === id && (id === "cash" || id === "card" || p.handle));
 // Buttons that open Venmo / Cash App with the amount (and, for Venmo, the note) filled in.
-function payButtons(amount, note){
-  const v = payWay("venmo"), c = payWay("cashapp"), out = [];
-  if (v) out.push(`<a class="btn btn-rose" href="https://venmo.com/${encodeURIComponent(v.handle)}?txn=pay&amount=${amount}&note=${encodeURIComponent(note)}" target="_blank" rel="noopener">Pay ${money(amount)} with Venmo</a>`);
-  if (c) out.push(`<a class="btn ${v ? "btn-ghost" : "btn-rose"}" href="https://cash.app/$${encodeURIComponent(c.handle)}/${Number(amount).toFixed(2)}" target="_blank" rel="noopener">Pay ${money(amount)} with Cash App</a>`);
+// "Pay with card" shows only when Shaun has Square connected and switched on (it's then in PAYMENTS)
+// and the server gave this customer a pay token for what they just placed. Card details go to Square, never here.
+function payButtons(amount, note, pay){
+  const card = payWay("card") && pay && pay.t && amount >= 1, v = payWay("venmo"), c = payWay("cashapp"), out = [];
+  if (card) out.push(`<button type="button" class="btn btn-rose" data-cardpay="${esc(pay.ref)}" data-t="${esc(pay.t)}">Pay ${money(amount)} with card</button>`);
+  if (v) out.push(`<a class="btn ${card ? "btn-ghost" : "btn-rose"}" href="https://venmo.com/${encodeURIComponent(v.handle)}?txn=pay&amount=${amount}&note=${encodeURIComponent(note)}" target="_blank" rel="noopener">Pay ${money(amount)} with Venmo</a>`);
+  if (c) out.push(`<a class="btn ${card || v ? "btn-ghost" : "btn-rose"}" href="https://cash.app/$${encodeURIComponent(c.handle)}/${Number(amount).toFixed(2)}" target="_blank" rel="noopener">Pay ${money(amount)} with Cash App</a>`);
   return out.join("");
 }
+// The server makes a Square payment link for its own total and we go to Square's page.
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-cardpay]"); if (!b) return;
+  const label = b.textContent; b.disabled = true; b.textContent = "Opening Square…";
+  try{
+    const res = await fetch("/api/pay", {method:"POST", headers:{"Content-Type":"application/json", Accept:"application/json"}, body: JSON.stringify({ref: b.dataset.cardpay, t: b.dataset.t})});
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Card payments aren't working right now.");
+    if (data.paid){ b.textContent = "Paid ✓"; toast("That's already paid. Thank you!"); return; }
+    location.href = data.url;
+  }catch(err){ b.disabled = false; b.textContent = label; toast(`${err.message} You can use another way to pay.`); }
+});
 function paySentence(at = "pickup"){
   const apps = [payWay("venmo") && "Venmo", payWay("cashapp") && "Cash App"].filter(Boolean), cash = !!payWay("cash");
+  if (payWay("card")) return `Want to pay now? Pay by card${apps.length ? " or with " + apps.join(" or ") : ""} below${cash ? `, or pay ${at === "pickup" ? "at pickup" : "cash at the event"}` : ""}.`;
   if (apps.length) return cash ? `Want to pay now? Use ${apps.join(" or ")} below, or pay ${at === "pickup" ? "at pickup" : "cash at the event"}.` : `Pay with ${apps.join(" or ")} below.`;
   return cash ? (at === "pickup" ? "You can pay with cash at pickup." : "You can pay with cash at the event.") : "Shaun will tell you how to pay when she confirms.";
 }
@@ -1019,7 +1035,7 @@ function showDone(o, delivered){
       <p style="color:var(--muted);font-size:14.5px">${esc(paySentence())}</p>
     </div>`;
   $("#drawerTitle").textContent = "Order placed";
-  $("#drawerFoot").innerHTML = `${payButtons(o.total, "CMS Cookie Co. order " + o.id)}<button class="btn btn-ghost" id="finish">Done</button>`;
+  $("#drawerFoot").innerHTML = `${payButtons(o.total, "CMS Cookie Co. order " + o.id, {ref:o.id, t:o.pay_token})}<button class="btn btn-ghost" id="finish">Done</button>`;
   $("#finish").addEventListener("click", ()=>{ closeDrawer(); step="cart"; });
   cart = []; saveCart();
 }
@@ -1347,7 +1363,7 @@ function showReserved(ev, name, r){
     <p>${esc(ev.title)}: <b>${r.seats} spot${r.seats === 1 ? "" : "s"}</b>${paying ? ` · <span class="tnum">${money(r.total)}</span>` : ""}</p>
     <p style="color:var(--muted)">Your reservation number is</p>
     <div class="copybox"><span class="price tnum" style="font-size:24px">${esc(r.id)}</span></div>
-    ${paying ? `<p style="color:var(--muted);font-size:14.5px">${esc(paySentence("event"))}</p>${payButtons(r.total, `${ev.title} – ${name} – ${r.id}`)}` : ""}
+    ${paying ? `<p style="color:var(--muted);font-size:14.5px">${esc(paySentence("event"))}</p>${payButtons(r.total, `${ev.title} – ${name} – ${r.id}`, {ref:r.id, t:r.pay_token})}` : ""}
     <p style="color:var(--muted);font-size:14.5px">Shaun will text you if anything changes.</p>
     <button class="btn btn-ghost" type="button" data-x>Done</button></div>`;
   d.querySelector("[data-x]").addEventListener("click", () => { d.close(); loadContent(); });
@@ -1373,6 +1389,42 @@ async function loadContent(){
   }catch(e){ /* Static flyer prices still work; checkout falls back to text/email if the API is down. */ }
 }
 loadContent();
+
+/* ============ Back from paying by card ============ */
+async function cardReturn(){
+  const q = new URLSearchParams(location.search), ref = q.get("paid"), t = q.get("t");
+  if (!ref || !t) return;
+  history.replaceState(null, "", location.pathname + location.hash); // a refresh won't re-check
+  const d = $("#rsv");
+  const show = (title, body, again) => {
+    d.innerHTML = `<div class="done"><h2 id="rsvTitle">${title}</h2>${body}
+      ${again ? `<button class="btn btn-rose" type="button" data-again>Check again</button>` : ""}<button class="btn btn-ghost" type="button" data-x>Done</button></div>`;
+    d.querySelector("[data-x]").addEventListener("click", () => d.close());
+    if (again) d.querySelector("[data-again]").addEventListener("click", () => check(1));
+    if (!d.open) d.showModal();
+  };
+  const check = async (tries) => {
+    show("Checking your payment…", `<p style="color:var(--muted)">One moment while we hear back from Square.</p>`, false);
+    for (let i = 0; i < tries; i++){
+      try{
+        const res = await fetch(`/api/pay/status?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(t)}`, {headers:{Accept:"application/json"}});
+        const s = await res.json().catch(() => ({}));
+        if (res.ok && s.paid){
+          return show("Paid. Thank you!", `<div style="width:110px">${cookieSVG("fs", 9, {heart:true})}</div>
+            <p>${s.amount != null ? `<b class="tnum">${money(s.amount)}</b> ` : ""}paid by card for</p>
+            <div class="copybox"><span class="price tnum" style="font-size:22px">${esc(s.ref)}</span></div>
+            <p style="color:var(--muted);font-size:14.5px">Shaun can see it's paid. Square emails your receipt if you gave your email.</p>`, false);
+        }
+        if (!res.ok) break;
+      }catch(e){}
+      if (i < tries - 1) await new Promise(r => setTimeout(r, 2500));
+    }
+    show("We haven't seen your payment yet", `<p>If you finished paying on Square, it can take a moment to show up. Tap <b>Check again</b>.</p>
+      <p style="color:var(--muted);font-size:14.5px">Didn't finish? Nothing was charged. You can pay another way, or text Shaun at ${CONFIG.phonePretty}.</p>`, true);
+  };
+  check(3);
+}
+cardReturn();
 </script>
 </body>
 </html>

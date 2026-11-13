@@ -66,6 +66,10 @@
 
   "observability": { "enabled": true },
 
+  // Daily: renew the Square connection well before its 30-day expiry (src/square.js scheduled()).
+  // Does nothing while Square isn't configured. Square secrets are Worker secrets, never vars here.
+  "triggers": { "crons": ["17 9 * * *"] },
+
   // wrangler dev otherwise rewrites request URLs to the first route's host (cmscookieco3more.com).
   "dev": { "ip": "127.0.0.1", "port": 8787, "local_protocol": "http", "upstream_protocol": "http", "host": "localhost" }
 }

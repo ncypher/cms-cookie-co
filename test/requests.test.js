@@ -149,8 +149,8 @@ test("requests spreadsheet: same CSV rules as orders, includes status and quote"
   const raw = new Uint8Array(await (await worker.fetch(new Request(`${ORIGIN}/api/admin/requests.csv`), e)).arrayBuffer());
   assert.deepEqual([...raw.slice(0, 3)], [0xef, 0xbb, 0xbf], "UTF-8 BOM so Excel reads it right");
   const lines = r.body.replace(/^﻿/, "").split("\r\n");
-  assert.equal(lines[0], "Request,Received,Kind,Status,Name,Phone,Email,Event date,How many,Pickup or delivery,Would like,Budget,Quote,Notes,Your notes");
-  assert.match(lines[1], /,Catering,Booked,'=cmd\|' \/C calc'!A0,5555550100,,"[A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2}, \d{4}",40,Delivery,Cookie trays,,\$200\.00,"Line one,\nline two",$/);
+  assert.equal(lines[0], "Request,Received,Kind,Status,Name,Phone,Email,Event date,How many,Pickup or delivery,Would like,Budget,Quote,Paid,Payment method,Notes,Your notes");
+  assert.match(lines[1], /,Catering,Booked,'=cmd\|' \/C calc'!A0,5555550100,,"[A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2}, \d{4}",40,Delivery,Cookie trays,,\$200\.00,No,,"Line one,\nline two",$/);
 });
 
 test("requests list, settings, packages and spreadsheet are admin-only", async () => {

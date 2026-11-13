@@ -1,6 +1,7 @@
 import { requireAdmin, AccessError } from "./access.js";
 import { TOO_MANY_ORDERS, HEVC_VIDEO } from "./messages.js";
 import { toCsv } from "./csv.js";
+import * as Square from "./square.js";
 
 /* ============ Constants ============ */
 const TZ = "America/Detroit";
@@ -25,6 +26,8 @@ const MEDIA_KEY_RE = /^(img|video)\/\d{4}\/[0-9a-f-]{36}\.(jpg|png|webp|mp4|mov)
 const ORDER_LIMIT = 5;
 // Ways to pay (Admin -> Payments). Venmo and Cash App need a name; "card" is a coming-soon placeholder.
 const PAY_LABEL = { venmo: "Venmo", cashapp: "Cash App", cash: "Cash at pickup", card: "Card (Square)" };
+// How it was paid, in the spreadsheets: "Card" when Square marked it paid, "Marked paid" when Shaun did.
+const paidHow = (r) => (!r.paid ? "" : r.paid_method === "card" ? "Card" : "Marked paid");
 const PAY_NEEDS_HANDLE = new Set(["venmo", "cashapp"]);
 const PAY_HANDLE_RE = /^[A-Za-z0-9_-]{1,30}$/;
 const ORDER_WINDOW_MS = 10 * 60 * 1000;
@@ -146,6 +149,7 @@ async function getContent(env) {
   ]);
   const cat = catering.results[0];
   const all = specials.results.map(shapeSpecial);
+  const card = await Square.cardAvailable(env); // false (and no query) while Square isn't configured
   const featured = media.results.map(shapeMedia);
   return {
     today,
@@ -158,7 +162,7 @@ async function getContent(env) {
     tip: featured.find((m) => m.kind === "video" || m.kind === "instagram") || null,
     photos: featured.filter((m) => m.kind === "photo"),
     // Only the ways Shaun has switched on (never the card placeholder). Venmo/Cash App without a name are skipped.
-    payments: payments.results.filter((p) => !PAY_NEEDS_HANDLE.has(p.id) || p.handle).map((p) => ({ id: p.id, handle: p.handle })),
+    payments: [...(card ? [{ id: "card", handle: null }] : []), ...payments.results.filter((p) => !PAY_NEEDS_HANDLE.has(p.id) || p.handle).map((p) => ({ id: p.id, handle: p.handle }))],
     // Nothing about catering is public until Shaun switches it on.
     catering: cat?.enabled ? {
       intro: cat.intro, notice_days: cat.notice_days, earliest: todayLocal(cat.notice_days), items: JSON.parse(cat.items_json || "[]"),
@@ -317,15 +321,16 @@ async function createOrder(request, env) {
     .map((x) => ({ gf: "Gluten-free", df: "Dairy-free" })[x]).filter(Boolean).join(", ") || null;
   const notes = str(body.notes, { max: 1000, field: "Notes" });
   const { lines, total_cents } = await priceOrder(env, body.items);
+  const payToken = Square.newPayToken(); // lets this customer (and only them) pay by card later
 
   let id;
   for (let attempt = 0; attempt < 5; attempt++) {
     id = newOrderId();
     try {
       await env.DB.prepare(
-        `INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, items_json, total_cents, client_hash)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`
-      ).bind(id, name, phone, body.date, fulfillment, dietary, notes, JSON.stringify(lines), total_cents, hash).run();
+        `INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, items_json, total_cents, client_hash, pay_token)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
+      ).bind(id, name, phone, body.date, fulfillment, dietary, notes, JSON.stringify(lines), total_cents, hash, payToken).run();
       break;
     } catch (e) {
       if (attempt === 4 || !String(e.message).includes("UNIQUE")) throw e;
@@ -349,7 +354,8 @@ async function createOrder(request, env) {
     }
   }
   await env.DB.prepare("UPDATE orders SET email_status = ?1 WHERE id = ?2").bind(emailStatus, id).run();
-  return json({ ok: true, id, total: dollars(total_cents), lines: lines.map((l) => ({ ...l, unit: dollars(l.unit_cents), line: dollars(l.line_cents) })), emailed: emailStatus === "sent" }, 201);
+  return json({ ok: true, id, total: dollars(total_cents), lines: lines.map((l) => ({ ...l, unit: dollars(l.unit_cents), line: dollars(l.line_cents) })), emailed: emailStatus === "sent",
+    ...((await Square.cardAvailable(env)) ? { pay_token: payToken } : {}) }, 201);
 }
 
 /* ============ Event signups ============ */
@@ -379,17 +385,18 @@ async function registerForEvent(request, env, eventId, { preview = false } = {})
   if (today > (ev.signup_closes || ev.date)) throw new HttpError(409, "Signups for this event have closed");
 
   let row = null, resId;
+  const payToken = Square.newPayToken();
   for (let attempt = 0; attempt < 5 && !row; attempt++) {
     resId = newOrderId("EV");
     try {
       row = await env.DB.prepare(
-        `INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price_cents, total_cents, client_hash)
-         SELECT ?1, e.id, ?3, ?4, ?5, ?6, ?7, e.ticket_price_cents, e.ticket_price_cents * ?6, ?8 FROM events e
+        `INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price_cents, total_cents, client_hash, pay_token)
+         SELECT ?1, e.id, ?3, ?4, ?5, ?6, ?7, e.ticket_price_cents, e.ticket_price_cents * ?6, ?8, ?11 FROM events e
          WHERE e.id = ?2 AND (e.published = 1 OR ?9 = 1) AND e.signups_open = 1 AND e.ticket_price_cents IS NOT NULL
            AND ?10 <= COALESCE(e.signup_closes, e.date)
            AND (e.capacity IS NULL OR e.capacity - ${TAKEN} >= ?6)
          RETURNING *`
-      ).bind(resId, id, name, phone, email, seats, notes, hash, preview ? 1 : 0, today).first();
+      ).bind(resId, id, name, phone, email, seats, notes, hash, preview ? 1 : 0, today, payToken).first();
       if (!row) break;
     } catch (e) {
       if (attempt === 4 || !String(e.message).includes("UNIQUE")) throw e;
@@ -426,7 +433,8 @@ async function registerForEvent(request, env, eventId, { preview = false } = {})
   }
   await env.DB.prepare("UPDATE registrations SET email_status = ?1 WHERE id = ?2").bind(emailStatus, row.id).run();
   return json({ ok: true, id: row.id, seats, price: dollars(row.price_cents), total: dollars(row.total_cents),
-    event: { id: ev.id, title: ev.title, date: ev.date }, emailed: emailStatus === "sent" }, 201);
+    event: { id: ev.id, title: ev.title, date: ev.date }, emailed: emailStatus === "sent",
+    ...(row.total_cents > 0 && (await Square.cardAvailable(env)) ? { pay_token: payToken } : {}) }, 201);
 }
 
 /* ============ Requests: catering quotes and custom orders ============ */
@@ -532,16 +540,16 @@ async function signupsCsv(env, eventId) {
   const ev = await env.DB.prepare("SELECT * FROM events WHERE id = ?1").bind(Number(eventId)).first();
   if (!ev) throw new HttpError(404, "Event not found");
   const { results } = await env.DB.prepare("SELECT * FROM registrations WHERE event_id = ?1 ORDER BY created_at").bind(ev.id).all();
-  const rows = [["Reservation", "Signed up", "Name", "Phone", "Email", "Spots", "Price per spot", "Total", "Paid", "Checked in", "Notes"],
-    ...results.map((r) => [r.id, csvWhen(r.created_at), r.name, r.phone, r.email, r.seats, csvMoney(r.price_cents), csvMoney(r.total_cents), yesNo(r.paid), yesNo(r.checked_in), r.notes])];
+  const rows = [["Reservation", "Signed up", "Name", "Phone", "Email", "Spots", "Price per spot", "Total", "Paid", "Payment method", "Checked in", "Notes"],
+    ...results.map((r) => [r.id, csvWhen(r.created_at), r.name, r.phone, r.email, r.seats, csvMoney(r.price_cents), csvMoney(r.total_cents), yesNo(r.paid), paidHow(r), yesNo(r.checked_in), r.notes])];
   const slug = String(ev.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "event";
   return csvResponse(`signups-${slug}-${ev.date}.csv`, toCsv(rows));
 }
 async function ordersCsv(env, url) {
   const { from, to, rows: results } = await rowsInRange(env, "orders", url);
   const items = (o) => JSON.parse(o.items_json).map((l) => `${l.qty} × ${l.name}${l.detail ? ` (${l.detail})` : ""}`).join("; ");
-  const rows = [["Order", "Placed", "Wanted", "Name", "Phone", "Pickup or delivery", "Items", "Total", "Confirmed", "Paid", "Dietary", "Notes"],
-    ...results.map((o) => [o.id, csvWhen(o.created_at), prettyDay(o.wanted_date), o.name, o.phone, o.fulfillment === "delivery" ? "Delivery" : "Pickup", items(o), csvMoney(o.total_cents), yesNo(o.confirmed), yesNo(o.paid), o.dietary, o.notes])];
+  const rows = [["Order", "Placed", "Wanted", "Name", "Phone", "Pickup or delivery", "Items", "Total", "Confirmed", "Paid", "Payment method", "Dietary", "Notes"],
+    ...results.map((o) => [o.id, csvWhen(o.created_at), prettyDay(o.wanted_date), o.name, o.phone, o.fulfillment === "delivery" ? "Delivery" : "Pickup", items(o), csvMoney(o.total_cents), yesNo(o.confirmed), yesNo(o.paid), paidHow(o), o.dietary, o.notes])];
   return csvResponse(`orders-${from}-to-${to}.csv`, toCsv(rows));
 }
 
@@ -557,10 +565,10 @@ async function rowsInRange(env, table, url) {
 }
 async function requestsCsv(env, url) {
   const { from, to, rows } = await rowsInRange(env, "requests", url);
-  const out = [["Request", "Received", "Kind", "Status", "Name", "Phone", "Email", "Event date", "How many", "Pickup or delivery", "Would like", "Budget", "Quote", "Notes", "Your notes"],
+  const out = [["Request", "Received", "Kind", "Status", "Name", "Phone", "Email", "Event date", "How many", "Pickup or delivery", "Would like", "Budget", "Quote", "Paid", "Payment method", "Notes", "Your notes"],
     ...rows.map((r) => [r.id, csvWhen(r.created_at), r.kind === "catering" ? "Catering" : "Custom order", STATUS_LABEL[r.status], r.name, r.phone, r.email,
       r.event_date ? prettyDay(r.event_date) : "", r.headcount, r.fulfillment ? (r.fulfillment === "delivery" ? "Delivery" : "Pickup") : "",
-      JSON.parse(r.interests || "[]").join("; "), r.budget, csvMoney(r.quote_cents), r.notes, r.admin_notes])];
+      JSON.parse(r.interests || "[]").join("; "), r.budget, csvMoney(r.quote_cents), yesNo(r.paid), paidHow(r), r.notes, r.admin_notes])];
   return csvResponse(`requests-${from}-to-${to}.csv`, toCsv(out));
 }
 
@@ -596,13 +604,15 @@ function payHandle(v, id) {
   if (!PAY_HANDLE_RE.test(s)) throw new HttpError(400, `${PAY_LABEL[id]} names can only use letters, numbers, - and _`);
   return s;
 }
-const shapePayment = (p) => ({ id: p.id, label: PAY_LABEL[p.id], enabled: !!p.enabled, handle: p.handle, coming_soon: p.id === "card", updated_at: p.updated_at, updated_by: p.updated_by });
+// The card row stays a greyed "coming soon" placeholder until the Worker has Square app credentials.
+const shapePayment = (p, env) => ({ id: p.id, label: PAY_LABEL[p.id], enabled: !!p.enabled, handle: p.handle, coming_soon: p.id === "card" && !Square.configured(env), updated_at: p.updated_at, updated_by: p.updated_by });
 
 async function updatePayment(request, env, id, admin) {
   const cur = await env.DB.prepare("SELECT * FROM payment_methods WHERE id = ?1").bind(id).first();
   if (!cur) throw new HttpError(404, "Payment method not found");
-  if (id === "card") throw new HttpError(400, "Card payments are coming soon. There's nothing to switch on yet.");
+  if (id === "card" && !Square.configured(env)) throw new HttpError(400, "Card payments are coming soon. There's nothing to switch on yet.");
   const b = await readJson(request);
+  if (id === "card" && bool01(b.enabled) && (await Square.getConnection(env))?.status !== "connected") throw new HttpError(400, "Connect Square first, then switch card payments on.");
   const handle = PAY_NEEDS_HANDLE.has(id) ? ("handle" in b ? payHandle(b.handle, id) : cur.handle) : null;
   const enabled = "enabled" in b ? bool01(b.enabled) : cur.enabled;
   if (enabled && PAY_NEEDS_HANDLE.has(id) && !handle) {
@@ -610,7 +620,7 @@ async function updatePayment(request, env, id, admin) {
   }
   const row = await env.DB.prepare("UPDATE payment_methods SET enabled = ?1, handle = ?2, updated_at = ?3, updated_by = ?4 WHERE id = ?5 RETURNING *")
     .bind(enabled, handle, new Date().toISOString(), admin.email, id).first();
-  return json({ payment: shapePayment(row) });
+  return json({ payment: shapePayment(row, env) });
 }
 
 /* ============ Admin API ============ */
@@ -708,12 +718,12 @@ async function deleteMediaIfUnused(env, ...keys) {
 // After an update, drop whichever of the row's old files it no longer uses.
 const releaseReplaced = (env, prev, row, cols) => deleteMediaIfUnused(env, ...cols.filter((c) => prev?.[c] && prev[c] !== row[c]).map((c) => prev[c]));
 
-const shapeOrder = (o) => ({ ...o, items: JSON.parse(o.items_json), items_json: undefined, total: dollars(o.total_cents), confirmed: !!o.confirmed, paid: !!o.paid });
+const shapeOrder = (o) => ({ ...o, pay_token: undefined, items: JSON.parse(o.items_json), items_json: undefined, total: dollars(o.total_cents), confirmed: !!o.confirmed, paid: !!o.paid });
 const shapeAdminSpecial = (s) => ({ ...s, sizes_json: undefined, sizes: shapeSizes(s), price: dollars(s.price_cents), image: mediaUrl(s.image_key), image_orig: mediaUrl(s.image_orig_key), active: !!s.active });
 const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key), flyer_orig: mediaUrl(e.flyer_orig_key),
   published: !!e.published, signups_open: !!e.signups_open, ticket_price: dollars(e.ticket_price_cents), taken: e.taken ?? 0, signups: e.signups ?? 0,
   paid_cents: e.paid_cents ?? 0, expected_cents: e.expected_cents ?? 0 });
-const shapeRequest = (r) => ({ ...r, client_hash: undefined, interests: JSON.parse(r.interests || "[]"), quote: dollars(r.quote_cents) });
+const shapeRequest = (r) => ({ ...r, client_hash: undefined, pay_token: undefined, paid: !!r.paid, interests: JSON.parse(r.interests || "[]"), quote: dollars(r.quote_cents) });
 const shapeCatering = (c) => ({ enabled: !!c.enabled, intro: c.intro, notice_days: c.notice_days, items: JSON.parse(c.items_json || "[]"), updated_at: c.updated_at });
 const shapeAdminPackage = (k) => ({ ...k, from: dollars(k.from_cents), photo: mediaUrl(k.photo_key), photo_orig: mediaUrl(k.photo_orig_key), active: !!k.active });
 async function packageFromBody(env, b) {
@@ -731,7 +741,7 @@ async function packageFromBody(env, b) {
     active: bool01(b.active ?? true),
   };
 }
-const shapeRegistration = (r) => ({ ...r, client_hash: undefined, paid: !!r.paid, checked_in: !!r.checked_in, price: dollars(r.price_cents), total: dollars(r.total_cents) });
+const shapeRegistration = (r) => ({ ...r, client_hash: undefined, pay_token: undefined, paid: !!r.paid, checked_in: !!r.checked_in, price: dollars(r.price_cents), total: dollars(r.total_cents) });
 const ADMIN_EVENT_SQL = `SELECT e.*, ${TAKEN} AS taken,
   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS signups,
   (SELECT COALESCE(SUM(total_cents), 0) FROM registrations r WHERE r.event_id = e.id) AS expected_cents,
@@ -868,9 +878,24 @@ async function adminApi(request, env, path, admin) {
   if (seg[0] === "payments") {
     if (m === "GET" && !id) {
       const { results } = await DB.prepare("SELECT * FROM payment_methods ORDER BY sort, id").all();
-      return json({ payments: results.map(shapePayment) });
+      return json({ payments: results.map((p) => shapePayment(p, env)) });
     }
     if (m === "PUT" && id) return updatePayment(request, env, id, admin);
+  }
+
+  if (seg[0] === "square") {
+    if (m === "GET" && !id) return json({ square: await Square.connectionStatus(env) });
+    if (!Square.configured(env)) throw new HttpError(404, "Not found"); // dark: nothing else exists
+    if (m === "POST" && id === "connect") return json({ url: await Square.startConnect(env, admin) });
+    if (m === "POST" && id === "disconnect") return json({ ...(await Square.disconnect(env, admin)), square: await Square.connectionStatus(env) });
+    if (m === "POST" && id === "links") { // "Send pay link" on an unpaid order, signup or quoted request
+      const b = await readJson(request);
+      const r = await Square.createPayLink(env, str(b.ref, { max: 40, required: true, field: "ref" }), { origin: returnOrigin(request, env), by: admin.email });
+      if (r.paid) return json({ paid: true, ref: r.ref, kind: r.kind });
+      const first = String(r.row.name || "").split(/\s+/)[0];
+      return json({ url: r.url, amount: dollars(r.amount_cents), ref: r.ref, kind: r.kind, name: r.row.name, phone: r.row.phone,
+        message: `Hi ${first}! Here's your secure card payment link for ${r.label} (${money(r.amount_cents)}): ${r.url} – Shaun, CMS Cookie Co.` });
+    }
   }
 
   if (seg[0] === "orders") {
@@ -1208,6 +1233,34 @@ async function adminApi(request, env, path, admin) {
   throw new HttpError(404, "Not found");
 }
 
+/* ============ Square: where customers come back to after paying ============ */
+// Our own origin. Locally, wrangler dev rewrites both request.url and the Origin header to plain
+// http://localhost (no port), so .dev.vars sets DEV_ORIGIN=http://localhost:8787. It is used only when the
+// request itself is on localhost and DEV_ORIGIN is a localhost URL; the live site always uses its own origin.
+function returnOrigin(request, env) {
+  const own = new URL(request.url);
+  const dev = env.DEV_ORIGIN;
+  if (/^(localhost|127\.0\.0\.1)$/.test(own.hostname) && dev && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(dev)) return dev;
+  return own.origin;
+}
+
+/* ============ Square: back from the Allow screen ============ */
+// Square sends the browser here. It's under /api/admin, so Access + the admin check already ran.
+async function squareCallback(request, env, admin, url) {
+  const back = new URL("/admin/", url.origin);
+  try {
+    const r = await Square.finishConnect(env, admin, url.searchParams);
+    back.searchParams.set("square", "connected");
+    back.searchParams.set("name", r.business_name);
+  } catch (e) {
+    if (e instanceof Square.SquareError && e.status === 404) throw new HttpError(404, "Not found");
+    back.searchParams.set("square_error", e instanceof Square.SquareError ? e.message : "Square didn't connect. Please try again.");
+    if (!(e instanceof Square.SquareError)) console.error("square callback", e?.message);
+  }
+  back.hash = "payments";
+  return new Response(null, { status: 302, headers: { Location: back.toString(), "Cache-Control": "no-store" } });
+}
+
 /* ============ Router ============ */
 async function route(request, env) {
   const url = new URL(request.url);
@@ -1227,6 +1280,7 @@ async function route(request, env) {
       const status = e instanceof AccessError ? e.status : 403;
       return withSecurityHeaders(isAdminApi ? json({ error: e.message }, status) : new Response(`Admin sign-in required: ${e.message}`, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } }), { admin: true });
     }
+    if (path === "/api/admin/square/callback" && request.method === "GET") return withSecurityHeaders(await squareCallback(request, env, admin, url), { admin: true });
     if (isAdminApi) {
       if (!["GET", "HEAD"].includes(request.method)) {
         // Same-origin only for writes, on top of the Access check. Browsers always send
@@ -1244,6 +1298,15 @@ async function route(request, env) {
   if (path === "/api/content" && request.method === "GET") return withSecurityHeaders(json(await getContent(env)));
   if (path === "/api/orders" && request.method === "POST") return withSecurityHeaders(await createOrder(request, env));
   if (path === "/api/requests" && request.method === "POST") return withSecurityHeaders(await createRequest(request, env));
+  if (path === "/api/pay" && request.method === "POST") { // "Pay with card": the customer who placed it, holding its pay token
+    const b = await readJson(request, 4096);
+    const r = await Square.createPayLink(env, String(b.ref || ""), { origin: returnOrigin(request, env), token: String(b.t || "") });
+    return withSecurityHeaders(json(r.paid ? { paid: true, ref: r.ref } : { url: r.url, amount: dollars(r.amount_cents), ref: r.ref }));
+  }
+  if (path === "/api/pay/status" && request.method === "GET") {
+    return withSecurityHeaders(json(await Square.payStatus(env, url.searchParams.get("ref") || "", url.searchParams.get("t") || "")));
+  }
+  if (path === "/api/square/webhook" && request.method === "POST") return withSecurityHeaders(json(await Square.handleWebhook(request, env)));
   const reg = path.match(/^\/api\/events\/(\d+)\/register$/);
   if (reg && request.method === "POST") return withSecurityHeaders(await registerForEvent(request, env, reg[1]));
   if (path.startsWith("/api/")) return withSecurityHeaders(json({ error: "Not found" }, 404));
@@ -1259,8 +1322,13 @@ export default {
       return await route(request, env);
     } catch (e) {
       if (e instanceof HttpError) return withSecurityHeaders(json({ error: e.message }, e.status, e.headers));
+      if (e instanceof Square.SquareError) return withSecurityHeaders(json({ error: e.message }, e.status));
       console.error("unhandled", e?.stack || e);
       return withSecurityHeaders(json({ error: "Something went wrong. Please try again or text Shaun." }, 500));
     }
+  },
+  // Daily: keep the Square connection fresh (renews well before the 30-day expiry). Does nothing until configured.
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(Square.scheduled(env).catch((e) => console.error("square scheduled", e?.message)));
   },
 };

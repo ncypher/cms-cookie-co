@@ -179,6 +179,12 @@ details.dl[open] summary::after{content:"−"}
 .pay .field{margin-top:12px}
 .pay .meta{margin:10px 0 0}
 .card.soon{opacity:.6; background:#F6F0EC}
+.pay .sqname{margin:12px 0 0; font-size:17px}
+.pay .warnnote{color:#8A5200; font-weight:700}
+.pay #sqConfirm .confirm{display:block; margin:12px 0 8px; font-size:15px}
+.paylink{margin-top:12px; padding:12px; border-radius:12px; background:#FFF3E5}
+.paylink .meta{margin:0 0 8px}
+.paylink input{width:100%; box-sizing:border-box; font:500 14px var(--f-body); padding:10px; border:1.5px solid var(--line, #E5D6CE); border-radius:10px; background:#fff; color:inherit}
 
 /* Tab bar */
 nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; border-top:1.5px solid var(--pink-soft); display:flex; gap:2px; padding:6px max(4px, env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px, env(safe-area-inset-left,0px))}
@@ -302,10 +308,43 @@ function go(t, arg){
 // Tapping a tab means she left the form on purpose, so a saved draft is dropped.
 $$("nav.tabs button").forEach(b => b.addEventListener("click", () => { draftStore.clear(); go(b.dataset.tab); }));
 
+/* ============ Square (card payments): status, tags, "Send pay link" ============ */
+// {configured:false} while the Worker has no Square credentials: then nothing card-related shows anywhere.
+let SQUARE = null;
+async function squareState(force){
+  if (force || !SQUARE){ try{ SQUARE = (await api("GET", "square")).square; }catch(e){ SQUARE = SQUARE || {configured:false}; } }
+  return SQUARE;
+}
+const payLinkOn = () => !!(SQUARE && SQUARE.connected && SQUARE.enabled);
+const paidTag = x => x.paid_method === "card" ? `<span class="tag green">Paid by card</span>` : `<span class="tag green">Paid</span>`;
+const payLinkButton = ref => payLinkOn() ? `<button class="btn btn-ghost btn-sm" type="button" data-paylink="${esc(ref)}">💳 Send pay link</button>` : "";
+// Refunds stay in Square: a link there, nothing more.
+const openSquare = x => x.paid_method === "card" && SQUARE?.dashboard_url ? `<a class="btn btn-ghost btn-sm" href="${esc(SQUARE.dashboard_url)}" target="_blank" rel="noopener">Refund? Open Square</a>` : "";
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-paylink]"); if (!b) return;
+  const card = b.closest(".card"), open = $(".paylink", card);
+  if (open){ open.remove(); return; }
+  const label = b.textContent; b.disabled = true; b.textContent = "Making the link…";
+  try{
+    const r = await api("POST", "square/links", {ref: b.dataset.paylink});
+    if (r.paid){ toast("That's already paid by card. ♥"); b.remove(); return; }
+    const digits = (r.phone || "").replace(/[^\d+]/g, ""), first = String(r.name || "").split(/\s+/)[0] || "them";
+    card.insertAdjacentHTML("beforeend", `<div class="paylink"><p class="meta">Card payment link for <b>${money(r.amount)}</b>. It switches on <b>Paid</b> by itself when they pay.</p>
+      <input readonly value="${esc(r.url)}" aria-label="Pay link">
+      <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}?&body=${encodeURIComponent(r.message)}">Text it to ${esc(first)}</a><button class="btn btn-ghost btn-sm" type="button" data-copylink>Copy link</button></div></div>`);
+    const box = $(".paylink", card);
+    $("[data-copylink]", box).addEventListener("click", async () => {
+      try{ await navigator.clipboard.writeText(r.url); toast("Link copied. Paste it in a text."); }
+      catch(x){ const i = $("input", box); i.focus(); i.select(); toast("Selected. Copy it, then paste it in a text."); }
+    });
+  }catch(x){ toast(x.message, true); }
+  b.disabled = false; b.textContent = label;
+});
+
 /* ============ Orders ============ */
 let orderFilter = "open";
 async function renderOrders(){
-  const {orders} = await api("GET", "orders?filter=" + orderFilter);
+  const [{orders}] = await Promise.all([api("GET", "orders?filter=" + orderFilter), squareState()]);
   if (orderFilter === "open") setBadge(orders.length);
   $("#main").innerHTML = `
     <h1 class="page">Orders <span class="sub">${orders.length} ${orderFilter === "open" ? "open" : "total"}</span></h1>
@@ -336,7 +375,7 @@ async function renderOrders(){
   }));
 }
 function statusTags(o){
-  return `${o.confirmed ? `<span class="tag green">Confirmed</span>` : `<span class="tag">New</span>`} ${o.paid ? `<span class="tag green">Paid</span>` : `<span class="tag warn">Unpaid</span>`}`
+  return `${o.confirmed ? `<span class="tag green">Confirmed</span>` : `<span class="tag">New</span>`} ${o.paid ? paidTag(o) : `<span class="tag warn">Unpaid</span>`}`
     + (o.email_status === "failed" ? ` <span class="tag warn" title="The notification email didn't send">Email failed</span>` : "");
 }
 function orderCard(o){
@@ -349,7 +388,7 @@ function orderCard(o){
     <ul class="items">${o.items.map(l => `<li><span>${l.qty} ×</span><span>${esc(l.name)}${l.detail ? `<small>${esc(l.detail)}</small>` : ""}</span><span>${money(l.line_cents/100)}</span></li>`).join("")}</ul>
     ${o.dietary ? `<p style="margin:8px 0 0"><span class="tag">${esc(o.dietary)}</span></p>` : ""}
     ${o.notes ? `<p style="margin:8px 0 0; white-space:pre-wrap"><b>Notes:</b> ${esc(o.notes)}</p>` : ""}
-    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(o.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a></div>
+    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(o.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a>${o.paid ? openSquare(o) : payLinkButton(o.id)}</div>
     <div class="toggles">
       <label class="switch"><input type="checkbox" data-toggle="${esc(o.id)}|confirmed" ${o.confirmed ? "checked" : ""}> Confirmed</label>
       <label class="switch"><input type="checkbox" data-toggle="${esc(o.id)}|paid" ${o.paid ? "checked" : ""}> Paid</label>
@@ -629,7 +668,7 @@ const REQ_STATUS = [["new","New"],["quoted","Quoted"],["booked","Booked"],["done
 let reqFilter = "open";
 function setReqBadge(n){ const b = $("#reqBadge"); b.hidden = !n; b.textContent = n; }
 async function renderRequests(){
-  const [{requests, new_count}, {catering}] = await Promise.all([api("GET", "requests?filter=" + reqFilter), api("GET", "catering")]);
+  const [{requests, new_count}, {catering}] = await Promise.all([api("GET", "requests?filter=" + reqFilter), api("GET", "catering"), squareState()]);
   setReqBadge(new_count);
   $("#main").innerHTML = `
     <h1 class="page">Requests <span class="sub">${new_count} new</span></h1>
@@ -666,7 +705,10 @@ async function renderRequests(){
       try{ await save({status: b.dataset.st}, `${r.name}: ${REQ_STATUS.find(x => x[0] === b.dataset.st)[1]}`); }catch(e){ toast(e.message, true); }
     }));
     const q = $("[data-quote]", c), n = $("[data-anotes]", c);
-    q.addEventListener("change", async () => { try{ await save({quote: q.value}, r.quote_cents == null && !q.value ? "Quote cleared" : `Quote saved: ${money(+q.value)}`); q.value = r.quote ?? ""; }catch(e){ toast(e.message, true); } });
+    q.addEventListener("change", async () => { try{ await save({quote: q.value}, r.quote_cents == null && !q.value ? "Quote cleared" : `Quote saved: ${money(+q.value)}`); q.value = r.quote ?? "";
+      const pl = $("[data-paylink]", c); $(".paylink", c)?.remove();
+      if (!r.paid && r.quote > 0 && !pl) $(".contact", c).insertAdjacentHTML("beforeend", payLinkButton(r.id));
+      if (pl && !(r.quote > 0)) pl.remove(); }catch(e){ toast(e.message, true); } });
     n.addEventListener("change", async () => { try{ await save({admin_notes: n.value}, "Your notes are saved"); }catch(e){ toast(e.message, true); } });
   });
 }
@@ -674,7 +716,7 @@ const statusTag = r => `<span class="tag ${r.status === "new" ? "" : r.status ==
 function requestCard(r){
   const digits = r.phone.replace(/[^\d+]/g, "");
   return `<article class="card req" data-req="${esc(r.id)}">
-    <div class="row"><h3>${esc(r.name)}</h3><span class="tag">${r.kind === "catering" ? "Catering" : "Custom order"}</span><span class="stat">${statusTag(r)}</span></div>
+    <div class="row"><h3>${esc(r.name)}</h3><span class="tag">${r.kind === "catering" ? "Catering" : "Custom order"}</span><span class="stat">${statusTag(r)}</span>${r.paid ? paidTag(r) : ""}</div>
     <div class="meta">${esc(r.id)} · came in ${esc(ago(r.created_at))}</div>
     <div class="facts">${r.event_date ? `<span>📅 ${esc(prettyDate(r.event_date, {weekday:"short", month:"short", day:"numeric", year:"numeric"}))}</span>` : ""}
       ${r.headcount ? `<span>👥 ${r.headcount} people</span>` : ""}${r.fulfillment ? `<span>${r.fulfillment === "delivery" ? "🚗 Delivery" : "🛍️ Pickup"}</span>` : ""}</div>
@@ -682,7 +724,7 @@ function requestCard(r){
     ${r.budget ? `<p style="margin:8px 0 0"><b>Budget:</b> ${esc(r.budget)}</p>` : ""}
     ${r.notes ? `<p style="margin:8px 0 0; white-space:pre-wrap"><b>Notes:</b> ${esc(r.notes)}</p>` : ""}
     <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(r.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a>
-      ${r.email ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(r.email)}">Email</a>` : ""}</div>
+      ${r.email ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(r.email)}">Email</a>` : ""}${r.paid ? openSquare(r) : r.quote > 0 ? payLinkButton(r.id) : ""}</div>
     <div class="statusrow" role="group" aria-label="Status">${REQ_STATUS.map(([k, l]) => `<button class="chip" type="button" data-st="${k}" aria-pressed="${r.status === k}">${l}</button>`).join("")}</div>
     <div class="field"><label for="q_${esc(r.id)}">Your quote ($)</label><input id="q_${esc(r.id)}" data-quote type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${r.quote ?? ""}" placeholder="Type it after you text them"></div>
     <div class="field"><label for="n_${esc(r.id)}">Your notes (only you see these)</label><textarea id="n_${esc(r.id)}" data-anotes maxlength="2000" style="min-height:64px">${esc(r.admin_notes || "")}</textarea></div>
@@ -767,7 +809,7 @@ async function renderCateringSettings(){
 
 /* ============ Event signups: who's coming, paid, checked in, spreadsheet ============ */
 async function renderSignups(id){
-  const {event: e, registrations: list} = await api("GET", `events/${id}/registrations`);
+  const [{event: e, registrations: list}] = await Promise.all([api("GET", `events/${id}/registrations`), squareState()]);
   const totals = () => {
     const seats = list.reduce((n, r) => n + r.seats, 0), exp = list.reduce((n, r) => n + r.total_cents, 0), paid = list.filter(r => r.paid).reduce((n, r) => n + r.total_cents, 0);
     const inside = list.filter(r => r.checked_in).reduce((n, r) => n + r.seats, 0);
@@ -776,11 +818,11 @@ async function renderSignups(id){
       <p class="meta" style="margin:10px 0 0; text-align:center">${inside} of ${seats} checked in · ${list.length} signup${list.length === 1 ? "" : "s"}</p>`;
   };
   const card = r => { const digits = r.phone.replace(/[^\d+]/g, ""); return `<article class="card reg" data-reg="${esc(r.id)}">
-    <div class="row"><h3>${esc(r.name)}</h3><span class="tag green">${r.seats} spot${r.seats === 1 ? "" : "s"}</span><span class="price spacer">${money(r.total)}</span></div>
+    <div class="row"><h3>${esc(r.name)}</h3><span class="tag green">${r.seats} spot${r.seats === 1 ? "" : "s"}</span>${r.paid_method === "card" ? `<span class="tag green">Paid by card</span>` : ""}<span class="price spacer">${money(r.total)}</span></div>
     <div class="meta">${esc(r.id)} · signed up ${esc(ago(r.created_at))}</div>
     ${r.email ? `<p class="meta" style="margin:4px 0 0; overflow-wrap:anywhere">${esc(r.email)}</p>` : ""}
     ${r.notes ? `<p style="margin:8px 0 0; white-space:pre-wrap"><b>Notes:</b> ${esc(r.notes)}</p>` : ""}
-    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(r.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a></div>
+    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(r.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a>${r.paid ? openSquare(r) : r.total > 0 ? payLinkButton(r.id) : ""}</div>
     <div class="toggles">
       <label class="switch"><input type="checkbox" data-rt="paid" ${r.paid ? "checked" : ""}> Paid</label>
       <label class="switch"><input type="checkbox" data-rt="checked_in" ${r.checked_in ? "checked" : ""}> Checked in</label>
@@ -1081,10 +1123,28 @@ const PAY_INFO = {
   cash: {ico:"💵", say:"Customers are told they can pay with cash when they pick up."},
   card: {ico:"💳", say:"Coming soon. Customers don't see this yet."},
 };
+// Connect Square (Square's own sign-in + Allow), then an on/off switch. No codes are typed here.
+function squareCard(p, sq){
+  const head = `<div class="payhead"><span class="payico card" aria-hidden="true">💳</span><h3>Card (Square)</h3>${sq.connected
+    ? `<label class="switch"><input type="checkbox" data-payon ${p.enabled ? "checked" : ""} aria-label="Show card payments to customers"><span class="sr">On</span></label>` : ""}</div>`;
+  if (!sq.connected) return `<section class="card pay" data-pay="card">${head}
+    <p class="meta">Let customers pay by card on Square's own secure page. The money goes to your Square account.</p>
+    ${sq.note ? `<p class="meta warnnote">${esc(sq.note)}</p>` : ""}
+    <button class="btn btn-rose" type="button" id="sqConnect" style="margin-top:12px">Connect Square</button>
+    <p class="meta">Square opens. Sign in there and tap <b>Allow</b>. You never type a password or code on this site.</p></section>`;
+  return `<section class="card pay" data-pay="card">${head}
+    <p class="sqname">Connected as <b>${esc(sq.business_name)}</b></p>
+    <p class="meta" data-cardsay>${p.enabled ? "On: customers see “Pay with card” after they order or sign up." : "Off: customers don't see card yet. Switch it on when you're ready."}</p>
+    <p class="meta">Square takes a fee on each card payment. See your Square app for the amount.</p>
+    <p class="meta">Refunds and payouts happen in Square.</p>
+    <div class="contact"><a class="btn btn-green btn-sm" href="${esc(sq.dashboard_url)}" target="_blank" rel="noopener">Open Square</a><button class="btn btn-ghost btn-sm" type="button" id="sqDisc">Disconnect</button></div>
+    <div id="sqConfirm"></div></section>`;
+}
 async function renderPayments(){
-  const {payments} = await api("GET", "payments");
+  const [{payments}, sq] = await Promise.all([api("GET", "payments"), squareState(true)]);
   const card = p => {
     const info = PAY_INFO[p.id];
+    if (p.id === "card" && !p.coming_soon && sq.configured) return squareCard(p, sq);
     if (p.coming_soon) return `<section class="card pay soon" data-pay="${p.id}"><div class="payhead"><span class="payico card" aria-hidden="true">${info.ico}</span><h3>${esc(p.label)}</h3><span class="tag">Coming soon</span></div>
       <p class="meta">${esc(info.say)}</p></section>`;
     return `<section class="card pay" data-pay="${p.id}">
@@ -1098,17 +1158,35 @@ async function renderPayments(){
   };
   $("#main").innerHTML = `
     <h1 class="page">Payments</h1>
-    <p class="meta" style="margin:0 0 12px">Customers only see the ways that are switched on: after they order, and in the contact box on the home page. Nobody pays through this website. Money goes straight to you.</p>
+    <p class="meta" style="margin:0 0 12px">Customers only see the ways that are switched on: after they order, and in the contact box on the home page. ${sq.connected ? "Card payments happen on Square's own page; nobody types a card on this website." : "Nobody pays through this website."} Money goes straight to you.</p>
     ${payments.map(card).join("")}
-    <div class="card" style="background:#FFF3E5"><b>Got paid?</b><p class="meta" style="margin:4px 0 10px">Open the order and switch on <b>Paid</b>. The Venmo note has the order number in it.</p>
+    <div class="card" style="background:#FFF3E5"><b>Got paid?</b><p class="meta" style="margin:4px 0 10px">${sq.connected ? "Card payments switch on <b>Paid</b> by themselves. For Venmo, Cash App or cash, open" : "Open"} the order and switch on <b>Paid</b>. The Venmo note has the order number in it.</p>
       <button class="btn btn-green btn-sm" type="button" id="toOrders">Go to Orders</button></div>`;
   $("#toOrders").addEventListener("click", () => go("orders"));
+  $("#sqConnect")?.addEventListener("click", async e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = "Opening Square…";
+    try{ const {url} = await api("POST", "square/connect"); location.href = url; }
+    catch(x){ toast(x.message, true); b.disabled = false; b.textContent = "Connect Square"; }
+  });
+  $("#sqDisc")?.addEventListener("click", () => {
+    const box = $("#sqConfirm");
+    box.innerHTML = `<span class="confirm">Disconnect Square? Customers stop seeing card right away. Payments already made stay in Square.</span>
+      <div class="contact"><button class="btn btn-danger btn-sm" type="button" data-yes>Yes, disconnect</button><button class="btn btn-ghost btn-sm" type="button" data-no>Keep it</button></div>`;
+    $("[data-no]", box).addEventListener("click", () => { box.innerHTML = ""; });
+    $("[data-yes]", box).addEventListener("click", async e => {
+      e.currentTarget.disabled = true;
+      try{ await api("POST", "square/disconnect"); toast("Square disconnected. Card payments are off."); renderPayments(); }
+      catch(x){ toast(x.message, true); e.currentTarget.disabled = false; }
+    });
+    $("[data-no]", box).focus();
+  });
   $$("[data-pay]").forEach(sec => {
     const p = payments.find(x => x.id === sec.dataset.pay); if (!p || p.coming_soon) return;
     const on = $("[data-payon]", sec), name = $("[data-payname]", sec);
     const save = async (body) => {
       const {payment} = await api("PUT", "payments/" + p.id, body);
       Object.assign(p, payment); on.checked = p.enabled; if (name) name.value = p.handle || "";
+      if (p.id === "card"){ if (SQUARE) SQUARE.enabled = p.enabled; const say = $("[data-cardsay]", sec); if (say) say.textContent = p.enabled ? "On: customers see “Pay with card” after they order or sign up." : "Off: customers don't see card yet. Switch it on when you're ready."; }
       return payment;
     };
     on.addEventListener("change", async () => {
@@ -1208,6 +1286,11 @@ async function restoreDraft(d){
   try{
     const me = await api("GET", "me");
     $("#who").textContent = me.email;
+    const back = new URLSearchParams(location.search);
+    if (back.has("square") || back.has("square_error")){
+      history.replaceState(null, "", location.pathname + location.hash);
+      setTimeout(() => back.get("square_error") ? toast(back.get("square_error"), true) : toast(`Square connected: ${back.get("name") || "done"}. Switch card on when you're ready.`), 300);
+    }
     const d = draftStore.get();
     if (d && TABS[d.tab]) tab = d.tab;
     if (d?.path === "media") mediaRestore = d;

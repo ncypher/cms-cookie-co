@@ -179,8 +179,8 @@ test("CSV of an event's signups: readable dates, dollars, Yes/No, file name", as
   assert.match(csv.headers.get("Content-Type"), /^text\/csv; charset=utf-8/);
   assert.match(csv.headers.get("Content-Disposition"), new RegExp(`attachment; filename="signups-cookie-class-dec-${ev.date}\\.csv"`));
   const lines = csv.body.replace(/^﻿/, "").split("\r\n");
-  assert.equal(lines[0], "Reservation,Signed up,Name,Phone,Email,Spots,Price per spot,Total,Paid,Checked in,Notes");
-  assert.match(lines[1], new RegExp(`^${r.body.id},"[A-Z][a-z]{2} \\d{1,2}, \\d{4}, \\d{1,2}:\\d{2} [AP]M","Ann ""Annie"" Lee",5555550100,,2,\\$12\\.50,\\$25\\.00,Yes,No,"Nut allergy,`));
+  assert.equal(lines[0], "Reservation,Signed up,Name,Phone,Email,Spots,Price per spot,Total,Paid,Payment method,Checked in,Notes");
+  assert.match(lines[1], new RegExp(`^${r.body.id},"[A-Z][a-z]{2} \\d{1,2}, \\d{4}, \\d{1,2}:\\d{2} [AP]M","Ann ""Annie"" Lee",5555550100,,2,\\$12\\.50,\\$25\\.00,Yes,Marked paid,No,"Nut allergy,`));
 });
 
 test("CSV of orders by date range (default last 30 days)", async () => {
@@ -190,9 +190,9 @@ test("CSV of orders by date range (default last 30 days)", async () => {
   const d = await admin(e, "GET", "orders.csv");
   assert.equal(d.status, 200);
   const lines = d.body.replace(/^﻿/, "").trim().split("\r\n");
-  assert.equal(lines[0], "Order,Placed,Wanted,Name,Phone,Pickup or delivery,Items,Total,Confirmed,Paid,Dietary,Notes");
+  assert.equal(lines[0], "Order,Placed,Wanted,Name,Phone,Pickup or delivery,Items,Total,Confirmed,Paid,Payment method,Dietary,Notes");
   assert.equal(lines.length, 2, "old order outside the last 30 days");
-  assert.match(lines[1], /"Order, Person",5555550100,Pickup,2 × Cookie Gram,\$18\.00,No,No,,$/);
+  assert.match(lines[1], /"Order, Person",5555550100,Pickup,2 × Cookie Gram,\$18\.00,No,No,,,$/);
   const old = await admin(e, "GET", "orders.csv?from=2025-01-01&to=2025-01-31");
   assert.match(old.body, /CMS-0101-1111/);
   assert.match(old.headers.get("Content-Disposition"), /orders-2025-01-01-to-2025-01-31\.csv/);
