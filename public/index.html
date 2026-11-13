@@ -203,6 +203,19 @@ button{font:inherit; color:inherit; cursor:pointer}
 .zoom img{max-width:calc(100% - 24px); max-height:calc(100% - 90px); width:auto; height:auto; object-fit:contain; border-radius:8px; background:#fff}
 .zoom button{position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:12px; min-width:48px; min-height:48px; border-radius:999px; border:0; background:#fff; color:var(--cocoa); font-weight:700; font-size:16px; padding:0 16px}
 .ev .rsvp{margin-top:8px}
+/* Event signups */
+.su{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px}
+.su .price{font-size:20px} .su .price small{font:500 13px var(--f-body); color:var(--muted)}
+.su .left{font:700 12.5px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--green); background:#E3F0E8; padding:4px 10px 2px; border-radius:999px}
+.su .left.out{color:#B42D55; background:var(--blush)}
+.rsv{border:0; padding:0; width:min(440px, calc(100% - 24px)); max-height:calc(100% - 24px); border-radius:20px; background:var(--paper); color:var(--cocoa); box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+.rsv::backdrop{background:rgba(30,12,8,.55)}
+.rsv form, .rsv .done{display:grid; gap:12px; padding:20px}
+.rsv h2{font:400 28px/1.1 var(--f-script); color:var(--green)}
+.rsv .when{font:600 13px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--pink)}
+.rsv .x{position:absolute; top:10px; right:10px}
+.rsv .sum{font:700 18px var(--f-body)}
+.preview-bar{position:sticky; top:0; z-index:70; background:#FFE9C7; color:#6B3F00; text-align:center; font:600 14px/1.4 var(--f-body); padding:10px 14px}
 .tip video{width:100%; border-radius:12px; background:#000; display:block}
 .tip .cap{font:400 18px/1.35 var(--f-hand); margin-top:10px; text-align:center}
 .igcard{display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:center; text-decoration:none; padding:14px; border-radius:14px; background:linear-gradient(135deg,#FDE7EE,#FFF3E5); border:1.5px solid var(--pink-line)}
@@ -622,6 +635,7 @@ button{font:inherit; color:inherit; cursor:pointer}
   <div class="drawer-foot" id="drawerFoot"></div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog class="rsv" id="rsv" aria-labelledby="rsvTitle"></dialog>
 <dialog class="zoom" id="zoom" aria-label="Flyer"><button type="button" id="zoomClose">Close ✕</button><img alt=""></dialog>
 
 <script>
@@ -915,10 +929,10 @@ function payButtons(amount, note){
   if (c) out.push(`<a class="btn ${v ? "btn-ghost" : "btn-rose"}" href="https://cash.app/$${encodeURIComponent(c.handle)}/${Number(amount).toFixed(2)}" target="_blank" rel="noopener">Pay ${money(amount)} with Cash App</a>`);
   return out.join("");
 }
-function paySentence(){
+function paySentence(at = "pickup"){
   const apps = [payWay("venmo") && "Venmo", payWay("cashapp") && "Cash App"].filter(Boolean), cash = !!payWay("cash");
-  if (apps.length) return cash ? `Want to pay now? Use ${apps.join(" or ")} below, or pay at pickup.` : `Pay with ${apps.join(" or ")} below.`;
-  return cash ? "You can pay with cash at pickup." : "Shaun will tell you how to pay when she confirms.";
+  if (apps.length) return cash ? `Want to pay now? Use ${apps.join(" or ")} below, or pay ${at === "pickup" ? "at pickup" : "cash at the event"}.` : `Pay with ${apps.join(" or ")} below.`;
+  return cash ? (at === "pickup" ? "You can pay with cash at pickup." : "You can pay with cash at the event.") : "Shaun will tell you how to pay when she confirms.";
 }
 // Contact panel: Venmo QR + row, Cash App row, each only when switched on. The QR is made from the stored name.
 async function renderPayContact(){
@@ -1061,7 +1075,8 @@ function renderContent(c){
       <div style="min-width:0"><span class="dow">${esc(longDate(e.date,{weekday:"long", month:"long", day:"numeric"}))}</span><h3>${esc(e.title)}</h3>
         ${e.body ? `<p>${esc(e.body)}</p>` : ""}
         ${e.flyer ? `<a class="zoomable" href="${esc(e.flyer)}" target="_blank" rel="noopener" data-zoom><img class="flyer" src="${esc(e.flyer)}" alt="Flyer for ${esc(e.title)}" loading="lazy"></a>` : ""}
-        ${e.rsvp_url ? `<a class="btn btn-rose btn-sm rsvp" href="${esc(e.rsvp_url)}" target="_blank" rel="noopener">RSVP</a>` : ""}</div></div>`).join("");
+        ${e.rsvp_url ? `<a class="btn btn-rose btn-sm rsvp" href="${esc(e.rsvp_url)}" target="_blank" rel="noopener">RSVP</a>` : ""}
+        ${signupHtml(e)}</div></div>`).join("");
   }
   const t = c.tip;
   if (show("#tipPanel", !!t || c.photos.length > 0)){ any = true;
@@ -1077,17 +1092,94 @@ function renderContent(c){
     const z = $("#zoom"); if (!z.showModal) return; // very old browsers just open the image
     e.preventDefault(); const im = a.querySelector("img"); z.querySelector("img").src = a.href; z.querySelector("img").alt = im.alt; z.showModal();
   }));
+  document.querySelectorAll("[data-reserve]").forEach(b => b.addEventListener("click", () => {
+    const ev = c.events.find(x => x.id === +b.dataset.reserve); if (ev) openReserve(ev);
+  }));
   const specials = [c.cookieOfTheMonth, ...c.specials].filter(Boolean);
   document.querySelectorAll("[data-special]").forEach(b => b.addEventListener("click", ()=>{
     const s = specials.find(x => x.id === +b.dataset.special); if (!s) return;
     addItem({key:"special-"+s.id, type:"special", name:s.title, detail: s.kind==="cotm" ? "Cookie of the Month" : "Special", price:s.price, art:["fs"]});
   }));
 }
+/* ============ Event signups ============ */
+// "?preview=ID" (opened from Admin) shows a Draft event to a signed-in admin; signups go through the admin API.
+const PREVIEW_ID = +(new URLSearchParams(location.search).get("preview") || 0) || null;
+function signupHtml(e){
+  const su = e.signup; if (!su) return "";
+  const price = su.price ? `${money(su.price)}<small> a spot</small>` : "Free";
+  const left = su.state === "soldout" ? `<span class="left out">Sold out</span>`
+    : su.state === "closed" ? `<span class="left out">Signups closed</span>`
+    : su.spots_left != null ? `<span class="left">${su.spots_left} spot${su.spots_left === 1 ? "" : "s"} left</span>` : "";
+  return `<div class="su"><span class="price tnum">${price}</span>${left}
+    ${su.state === "open" ? `<button class="btn btn-rose btn-sm" data-reserve="${e.id}">Reserve your spot</button>` : ""}</div>`;
+}
+function openReserve(ev){
+  const d = $("#rsv"), su = ev.signup, max = Math.min(10, su.spots_left ?? 10);
+  const saved = store.get("cms-details", {});
+  d.innerHTML = `<form novalidate>
+    <button class="icon-btn x" type="button" data-x aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <span class="when">${esc(longDate(ev.date, {weekday:"long", month:"long", day:"numeric"}))}</span>
+    <h2 id="rsvTitle">${esc(ev.title)}</h2>
+    <div class="row2">
+      <div class="field"><label for="rName">Your name</label><input id="rName" autocomplete="name" required value="${esc(saved.oName || "")}"></div>
+      <div class="field"><label for="rPhone">Phone</label><input id="rPhone" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(saved.oPhone || "")}"></div>
+    </div>
+    <div class="field"><label for="rSeats">How many spots?</label><select id="rSeats">${Array.from({length:max}, (_, i) => `<option value="${i+1}">${i+1}${su.price ? ` · ${money(su.price*(i+1))}` : ""}</option>`).join("")}</select></div>
+    <div class="field"><label for="rEmail">Email (optional)</label><input id="rEmail" type="email" inputmode="email" autocomplete="email"></div>
+    <div class="field"><label for="rNotes">Anything Shaun should know? (optional)</label><textarea id="rNotes" placeholder="Names of who's coming, allergies…"></textarea></div>
+    <div class="hp" aria-hidden="true"><label for="rWebsite">Leave this empty</label><input id="rWebsite" tabindex="-1" autocomplete="off"></div>
+    <p class="err" id="rErr" role="alert" hidden></p>
+    <button class="btn btn-rose" type="submit">Reserve</button>
+  </form>`;
+  const form = d.querySelector("form"), err = d.querySelector("#rErr");
+  d.querySelector("[data-x]").addEventListener("click", () => d.close());
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = $("#rName").value.trim(), phone = $("#rPhone").value.trim();
+    if (!name || phone.replace(/\D/g, "").length < 10){ err.textContent = !name ? "Add your name so Shaun knows who's coming." : "Add a 10-digit phone number so Shaun can text you."; err.hidden = false; return; }
+    err.hidden = true;
+    const b = form.querySelector("[type=submit]"); b.disabled = true; b.textContent = "Reserving…";
+    try{
+      const url = PREVIEW_ID === ev.id ? `/api/admin/events/${ev.id}/register` : `/api/events/${ev.id}/register`;
+      const res = await fetch(url, {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json", Accept:"application/json"},
+        body: JSON.stringify({name, phone, seats: +$("#rSeats").value, email: $("#rEmail").value.trim(), notes: $("#rNotes").value.trim(), website: $("#rWebsite").value})});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "That didn't go through. Please try again, or text Shaun.");
+      store.set("cms-details", {...saved, oName: name, oPhone: phone});
+      showReserved(ev, name, data);
+    }catch(x){ err.textContent = x.message; err.hidden = false; b.disabled = false; b.textContent = "Reserve"; }
+  });
+  d.showModal();
+  d.querySelector("#rName").focus();
+}
+function showReserved(ev, name, r){
+  const d = $("#rsv"), paying = r.total > 0;
+  d.innerHTML = `<div class="done">
+    <span class="when">${esc(longDate(ev.date, {weekday:"long", month:"long", day:"numeric"}))}</span>
+    <h2 id="rsvTitle">You're signed up!</h2>
+    <p>${esc(ev.title)}: <b>${r.seats} spot${r.seats === 1 ? "" : "s"}</b>${paying ? ` · <span class="tnum">${money(r.total)}</span>` : ""}</p>
+    <p style="color:var(--muted)">Your reservation number is</p>
+    <div class="copybox"><span class="price tnum" style="font-size:24px">${esc(r.id)}</span></div>
+    ${paying ? `<p style="color:var(--muted);font-size:14.5px">${esc(paySentence("event"))}</p>${payButtons(r.total, `${ev.title} – ${name} – ${r.id}`)}` : ""}
+    <p style="color:var(--muted);font-size:14.5px">Shaun will text you if anything changes.</p>
+    <button class="btn btn-ghost" type="button" data-x>Done</button></div>`;
+  d.querySelector("[data-x]").addEventListener("click", () => { d.close(); loadContent(); });
+}
+
 async function loadContent(){
   try{
     const res = await fetch(CONFIG.contentEndpoint, {headers:{Accept:"application/json"}});
     if (!res.ok) throw new Error(res.status);
     const c = await res.json();
+    if (PREVIEW_ID){
+      try{
+        const pr = await fetch(`/api/admin/events/${PREVIEW_ID}`, {credentials:"same-origin", headers:{Accept:"application/json"}});
+        if (!pr.ok) throw new Error(pr.status);
+        const {event} = await pr.json();
+        c.events = [event, ...c.events.filter(x => x.id !== event.id)];
+        if (!$(".preview-bar")) document.body.insertAdjacentHTML("afterbegin", `<div class="preview-bar" role="status">Preview${event.published ? "" : " of a draft"}: only you can see <b>${esc(event.title)}</b> here. Signups you make are real, so remove them in Admin after.</div>`);
+      }catch(e){ toast("Open the preview from Admin (you need to be signed in)."); }
+    }
     applyFlavors(c.flavors); applyMenu(c.menu); renderTreats(c.treats); renderContent(c);
     if (Array.isArray(c.payments)){ PAYMENTS = c.payments; renderPayContact(); }
   }catch(e){ /* Static flyer prices still work; checkout falls back to text/email if the API is down. */ }

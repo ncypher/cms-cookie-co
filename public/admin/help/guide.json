@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T04:17:01.079Z",
+  "generated": "2026-11-13T04:34:52.579Z",
   "tasks": [
     {
       "id": "home",
@@ -30,7 +30,7 @@
         }
       ],
       "clip": "/admin/help/home/clip.mp4",
-      "clip_seconds": 12.7
+      "clip_seconds": 10.8
     },
     {
       "id": "photo",
@@ -65,7 +65,7 @@
         }
       ],
       "clip": "/admin/help/photo/clip.mp4",
-      "clip_seconds": 19.5
+      "clip_seconds": 16
     },
     {
       "id": "cotm",
@@ -96,7 +96,7 @@
         }
       ],
       "clip": "/admin/help/cotm/clip.mp4",
-      "clip_seconds": 12.7
+      "clip_seconds": 11.9
     },
     {
       "id": "special",
@@ -127,7 +127,7 @@
         }
       ],
       "clip": "/admin/help/special/clip.mp4",
-      "clip_seconds": 12
+      "clip_seconds": 11.7
     },
     {
       "id": "event",
@@ -149,7 +149,7 @@
           "image": "/admin/help/event/3.webp"
         },
         {
-          "caption": "If people should sign up, paste the link in {RSVP link}.",
+          "caption": "People sign up somewhere else? Paste that link in {RSVP link}. (To take signups right here, see “Take signups for an event”.)",
           "image": "/admin/help/event/4.webp"
         },
         {
@@ -158,7 +158,42 @@
         }
       ],
       "clip": "/admin/help/event/clip.mp4",
-      "clip_seconds": 12.5
+      "clip_seconds": 11.7
+    },
+    {
+      "id": "signups",
+      "icon": "🎟️",
+      "title": "Take signups for an event",
+      "go": "events",
+      "tip": "A Draft never shows on the home page, so you can check everything first. Each signup also arrives in your email. Tap {Signups} on the event to see who's coming, text them, and switch on {Paid} and {Checked in}.",
+      "steps": [
+        {
+          "caption": "Tap {Events}, then {+ New event}.",
+          "image": "/admin/help/signups/1.webp"
+        },
+        {
+          "caption": "Set {On the site?} to {Draft: only you can see it}. Type the title, date and details, and add the flyer.",
+          "image": "/admin/help/signups/2.webp"
+        },
+        {
+          "caption": "Switch on {Take signups on the site}. Type the {Price per spot} and {How many spots}.",
+          "image": "/admin/help/signups/3.webp"
+        },
+        {
+          "caption": "Tap {Save}. It's saved as a Draft.",
+          "image": "/admin/help/signups/4.webp"
+        },
+        {
+          "caption": "Tap {Preview} to try the signup form the way customers see it. Then remove your test signup under {Signups}.",
+          "image": "/admin/help/signups/5.webp"
+        },
+        {
+          "caption": "All good? Tap {Edit}, change {On the site?} to {Published}, and tap {Save}. Now customers can sign up.",
+          "image": "/admin/help/signups/6.webp"
+        }
+      ],
+      "clip": "/admin/help/signups/clip.mp4",
+      "clip_seconds": 14.5
     },
     {
       "id": "flavor",
@@ -193,7 +228,7 @@
         }
       ],
       "clip": "/admin/help/flavor/clip.mp4",
-      "clip_seconds": 14.6
+      "clip_seconds": 14.1
     },
     {
       "id": "treat",
@@ -224,7 +259,7 @@
         }
       ],
       "clip": "/admin/help/treat/clip.mp4",
-      "clip_seconds": 13.3
+      "clip_seconds": 13
     },
     {
       "id": "price",
@@ -251,7 +286,7 @@
         }
       ],
       "clip": "/admin/help/price/clip.mp4",
-      "clip_seconds": 11.4
+      "clip_seconds": 10.9
     },
     {
       "id": "order",
@@ -282,7 +317,7 @@
         }
       ],
       "clip": "/admin/help/order/clip.mp4",
-      "clip_seconds": 13.8
+      "clip_seconds": 12.3
     },
     {
       "id": "pay",
@@ -317,7 +352,42 @@
         }
       ],
       "clip": "/admin/help/pay/clip.mp4",
-      "clip_seconds": 15.7
+      "clip_seconds": 15.2
+    },
+    {
+      "id": "spreadsheet",
+      "icon": "📊",
+      "title": "Download a spreadsheet",
+      "go": "orders",
+      "tip": "The file opens in Excel, Numbers or Google Sheets. It has names and phone numbers, so keep it to yourself.",
+      "steps": [
+        {
+          "caption": "Orders: on {Orders}, scroll down and tap {Download a spreadsheet of orders}.",
+          "image": "/admin/help/spreadsheet/1.webp"
+        },
+        {
+          "caption": "Pick the dates. It starts as the last 30 days.",
+          "image": "/admin/help/spreadsheet/2.webp"
+        },
+        {
+          "caption": "Tap {Download spreadsheet}.",
+          "image": "/admin/help/spreadsheet/3.webp"
+        },
+        {
+          "caption": "Event signups: tap {Events}.",
+          "image": "/admin/help/spreadsheet/4.webp"
+        },
+        {
+          "caption": "Tap {Signups} on the event.",
+          "image": "/admin/help/spreadsheet/5.webp"
+        },
+        {
+          "caption": "Tap {Download spreadsheet}. It lists everyone, their spots, and who has paid and checked in.",
+          "image": "/admin/help/spreadsheet/6.webp"
+        }
+      ],
+      "clip": "/admin/help/spreadsheet/clip.mp4",
+      "clip_seconds": 13.7
     },
     {
       "id": "tip",
@@ -348,7 +418,7 @@
         }
       ],
       "clip": "/admin/help/tip/clip.mp4",
-      "clip_seconds": 10.5
+      "clip_seconds": 10.6
     }
   ]
 }

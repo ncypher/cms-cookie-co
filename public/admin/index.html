@@ -136,6 +136,17 @@ form.edit, .field, .field > *{min-width:0}
 #flavorForm:not(:empty), #treatForm:not(:empty){margin-top:12px}
 .subhead{font:700 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:16px 0 0}
 
+/* Event signups */
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:center}
+.stats b{display:block; font:700 24px/1.1 var(--f-hand); color:var(--green)}
+.stats span{font-size:12.5px; color:var(--muted)}
+.reg .row h3{font-size:19px}
+.back{margin-top:12px}
+details.dl summary{cursor:pointer; font-weight:700; list-style:none; display:flex; align-items:center; gap:8px; min-height:28px}
+details.dl summary::-webkit-details-marker{display:none}
+details.dl summary::after{content:"+"; margin-left:auto; color:var(--pink); font-size:22px}
+details.dl[open] summary::after{content:"−"}
+
 /* Payments */
 .pay .payhead{display:flex; align-items:center; gap:12px}
 .pay .payhead h3{flex:1}
@@ -282,7 +293,14 @@ async function renderOrders(){
       <button class="chip" data-f="all" aria-pressed="${orderFilter==="all"}">All</button>
       <button class="btn btn-ghost btn-sm spacer" id="refresh">Refresh</button>
     </div>
-    ${orders.length ? orders.map(orderCard).join("") : `<p class="empty">${orderFilter === "open" ? "No open orders. Time for a cookie. ♥" : "No orders yet."}</p>`}`;
+    ${orders.length ? orders.map(orderCard).join("") : `<p class="empty">${orderFilter === "open" ? "No open orders. Time for a cookie. ♥" : "No orders yet."}</p>`}
+    <details class="card dl" id="ordersDl"><summary>⬇ Download a spreadsheet of orders</summary>
+      <div class="two" style="margin-top:12px"><div class="field"><label for="dlFrom">From</label><input id="dlFrom" type="date" value="${daysAgo(29)}"></div>
+        <div class="field"><label for="dlTo">To</label><input id="dlTo" type="date" value="${todayStr()}"></div></div>
+      <p class="meta" style="margin:8px 0 12px">Opens in Excel, Numbers or Google Sheets. Starts as the last 30 days.</p>
+      <a class="btn btn-green btn-sm" id="dlGo" href="/api/admin/orders.csv" download>Download spreadsheet</a></details>`;
+  const dlHref = () => { $("#dlGo").href = `/api/admin/orders.csv?from=${encodeURIComponent($("#dlFrom").value)}&to=${encodeURIComponent($("#dlTo").value)}`; };
+  $("#dlFrom").addEventListener("change", dlHref); $("#dlTo").addEventListener("change", dlHref); dlHref();
   $$("[data-f]").forEach(b => b.addEventListener("click", () => { orderFilter = b.dataset.f; renderOrders(); }));
   $("#refresh").addEventListener("click", renderOrders);
   $$("[data-toggle]").forEach(inp => inp.addEventListener("change", async () => {
@@ -364,22 +382,35 @@ const SPECIALS = {
 };
 const EVENTS = {
   path: "events", listKey: "events", one: "event", title: "Events", noun: "event",
-  sub: "Upcoming events show on the home page until their date passes.",
+  sub: "Published events show on the home page until their date passes. Drafts only show here.",
   fields: [
+    {name:"published", label:"On the site?", type:"select", default:"1", options:[["1","Published: on the home page"],["0","Draft: only you can see it"]]},
     {name:"title", label:"Title", type:"text", required:true, max:120},
     {name:"date", label:"Date", type:"date", required:true},
     {name:"body", label:"Details", type:"textarea", max:1000},
     {name:"flyer_key", orig:"flyer_orig_key", label:"Flyer", type:"image", preview:"flyer", origPreview:"flyer_orig", shape: () => "whole"},
-    {name:"rsvp_url", label:"RSVP link", type:"url", hint:"Optional. Must start with https://"},
+    {name:"signups_open", label:"Take signups on the site", type:"switch", default:false},
+    {pair:[{name:"ticket_price", label:"Price per spot ($)", type:"money", hint:"0 if it's free."}, {name:"capacity", label:"How many spots", type:"number", hint:"Empty = no limit."}]},
+    {name:"signup_closes", label:"Signups close (optional)", type:"date", hint:"The last day people can sign up. Empty = the event day."},
+    {name:"rsvp_url", label:"RSVP link (optional)", type:"url", hint:"Only if people sign up somewhere else. Must start with https://"},
   ],
   card: e => `<div class="row"><h3>${esc(e.title)}</h3></div>
     <div class="row" style="margin-top:4px"><b>${esc(prettyDate(e.date, {weekday:"long", month:"long", day:"numeric", year:"numeric"}))}</b>
-      ${e.date < todayStr() ? `<span class="tag warn">Past</span>` : `<span class="tag green">Upcoming</span>`}</div>
+      ${e.published ? "" : `<span class="tag warn">Draft</span>`}
+      ${e.date < todayStr() ? `<span class="tag warn">Past</span>` : e.published ? `<span class="tag green">On the site</span>` : ""}</div>
     ${e.body ? `<p style="margin:8px 0 0">${esc(e.body)}</p>` : ""}
+    ${e.signups_open || e.signups ? `<p class="meta" style="margin:6px 0 0">Signups ${e.signups_open ? "<b>on</b>" : "off"} · ${e.ticket_price ? money(e.ticket_price) + " a spot" : "free"} ·
+      ${e.taken}${e.capacity ? ` of ${e.capacity}` : ""} spots taken · ${money(e.expected_cents/100)} expected, ${money(e.paid_cents/100)} paid</p>` : ""}
     ${e.rsvp_url ? `<p class="meta" style="margin:6px 0 0; overflow-wrap:anywhere">RSVP: ${esc(e.rsvp_url)}</p>` : ""}
     ${e.flyer ? `<img class="thumb whole" src="${esc(e.flyer)}" alt="" loading="lazy">` : ""}`,
-  isOff: e => e.date < todayStr(),
+  buttons: e => `${e.signups_open || e.signups ? `<button class="btn btn-green btn-sm" data-signups="${e.id}">Signups (${e.signups})</button>` : ""}
+    ${!e.published && e.signups_open ? `<a class="btn btn-ghost btn-sm" href="/?preview=${e.id}" target="_blank" rel="noopener" data-preview="${e.id}">Preview</a>` : ""}`,
+  deleteNote: e => e.signups ? ` Its ${e.signups} signup${e.signups === 1 ? " is" : "s are"} deleted too.` : "",
+  wire: () => $$("[data-signups]").forEach(b => b.addEventListener("click", () => renderSignups(+b.dataset.signups))),
+  isOff: e => e.date < todayStr() || !e.published,
 };
+// Calendar days back from today (safe across daylight-saving changes).
+function daysAgo(n){ const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 
 async function renderCrud(cfg, editing){
@@ -391,15 +422,16 @@ async function renderCrud(cfg, editing){
     <div class="bar"><button class="btn btn-rose" id="addNew">+ New ${cfg.noun}</button></div>
     <div id="formSlot"></div>
     ${rows.length ? rows.map(r => `<article class="card ${cfg.isOff(r) ? "off" : ""}" data-id="${r.id}">${cfg.card(r)}
-      <div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-edit="${r.id}">Edit</button><button class="btn btn-danger btn-sm" data-del="${r.id}">Delete</button></div></article>`).join("")
+      <div class="row" style="margin-top:12px">${cfg.buttons ? cfg.buttons(r) : ""}<button class="btn btn-ghost btn-sm" data-edit="${r.id}">Edit</button><button class="btn btn-danger btn-sm" data-del="${r.id}">Delete</button></div></article>`).join("")
       : `<p class="empty">No ${cfg.noun}s yet.</p>`}`;
   $("#addNew").addEventListener("click", () => openForm(cfg, null));
   $$("[data-edit]").forEach(b => b.addEventListener("click", () => openForm(cfg, rows.find(r => r.id === +b.dataset.edit))));
   $$("[data-del]").forEach(b => b.addEventListener("click", async () => {
     const r = rows.find(x => x.id === +b.dataset.del);
-    if (!confirm(`Delete "${r.title}"? This can't be undone.`)) return;
+    if (!confirm(`Delete "${r.title}"?${cfg.deleteNote ? cfg.deleteNote(r) : ""} This can't be undone.`)) return;
     try{ await api("DELETE", `${cfg.path}/${r.id}`); toast("Deleted"); renderCrud(cfg); }catch(e){ toast(e.message, true); }
   }));
+  cfg.wire?.(rows);
   if (editing !== undefined) openForm(cfg, editing);
 }
 
@@ -409,7 +441,9 @@ function fieldHtml(f, v){
   const val = v?.[f.name] ?? (f.default ?? "");
   const hint = f.hint ? `<span class="hint">${esc(f.hint)}</span>` : "";
   switch (f.type){
-    case "select": return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" name="${f.name}">${f.options.map(([k,l]) => `<option value="${k}" ${val===k?"selected":""}>${l}</option>`).join("")}</select>${hint}</div>`;
+    case "select": { const sv = val === true ? "1" : val === false ? "0" : String(val);
+      return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" name="${f.name}">${f.options.map(([k,l]) => `<option value="${k}" ${sv===k?"selected":""}>${l}</option>`).join("")}</select>${hint}</div>`; }
+    case "number": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="number" inputmode="numeric" step="1" min="${f.min ?? 1}" max="${f.max ?? 1000}" value="${esc(val ?? "")}">${hint}</div>`;
     case "textarea": return `<div class="field"><label for="${id}">${f.label}</label><textarea id="${id}" name="${f.name}" maxlength="${f.max||1000}">${esc(val)}</textarea>${hint}</div>`;
     case "money": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${val ?? ""}">${hint}</div>`;
     case "date": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="date" value="${esc(val)}" ${f.required?"required":""}>${hint}</div>`;
@@ -537,6 +571,52 @@ function openForm(cfg, row, restored){
   $("input:not([type=hidden]), select, textarea", form)?.focus({preventScroll:true});
 }
 function showErr(form, msg){ const p = $(".err", form); p.textContent = msg; p.hidden = false; }
+
+/* ============ Event signups: who's coming, paid, checked in, spreadsheet ============ */
+async function renderSignups(id){
+  const {event: e, registrations: list} = await api("GET", `events/${id}/registrations`);
+  const totals = () => {
+    const seats = list.reduce((n, r) => n + r.seats, 0), exp = list.reduce((n, r) => n + r.total_cents, 0), paid = list.filter(r => r.paid).reduce((n, r) => n + r.total_cents, 0);
+    const inside = list.filter(r => r.checked_in).reduce((n, r) => n + r.seats, 0);
+    return `<div class="stats"><div><b>${seats}${e.capacity ? ` / ${e.capacity}` : ""}</b><span>spots taken</span></div>
+      <div><b>${money(exp/100)}</b><span>expected</span></div><div><b>${money(paid/100)}</b><span>marked paid</span></div></div>
+      <p class="meta" style="margin:10px 0 0; text-align:center">${inside} of ${seats} checked in · ${list.length} signup${list.length === 1 ? "" : "s"}</p>`;
+  };
+  const card = r => { const digits = r.phone.replace(/[^\d+]/g, ""); return `<article class="card reg" data-reg="${esc(r.id)}">
+    <div class="row"><h3>${esc(r.name)}</h3><span class="tag green">${r.seats} spot${r.seats === 1 ? "" : "s"}</span><span class="price spacer">${money(r.total)}</span></div>
+    <div class="meta">${esc(r.id)} · signed up ${esc(ago(r.created_at))}</div>
+    ${r.email ? `<p class="meta" style="margin:4px 0 0; overflow-wrap:anywhere">${esc(r.email)}</p>` : ""}
+    ${r.notes ? `<p style="margin:8px 0 0; white-space:pre-wrap"><b>Notes:</b> ${esc(r.notes)}</p>` : ""}
+    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(r.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a></div>
+    <div class="toggles">
+      <label class="switch"><input type="checkbox" data-rt="paid" ${r.paid ? "checked" : ""}> Paid</label>
+      <label class="switch"><input type="checkbox" data-rt="checked_in" ${r.checked_in ? "checked" : ""}> Checked in</label>
+      <button class="btn btn-danger btn-sm spacer" type="button" data-rdel>Remove</button>
+    </div></article>`; };
+  $("#main").innerHTML = `
+    <button class="btn btn-ghost btn-sm back" type="button" id="backEvents">← Events</button>
+    <h1 class="page">Signups <span class="sub">${esc(e.title)}</span></h1>
+    <p class="meta" style="margin:0 0 12px">${esc(prettyDate(e.date, {weekday:"long", month:"long", day:"numeric"}))} · ${e.published ? "on the site" : "Draft"} · signups ${e.signups_open ? "on" : "off"} · ${e.ticket_price ? money(e.ticket_price) + " a spot" : "free"}</p>
+    <section class="card" id="regTotals">${totals()}</section>
+    <div class="bar"><a class="btn btn-green btn-sm" id="regCsv" href="/api/admin/events/${e.id}/registrations.csv" download>⬇ Download spreadsheet</a>
+      ${e.signups_open && !e.published ? `<a class="btn btn-ghost btn-sm" href="/?preview=${e.id}" target="_blank" rel="noopener">Preview signup form</a>` : ""}</div>
+    ${list.length ? list.map(card).join("") : `<p class="empty">Nobody has signed up yet.</p>`}`;
+  $("#backEvents").addEventListener("click", () => go("events"));
+  $$("[data-reg]").forEach(c => {
+    const r = list.find(x => x.id === c.dataset.reg);
+    $$("[data-rt]", c).forEach(inp => inp.addEventListener("change", async () => {
+      const f = inp.dataset.rt; inp.disabled = true;
+      try{ const {registration} = await api("PATCH", "registrations/" + encodeURIComponent(r.id), {[f]: inp.checked}); Object.assign(r, registration);
+        $("#regTotals").innerHTML = totals(); toast(`${r.name}: ${f === "paid" ? (r.paid ? "paid" : "not paid") : (r.checked_in ? "checked in" : "not checked in")}`); }
+      catch(x){ inp.checked = !inp.checked; toast(x.message, true); }
+      inp.disabled = false;
+    }));
+    $("[data-rdel]", c).addEventListener("click", async () => {
+      if (!confirm(`Remove ${r.name}'s signup (${r.seats} spot${r.seats === 1 ? "" : "s"})? Their spots open up again.`)) return;
+      try{ await api("DELETE", "registrations/" + encodeURIComponent(r.id)); toast("Removed"); renderSignups(id); }catch(x){ toast(x.message, true); }
+    });
+  });
+}
 
 /* ============ Media ============ */
 let mediaKind = "photo", mediaRestore = null;

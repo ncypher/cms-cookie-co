@@ -86,8 +86,26 @@
           "before": [{ "fill": "#f_title", "text": "Holiday Market" }, { "fill": "#f_date", "text": "{+9d}" }, { "fill": "#f_body", "text": "Find Shaun's table by the tree, 10am to 3pm." }] },
         { "caption": "Under {Flyer}, tap {Choose photo}. The whole flyer is used, nothing gets cut off. Tap {Use this photo}.", "highlight": "[data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
           "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/shaun-market.jpg" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
-        { "caption": "If people should sign up, paste the link in {RSVP link}.", "highlight": "#f_rsvp_url", "tap": false, "before": [{ "fill": "#f_rsvp_url", "text": "https://www.instagram.com/cmscookieco/" }] },
+        { "caption": "People sign up somewhere else? Paste that link in {RSVP link}. (To take signups right here, see “Take signups for an event”.)", "highlight": "#f_rsvp_url", "tap": false, "before": [{ "fill": "#f_rsvp_url", "text": "https://www.instagram.com/cmscookieco/" }] },
         { "caption": "Tap {Save}. The event leaves the site by itself after the date.", "highlight": "form.edit [type=submit]", "after": [{ "wait": "article.card h3" }, { "pause": 500 }] }
+      ]
+    },
+    {
+      "id": "signups",
+      "icon": "🎟️",
+      "title": "Take signups for an event",
+      "go": "events",
+      "tip": "A Draft never shows on the home page, so you can check everything first. Each signup also arrives in your email. Tap {Signups} on the event to see who's coming, text them, and switch on {Paid} and {Checked in}.",
+      "start": "/admin/#events",
+      "steps": [
+        { "caption": "Tap {Events}, then {+ New event}.", "highlight": "#addNew", "before": [{ "wait": "#addNew" }] },
+        { "caption": "Set {On the site?} to {Draft: only you can see it}. Type the title, date and details, and add the flyer.", "highlight": "#f_published", "tap": false,
+          "before": [{ "select": "#f_published", "value": "0" }, { "fill": "#f_title", "text": "Kids Cookie Decorating" }, { "fill": "#f_date", "text": "{+14d}" }, { "fill": "#f_body", "text": "Decorate 6 cookies to take home. 1 to 2:30pm." }] },
+        { "caption": "Switch on {Take signups on the site}. Type the {Price per spot} and {How many spots}.", "highlight": "label.switch:has(input[name=signups_open])",
+          "after": [{ "fill": "#f_ticket_price", "text": "25" }, { "fill": "#f_capacity", "text": "10" }, { "scroll": "#f_capacity" }, { "pause": 500 }] },
+        { "caption": "Tap {Save}. It's saved as a Draft.", "highlight": "form.edit [type=submit]", "after": [{ "wait": "[data-preview]" }, { "scroll": "[data-preview]" }, { "pause": 400 }] },
+        { "caption": "Tap {Preview} to try the signup form the way customers see it. Then remove your test signup under {Signups}.", "highlight": "[data-preview]", "tap": false },
+        { "caption": "All good? Tap {Edit}, change {On the site?} to {Published}, and tap {Save}. Now customers can sign up.", "highlight": "article.card:has([data-preview]) [data-edit]", "tap": false }
       ]
     },
     {
@@ -170,6 +188,22 @@
         { "caption": "Want Cash App too? Type your $cashtag, then switch Cash App on.", "highlight": "[data-pay=cashapp] label.switch", "before": [{ "scroll": "[data-pay=cashapp]" }, { "fill": "#ph_cashapp", "text": "CmsCookieCo" }], "after": [{ "pause": 900 }] },
         { "caption": "Money came in? Tap {Orders}. The Venmo note has the order number in it.", "highlight": "nav.tabs button[data-tab=orders]", "after": [{ "wait": "[data-f=all]" }, { "tap": "[data-f=all]" }, { "wait": "article[data-order]" }] },
         { "caption": "Find that order and switch on {Paid}.", "highlight": "article[data-order] label.switch:has([data-toggle$='|paid'])", "tap": false, "after": [{ "pause": 600 }] }
+      ]
+    },
+    {
+      "id": "spreadsheet",
+      "icon": "📊",
+      "title": "Download a spreadsheet",
+      "go": "orders",
+      "tip": "The file opens in Excel, Numbers or Google Sheets. It has names and phone numbers, so keep it to yourself.",
+      "start": "/admin/#orders",
+      "steps": [
+        { "caption": "Orders: on {Orders}, scroll down and tap {Download a spreadsheet of orders}.", "highlight": "#ordersDl summary", "before": [{ "wait": "#ordersDl" }, { "scroll": "#ordersDl" }] },
+        { "caption": "Pick the dates. It starts as the last 30 days.", "highlight": "#dlFrom", "tap": false, "before": [{ "scroll": "#dlGo" }] },
+        { "caption": "Tap {Download spreadsheet}.", "highlight": "#dlGo", "tap": false },
+        { "caption": "Event signups: tap {Events}.", "highlight": "nav.tabs button[data-tab=events]", "after": [{ "wait": "[data-signups]" }, { "scroll": "[data-signups]" }] },
+        { "caption": "Tap {Signups} on the event.", "highlight": "[data-signups]", "after": [{ "wait": "#regCsv" }] },
+        { "caption": "Tap {Download spreadsheet}. It lists everyone, their spots, and who has paid and checked in.", "highlight": "#regCsv", "tap": false }
       ]
     },
     {

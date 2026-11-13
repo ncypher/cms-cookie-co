@@ -10,7 +10,7 @@ const guide = JSON.parse(fs.readFileSync(path.join(ROOT, "public", "admin", "hel
 const pub = (url) => path.join(ROOT, "public", ...url.split("/").filter(Boolean));
 
 test("tasks.json covers every task in the brief, 4–6 steps each", () => {
-  assert.deepEqual(spec.tasks.map((t) => t.id), ["home", "photo", "cotm", "special", "event", "flavor", "treat", "price", "order", "pay", "tip"]);
+  assert.deepEqual(spec.tasks.map((t) => t.id), ["home", "photo", "cotm", "special", "event", "signups", "flavor", "treat", "price", "order", "pay", "spreadsheet", "tip"]);
   for (const t of spec.tasks) {
     assert.ok(t.steps.length >= 4 && t.steps.length <= 6, `${t.id} has ${t.steps.length} steps`);
     for (const s of t.steps) { assert.ok(s.caption.trim(), t.id); assert.ok(s.highlight, t.id); }
@@ -56,4 +56,11 @@ test("admin Help is built from guide.json (lazy pictures + Show me), not a hard-
 test("guide runner refuses anything but local dev", () => {
   const src = fs.readFileSync(path.join(ROOT, "scripts", "guide.mjs"), "utf8");
   assert.match(src, /only runs against local wrangler dev/);
+});
+
+test("admin and public inline scripts parse (no syntax errors)", () => {
+  for (const page of ["admin/index.html", "index.html", "kitchen/index.html"]) {
+    const html = fs.readFileSync(path.join(ROOT, "public", page), "utf8");
+    for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) assert.doesNotThrow(() => new Function(m[1]), page);
+  }
 });

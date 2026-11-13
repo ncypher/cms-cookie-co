@@ -1,5 +1,6 @@
 import { requireAdmin, AccessError } from "./access.js";
 import { TOO_MANY_ORDERS, HEVC_VIDEO } from "./messages.js";
+import { toCsv } from "./csv.js";
 
 /* ============ Constants ============ */
 const TZ = "America/Detroit";
@@ -111,6 +112,15 @@ function shapeMedia(m) {
 
 const flavorPhoto = (r) => (r.photo_key ? mediaUrl(r.photo_key) : r.asset || null);
 const shapeFlavor = (r) => ({ id: r.key.slice(7), name: r.name, short: r.short || r.name, description: r.description, photo: flavorPhoto(r), in_flight: !!r.in_flight });
+// Seats already reserved for event e (correlated subquery; the table alias must be `e`).
+const TAKEN = "(SELECT COALESCE(SUM(r.seats), 0) FROM registrations r WHERE r.event_id = e.id)";
+// What the site shows about signing up: null = no signup on the site.
+function eventSignup(e, today) {
+  if (e.ticket_price_cents == null || !e.signups_open) return null;
+  const closes = e.signup_closes || e.date;
+  const left = e.capacity == null ? null : Math.max(0, e.capacity - (e.taken || 0));
+  return { price: dollars(e.ticket_price_cents), spots_left: left, closes, state: today > closes ? "closed" : left === 0 ? "soldout" : "open" };
+}
 const shapeTreat = (t) => ({ id: t.id, name: t.name, price: dollars(t.price_cents), description: t.description, category: t.category, photo: mediaUrl(t.photo_key) });
 
 async function getContent(env) {
@@ -122,7 +132,7 @@ async function getContent(env) {
          AND (starts IS NULL OR starts <= ?1) AND (ends IS NULL OR ends >= ?1)
        ORDER BY CASE kind WHEN 'cotm' THEN 0 ELSE 1 END, id DESC`
     ).bind(today),
-    env.DB.prepare("SELECT * FROM events WHERE date >= ?1 ORDER BY date, id LIMIT 6").bind(today),
+    env.DB.prepare(`SELECT e.*, ${TAKEN} AS taken FROM events e WHERE e.published = 1 AND e.date >= ?1 ORDER BY e.date, e.id LIMIT 6`).bind(today),
     env.DB.prepare("SELECT * FROM media WHERE featured = 1 ORDER BY id DESC LIMIT 12"),
     env.DB.prepare(`SELECT * FROM menu WHERE kind = 'flavor' AND ${IN_SEASON} ORDER BY sort, key`).bind(today),
     env.DB.prepare(`SELECT * FROM treats WHERE ${IN_SEASON} ORDER BY sort, id`).bind(today),
@@ -137,7 +147,7 @@ async function getContent(env) {
     treats: treats.results.map(shapeTreat),
     cookieOfTheMonth: all.find((s) => s.kind === "cotm") || null,
     specials: all.filter((s) => s.kind === "special"),
-    events: events.results.map((e) => ({ id: e.id, title: e.title, date: e.date, body: e.body, flyer: mediaUrl(e.flyer_key), rsvp_url: e.rsvp_url })),
+    events: events.results.map((e) => ({ id: e.id, title: e.title, date: e.date, body: e.body, flyer: mediaUrl(e.flyer_key), rsvp_url: e.rsvp_url, signup: eventSignup(e, today) })),
     tip: featured.find((m) => m.kind === "video" || m.kind === "instagram") || null,
     photos: featured.filter((m) => m.kind === "photo"),
     // Only the ways Shaun has switched on (never the card placeholder). Venmo/Cash App without a name are skipped.
@@ -240,10 +250,10 @@ function orderEmailText(o) {
   ].filter((x) => x !== null).join("\n");
 }
 
-function newOrderId() {
+function newOrderId(prefix = "CMS") {
   const d = todayLocal().slice(5).replace("-", "");
   const n = crypto.getRandomValues(new Uint16Array(1))[0] % 9000 + 1000;
-  return `CMS-${d}-${n}`;
+  return `${prefix}-${d}-${n}`;
 }
 
 // Salted hash of the caller's IP: enough to count orders per device without storing the address.
@@ -259,7 +269,9 @@ async function enforceOrderLimit(env, hash) {
     if (!success) throw new HttpError(429, TOO_MANY_ORDERS, { "Retry-After": "60" });
   }
   const since = new Date(Date.now() - ORDER_WINDOW_MS).toISOString();
-  const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE client_hash = ?1 AND created_at >= ?2").bind(hash, since).first();
+  const recent = await env.DB.prepare(
+    "SELECT (SELECT COUNT(*) FROM orders WHERE client_hash = ?1 AND created_at >= ?2) + (SELECT COUNT(*) FROM registrations WHERE client_hash = ?1 AND created_at >= ?2) AS n"
+  ).bind(hash, since).first();
   if ((recent?.n ?? 0) >= ORDER_LIMIT) throw new HttpError(429, TOO_MANY_ORDERS, { "Retry-After": "600" });
 }
 
@@ -311,6 +323,115 @@ async function createOrder(request, env) {
   }
   await env.DB.prepare("UPDATE orders SET email_status = ?1 WHERE id = ?2").bind(emailStatus, id).run();
   return json({ ok: true, id, total: dollars(total_cents), lines: lines.map((l) => ({ ...l, unit: dollars(l.unit_cents), line: dollars(l.line_cents) })), emailed: emailStatus === "sent" }, 201);
+}
+
+/* ============ Event signups ============ */
+const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
+const prettyDay = (ymd) => { const [y, m, d] = ymd.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }); };
+
+// Reserve spots. The price comes from the event, and the capacity check is part of the INSERT itself
+// (one statement, so two people can't both get the last spot). `preview` = admin trying a Draft event.
+async function registerForEvent(request, env, eventId, { preview = false } = {}) {
+  const hash = await clientHash(request, env);
+  if (!preview) await enforceOrderLimit(env, hash);
+  const b = await readJson(request);
+  if (b.website) return json({ ok: true, id: newOrderId("EV"), seats: 1, total: 0 }, 201); // honeypot: pretend success
+  const name = str(b.name, { max: 80, required: true, field: "Name" });
+  const phone = str(b.phone, { max: 30, required: true, field: "Phone" });
+  if (phone.replace(/\D/g, "").length < 10) throw new HttpError(400, "Add a 10-digit phone number so Shaun can text you back");
+  const email = str(b.email, { max: 120, field: "Email" });
+  if (email && !EMAIL_RE.test(email)) throw new HttpError(400, "That email doesn't look right. You can leave it empty.");
+  const notes = str(b.notes, { max: 500, field: "Notes" });
+  const seats = Number(b.seats);
+  if (!Number.isInteger(seats) || seats < 1 || seats > 10) throw new HttpError(400, "Pick 1 to 10 spots");
+  const id = Number(eventId);
+  const ev = Number.isInteger(id) && id > 0 ? await env.DB.prepare(`SELECT e.*, ${TAKEN} AS taken FROM events e WHERE e.id = ?1`).bind(id).first() : null;
+  if (!ev || (!ev.published && !preview)) throw new HttpError(404, "That event isn't taking signups");
+  if (ev.ticket_price_cents == null || !ev.signups_open) throw new HttpError(409, "Signups aren't open for this event");
+  const today = todayLocal();
+  if (today > (ev.signup_closes || ev.date)) throw new HttpError(409, "Signups for this event have closed");
+
+  let row = null, resId;
+  for (let attempt = 0; attempt < 5 && !row; attempt++) {
+    resId = newOrderId("EV");
+    try {
+      row = await env.DB.prepare(
+        `INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price_cents, total_cents, client_hash)
+         SELECT ?1, e.id, ?3, ?4, ?5, ?6, ?7, e.ticket_price_cents, e.ticket_price_cents * ?6, ?8 FROM events e
+         WHERE e.id = ?2 AND (e.published = 1 OR ?9 = 1) AND e.signups_open = 1 AND e.ticket_price_cents IS NOT NULL
+           AND ?10 <= COALESCE(e.signup_closes, e.date)
+           AND (e.capacity IS NULL OR e.capacity - ${TAKEN} >= ?6)
+         RETURNING *`
+      ).bind(resId, id, name, phone, email, seats, notes, hash, preview ? 1 : 0, today).first();
+      if (!row) break;
+    } catch (e) {
+      if (attempt === 4 || !String(e.message).includes("UNIQUE")) throw e;
+    }
+  }
+  if (!row) {
+    const now = await env.DB.prepare(`SELECT e.capacity, ${TAKEN} AS taken FROM events e WHERE e.id = ?1`).bind(id).first();
+    const left = now?.capacity == null ? null : Math.max(0, now.capacity - now.taken);
+    if (left === 0) throw new HttpError(409, "Sold out. Every spot is taken.");
+    if (left != null) throw new HttpError(409, `Only ${left} spot${left === 1 ? "" : "s"} left. Pick ${left} or fewer.`);
+    throw new HttpError(409, "Signups aren't open for this event");
+  }
+
+  let emailStatus = "skipped";
+  if (env.EMAIL && env.NOTIFY_TO && env.NOTIFY_FROM) {
+    try {
+      await env.EMAIL.send({
+        from: { name: "CMS Cookie Co. Signups", email: env.NOTIFY_FROM },
+        to: env.NOTIFY_TO,
+        subject: `${preview ? "[PREVIEW] " : ""}Signup ${row.id}: ${name}, ${seats} for ${ev.title} — ${money(row.total_cents)}`,
+        text: [
+          `New signup ${row.id}${preview ? " (made from the admin preview of a draft)" : ""}`, "",
+          `Event: ${ev.title} (${prettyDay(ev.date)})`,
+          `Spots: ${seats} × ${money(row.price_cents)} = ${money(row.total_cents)}`,
+          `Name: ${name}`, `Phone: ${phone}`, email ? `Email: ${email}` : null, notes ? `Notes: ${notes}` : null,
+          "", `See everyone who signed up: ${env.SITE_ORIGIN || ""}/admin/#events`,
+        ].filter((x) => x !== null).join("\n"),
+      });
+      emailStatus = "sent";
+    } catch (e) {
+      console.error("signup email failed", row.id, e?.message);
+      emailStatus = "failed";
+    }
+  }
+  await env.DB.prepare("UPDATE registrations SET email_status = ?1 WHERE id = ?2").bind(emailStatus, row.id).run();
+  return json({ ok: true, id: row.id, seats, price: dollars(row.price_cents), total: dollars(row.total_cents),
+    event: { id: ev.id, title: ev.title, date: ev.date }, emailed: emailStatus === "sent" }, 201);
+}
+
+/* ============ Spreadsheets (CSV) ============ */
+const csvMoney = (cents) => (cents == null ? "" : "$" + (cents / 100).toFixed(2));
+const csvWhen = (iso) => (iso ? new Date(iso).toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "");
+const yesNo = (v) => (v ? "Yes" : "No");
+const localDay = (iso) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+function csvResponse(filename, body) {
+  return new Response(body, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${filename}"`, "Cache-Control": "no-store" } });
+}
+async function signupsCsv(env, eventId) {
+  const ev = await env.DB.prepare("SELECT * FROM events WHERE id = ?1").bind(Number(eventId)).first();
+  if (!ev) throw new HttpError(404, "Event not found");
+  const { results } = await env.DB.prepare("SELECT * FROM registrations WHERE event_id = ?1 ORDER BY created_at").bind(ev.id).all();
+  const rows = [["Reservation", "Signed up", "Name", "Phone", "Email", "Spots", "Price per spot", "Total", "Paid", "Checked in", "Notes"],
+    ...results.map((r) => [r.id, csvWhen(r.created_at), r.name, r.phone, r.email, r.seats, csvMoney(r.price_cents), csvMoney(r.total_cents), yesNo(r.paid), yesNo(r.checked_in), r.notes])];
+  const slug = String(ev.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "event";
+  return csvResponse(`signups-${slug}-${ev.date}.csv`, toCsv(rows));
+}
+async function ordersCsv(env, url) {
+  const to = url.searchParams.get("to") || todayLocal(), from = url.searchParams.get("from") || todayLocal(-29);
+  if (!isDate(from) || !isDate(to)) throw new HttpError(400, "Dates must be YYYY-MM-DD");
+  if (from > to) throw new HttpError(400, "The start date is after the end date");
+  if (Date.parse(to) - Date.parse(from) > 366 * 864e5) throw new HttpError(400, "Pick a year or less");
+  // created_at is UTC; widen by a day each side, then keep the rows whose Michigan date is in range.
+  const lo = new Date(Date.parse(from + "T00:00:00Z") - 864e5).toISOString(), hi = new Date(Date.parse(to + "T00:00:00Z") + 2 * 864e5).toISOString();
+  const { results } = await env.DB.prepare("SELECT * FROM orders WHERE created_at >= ?1 AND created_at < ?2 ORDER BY created_at").bind(lo, hi).all();
+  const items = (o) => JSON.parse(o.items_json).map((l) => `${l.qty} × ${l.name}${l.detail ? ` (${l.detail})` : ""}`).join("; ");
+  const rows = [["Order", "Placed", "Wanted", "Name", "Phone", "Pickup or delivery", "Items", "Total", "Confirmed", "Paid", "Dietary", "Notes"],
+    ...results.filter((o) => { const d = localDay(o.created_at); return d >= from && d <= to; })
+      .map((o) => [o.id, csvWhen(o.created_at), prettyDay(o.wanted_date), o.name, o.phone, o.fulfillment === "delivery" ? "Delivery" : "Pickup", items(o), csvMoney(o.total_cents), yesNo(o.confirmed), yesNo(o.paid), o.dietary, o.notes])];
+  return csvResponse(`orders-${from}-to-${to}.csv`, toCsv(rows));
 }
 
 /* ============ Public: media from R2 ============ */
@@ -458,7 +579,15 @@ const releaseReplaced = (env, prev, row, cols) => deleteMediaIfUnused(env, ...co
 
 const shapeOrder = (o) => ({ ...o, items: JSON.parse(o.items_json), items_json: undefined, total: dollars(o.total_cents), confirmed: !!o.confirmed, paid: !!o.paid });
 const shapeAdminSpecial = (s) => ({ ...s, price: dollars(s.price_cents), image: mediaUrl(s.image_key), image_orig: mediaUrl(s.image_orig_key), active: !!s.active });
-const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key), flyer_orig: mediaUrl(e.flyer_orig_key) });
+const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key), flyer_orig: mediaUrl(e.flyer_orig_key),
+  published: !!e.published, signups_open: !!e.signups_open, ticket_price: dollars(e.ticket_price_cents), taken: e.taken ?? 0, signups: e.signups ?? 0,
+  paid_cents: e.paid_cents ?? 0, expected_cents: e.expected_cents ?? 0 });
+const shapeRegistration = (r) => ({ ...r, client_hash: undefined, paid: !!r.paid, checked_in: !!r.checked_in, price: dollars(r.price_cents), total: dollars(r.total_cents) });
+const ADMIN_EVENT_SQL = `SELECT e.*, ${TAKEN} AS taken,
+  (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS signups,
+  (SELECT COALESCE(SUM(total_cents), 0) FROM registrations r WHERE r.event_id = e.id) AS expected_cents,
+  (SELECT COALESCE(SUM(total_cents), 0) FROM registrations r WHERE r.event_id = e.id AND r.paid = 1) AS paid_cents
+  FROM events e`;
 const shapeAdminMedia = (m) => ({ ...m, url: m.kind === "instagram" ? m.key_or_url : mediaUrl(m.key_or_url), orig: mediaUrl(m.orig_key), featured: !!m.featured });
 
 // A framed photo and its untouched original travel together; an original without a photo is dropped.
@@ -482,12 +611,24 @@ async function specialFromBody(env, b) {
 }
 async function eventFromBody(env, b) {
   if (!isDate(b.date)) throw new HttpError(400, "Event date must be YYYY-MM-DD");
+  const ticket_price_cents = priceToCents(b.ticket_price, { field: "Price per spot" });
+  let capacity = null;
+  if (b.capacity != null && b.capacity !== "") {
+    capacity = Number(b.capacity);
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 1000) throw new HttpError(400, "Spots must be a whole number from 1 to 1000");
+  }
+  const signup_closes = optDate(b.signup_closes, "Signups close");
+  if (signup_closes && signup_closes > b.date) throw new HttpError(400, "Signups should close on or before the event day");
+  const signups_open = bool01(b.signups_open ?? false);
+  if (signups_open && ticket_price_cents == null) throw new HttpError(400, "Add a price per spot to take signups (0 if it's free)");
   return {
     title: str(b.title, { max: 120, required: true, field: "Title" }),
     date: b.date,
     body: str(b.body, { max: 1000, field: "Details" }),
     ...(await photoPair(env, b, "flyer_key", "flyer_orig_key", "Flyer")),
     rsvp_url: httpsUrl(b.rsvp_url, "RSVP link"),
+    published: bool01(b.published ?? true),
+    ticket_price_cents, capacity, signup_closes, signups_open,
   };
 }
 
@@ -606,10 +747,47 @@ async function adminApi(request, env, path, admin) {
     }
   }
 
+  if (seg[0] === "orders.csv" && m === "GET") return ordersCsv(env, new URL(request.url));
+
+  if (seg[0] === "registrations" && id) {
+    if (m === "PATCH") {
+      const b = await readJson(request);
+      const sets = [], vals = [];
+      for (const f of ["paid", "checked_in"]) if (f in b) { sets.push(`${f} = ?${vals.length + 1}`); vals.push(bool01(b[f])); }
+      if (!sets.length) throw new HttpError(400, "Nothing to update");
+      vals.push(new Date().toISOString(), admin.email, id);
+      const n = vals.length;
+      const row = await DB.prepare(`UPDATE registrations SET ${sets.join(", ")}, updated_at = ?${n - 2}, updated_by = ?${n - 1} WHERE id = ?${n} RETURNING *`).bind(...vals).first();
+      if (!row) throw new HttpError(404, "Signup not found");
+      return json({ registration: shapeRegistration(row) });
+    }
+    if (m === "DELETE") {
+      const row = await DB.prepare("DELETE FROM registrations WHERE id = ?1 RETURNING id").bind(id).first();
+      if (!row) throw new HttpError(404, "Signup not found");
+      return json({ ok: true });
+    }
+  }
+
+  if (seg[0] === "events" && id && seg[2]) {
+    if (seg[2] === "registrations.csv" && m === "GET") return signupsCsv(env, id);
+    if (seg[2] === "registrations" && m === "GET") {
+      const event = await DB.prepare(`${ADMIN_EVENT_SQL} WHERE e.id = ?1`).bind(Number(id)).first();
+      if (!event) throw new HttpError(404, "Event not found");
+      const { results } = await DB.prepare("SELECT * FROM registrations WHERE event_id = ?1 ORDER BY created_at").bind(event.id).all();
+      return json({ event: shapeAdminEvent(event), registrations: results.map(shapeRegistration) });
+    }
+    if (seg[2] === "register" && m === "POST") return registerForEvent(request, env, id, { preview: true });
+  }
+
   if (seg[0] === "events") {
     if (m === "GET" && !id) {
-      const { results } = await DB.prepare("SELECT * FROM events ORDER BY date DESC, id DESC").all();
+      const { results } = await DB.prepare(`${ADMIN_EVENT_SQL} ORDER BY e.date DESC, e.id DESC`).all();
       return json({ events: results.map(shapeAdminEvent) });
+    }
+    if (m === "GET" && id) { // admin preview of a (draft) event as the site would show it
+      const e = await DB.prepare(`SELECT e.*, ${TAKEN} AS taken FROM events e WHERE e.id = ?1`).bind(Number(id)).first();
+      if (!e) throw new HttpError(404, "Event not found");
+      return json({ event: { id: e.id, title: e.title, date: e.date, body: e.body, flyer: mediaUrl(e.flyer_key), rsvp_url: e.rsvp_url, published: !!e.published, signup: eventSignup(e, todayLocal()) } });
     }
     if ((m === "POST" && !id) || (m === "PUT" && id)) {
       const e = await eventFromBody(env, await readJson(request));
@@ -626,6 +804,7 @@ async function adminApi(request, env, path, admin) {
       return json({ event: shapeAdminEvent(row) }, m === "POST" ? 201 : 200);
     }
     if (m === "DELETE" && id) {
+      await DB.prepare("DELETE FROM registrations WHERE event_id = ?1").bind(Number(id)).run(); // its signups go with it
       const row = await DB.prepare("DELETE FROM events WHERE id = ?1 RETURNING flyer_key, flyer_orig_key").bind(Number(id)).first();
       await deleteMediaIfUnused(env, row?.flyer_key, row?.flyer_orig_key);
       return json({ ok: true });
@@ -813,6 +992,8 @@ async function route(request, env) {
 
   if (path === "/api/content" && request.method === "GET") return withSecurityHeaders(json(await getContent(env)));
   if (path === "/api/orders" && request.method === "POST") return withSecurityHeaders(await createOrder(request, env));
+  const reg = path.match(/^\/api\/events\/(\d+)\/register$/);
+  if (reg && request.method === "POST") return withSecurityHeaders(await registerForEvent(request, env, reg[1]));
   if (path.startsWith("/api/")) return withSecurityHeaders(json({ error: "Not found" }, 404));
   if (path.startsWith("/media/") && (request.method === "GET" || request.method === "HEAD")) {
     return withSecurityHeaders(await serveMedia(request, env, decodeURIComponent(path.slice(7))));

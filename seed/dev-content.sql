@@ -1,7 +1,7 @@
 -- LOCAL DEMO CONTENT ONLY. Applied by `npm run seed:dev` and `npm run guide` (always --local).
 -- Never run this against the production database; Shaun adds real content in /admin.
 -- Image/video keys match objects uploaded to local R2 by scripts/seed-dev.mjs.
-DELETE FROM specials; DELETE FROM events; DELETE FROM media;
+DELETE FROM registrations; DELETE FROM specials; DELETE FROM events; DELETE FROM media;
 
 INSERT INTO specials (kind, title, body, price_cents, image_key, starts, ends, active) VALUES
   ('cotm', 'Pumpkin Spice Sugar Cookie',
@@ -43,3 +43,10 @@ INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, i
 -- Ways to pay back to the launch settings (Venmo @CmsCookieCo + cash at pickup on, Cash App off).
 UPDATE payment_methods SET enabled = CASE id WHEN 'venmo' THEN 1 WHEN 'cash' THEN 1 ELSE 0 END,
   handle = CASE id WHEN 'venmo' THEN 'CmsCookieCo' ELSE NULL END, updated_at = NULL, updated_by = NULL;
+
+-- The class takes signups on the site ($35 a spot, 12 spots), with two made-up people signed up.
+UPDATE events SET signups_open = 1, ticket_price_cents = 3500, capacity = 12 WHERE title = 'Holiday Cookie Decorating Class';
+INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price_cents, total_cents, paid, email_status, created_at)
+  SELECT 'EV-1110-3141', id, 'Sample Parent', '(555) 555-0142', NULL, 2, 'Two kids, ages 7 and 9', 3500, 7000, 1, 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 day') FROM events WHERE title = 'Holiday Cookie Decorating Class';
+INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price_cents, total_cents, paid, email_status, created_at)
+  SELECT 'EV-1111-2718', id, 'Sample Friend', '(555) 555-0177', 'friend@example.com', 1, NULL, 3500, 3500, 0, 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-3 hours') FROM events WHERE title = 'Holiday Cookie Decorating Class';
