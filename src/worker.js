@@ -1262,7 +1262,7 @@ async function squareCallback(request, env, admin, url) {
 }
 
 /* ============ Router ============ */
-async function route(request, env) {
+async function route(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname;
 
@@ -1295,7 +1295,11 @@ async function route(request, env) {
     return withSecurityHeaders(await env.ASSETS.fetch(request), { admin: true });
   }
 
-  if (path === "/api/content" && request.method === "GET") return withSecurityHeaders(json(await getContent(env)));
+  if (path === "/api/content" && request.method === "GET") {
+    // Keeps the Square connection fresh even without a cron trigger (no-op while Square is not configured).
+    if (ctx && Square.configured(env)) ctx.waitUntil(Square.scheduled(env).catch((e) => console.error("square refresh", e?.message)));
+    return withSecurityHeaders(json(await getContent(env)));
+  }
   if (path === "/api/orders" && request.method === "POST") return withSecurityHeaders(await createOrder(request, env));
   if (path === "/api/requests" && request.method === "POST") return withSecurityHeaders(await createRequest(request, env));
   if (path === "/api/pay" && request.method === "POST") { // "Pay with card": the customer who placed it, holding its pay token
@@ -1317,9 +1321,9 @@ async function route(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await route(request, env);
+      return await route(request, env, ctx);
     } catch (e) {
       if (e instanceof HttpError) return withSecurityHeaders(json({ error: e.message }, e.status, e.headers));
       if (e instanceof Square.SquareError) return withSecurityHeaders(json({ error: e.message }, e.status));

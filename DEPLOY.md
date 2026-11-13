@@ -167,6 +167,6 @@ The code is live but dark: with no `SQUARE_APP_ID` secret the site and admin loo
 3. **Shaun:** Admin → Payments → **Connect Square** → sign in to Square → **Allow**. Then switch **Card** on.
 4. **Prove it:** order something for $1 on the live site, pay by card, check it flips to **Paid by card**, then refund it in Square (Admin → Payments → Open Square).
 
-The Worker refreshes the Square connection daily (cron `17 9 * * *`). If Shaun removes the app in Square, the site switches card off by itself and Payments says to connect again. To turn card off for good, tap Disconnect (or delete the four secrets).
+The Worker renews the Square connection every 6 days in the background when the home page loads. A daily cron (`17 9 * * *`) is ready in `wrangler.jsonc` but commented out: Cloudflare refuses cron triggers until the account has a workers.dev subdomain. Open **Workers & Pages** once in the dashboard to create it (this Worker stays off workers.dev), then uncomment the line and deploy. If Shaun removes the app in Square, the site switches card off by itself and Payments says to connect again. To turn card off for good, tap Disconnect (or delete the four secrets).
 
 Local sandbox testing: put the sandbox values in `.dev.vars` (see `.dev.vars.example`), and in the Square app's **Sandbox** OAuth page set Redirect URL `http://localhost:8787/api/admin/square/callback`. Square's sandbox Allow screen only shows while the sandbox test seller's Dashboard is open in the same browser (Developer Console → Sandbox test accounts → Open in Square Dashboard).

@@ -229,6 +229,19 @@ test("refresh: the daily job renews a token that's 6+ days old, and leaves a fre
   assert.equal(after.status, "connected");
 });
 
+test("refresh also runs in the background on page loads (works without a cron); never while dark", async () => {
+  const e = env();
+  await connect(e);
+  e.DB.raw.prepare("UPDATE square_connection SET refreshed_at = ?").run(new Date(Date.now() - 7 * DAY).toISOString());
+  const waits = [];
+  await worker.fetch(new Request(ORIGIN + "/api/content"), e, { waitUntil: (p) => waits.push(p) });
+  await Promise.all(waits);
+  assert.equal(SQ.calls.filter((c) => c.body?.grant_type === "refresh_token").length, 1);
+  const dark = darkEnv(), w2 = [];
+  await worker.fetch(new Request(ORIGIN + "/api/content"), dark, { waitUntil: (p) => w2.push(p) });
+  assert.equal(w2.length, 0, "nothing scheduled while dark");
+});
+
 test("refresh: an auth failure refreshes once and retries; Square refusing the refresh disconnects and switches card off", async () => {
   const e = env();
   await connectAndSwitchOn(e);

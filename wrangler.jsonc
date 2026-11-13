@@ -66,9 +66,12 @@
 
   "observability": { "enabled": true },
 
-  // Daily: renew the Square connection well before its 30-day expiry (src/square.js scheduled()).
-  // Does nothing while Square isn't configured. Square secrets are Worker secrets, never vars here.
-  "triggers": { "crons": ["17 9 * * *"] },
+  // Daily Square token renewal (src/square.js scheduled()). Cloudflare refuses cron triggers until the
+  // account has a workers.dev subdomain (error 10063), so it's off for now; the same renewal also runs in
+  // the background on /api/content. To turn the cron on: open Workers & Pages once in the dashboard
+  // (creates the account subdomain; this Worker stays off it because workers_dev is false), then uncomment:
+  // "triggers": { "crons": ["17 9 * * *"] },
+  // Square secrets are Worker secrets (DEPLOY.md §8), never vars here.
 
   // wrangler dev otherwise rewrites request URLs to the first route's host (cmscookieco3more.com).
   "dev": { "ip": "127.0.0.1", "port": 8787, "local_protocol": "http", "upstream_protocol": "http", "host": "localhost" }
