@@ -30,6 +30,23 @@ test("kitchen page: big button to /admin/", () => {
   assert.match(pub("kitchen/index.html"), /<a class="go" href="\/admin\/" id="open">Open my kitchen<\/a>/);
 });
 
+test("kitchen page: Android steps match Chrome's Install / Create shortcut drawer", () => {
+  const html = pub("kitchen/index.html");
+  assert.match(html, /Tap <b>Add to Home screen<\/b>\.<\/li><li>Chrome asks <b>Install<\/b> or <b>Create shortcut<\/b>: tap <b>Create shortcut<\/b>\.<\/li><li>Tap <b>Add<\/b>\.<\/li>/);
+  const guide = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "..", "guide", "tasks.json"), "utf8"));
+  const home = guide.tasks.find((t) => t.id === "home");
+  assert.ok(home.steps.some((s) => /\{Create shortcut\}/.test(s.caption)), "Help says Create shortcut too");
+});
+
+test("kitchen page: forwarding shows the cookie and 'Opening your kitchen…', never a blank page", () => {
+  const html = pub("kitchen/index.html");
+  assert.match(html, /<div class="splash" role="status"><img class="icon" src="\/assets\/admin-icon-192\.png"[^>]*><p>Opening your kitchen…<\/p><\/div>/);
+  assert.match(html, /html\.fwd \.splash\{display:block\}/);
+  assert.doesNotMatch(html.split("</head>")[0], /location\.replace/, "no redirect before anything is painted");
+  assert.match(html, /requestAnimationFrame\(function\(\)\{ requestAnimationFrame\(go\); \}\)/);
+  assert.match(html, /fonts\.googleapis[^>]*media="print" onload=/, "web fonts don't block the first paint");
+});
+
 test("worker: /kitchen/ is public (no Access check), /admin/ is not", async () => {
   const env = { ASSETS: { fetch: async () => new Response("ok", { headers: { "Content-Type": "text/html" } }) } };
   const kitchen = await worker.fetch(new Request("https://cmscookieco3more.com/kitchen/"), env);

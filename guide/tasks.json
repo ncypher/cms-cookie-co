@@ -11,7 +11,7 @@
       "steps": [
         { "caption": "On your phone, open cmscookieco3more.com/kitchen in Safari (iPhone) or Chrome (Android).", "highlight": "h1", "tap": false },
         { "caption": "iPhone: tap the Share button (square with an arrow), then {Add to Home Screen}. If you see {Open as Web App}, switch it off. Tap {Add}.", "highlight": "details .steps ol:first-of-type", "tap": false },
-        { "caption": "Android: tap the three dots ⋮ in the corner, then {Add to Home screen}, then {Add}.", "highlight": "details .steps ol:last-of-type", "tap": false },
+        { "caption": "Android: tap the three dots ⋮ in the corner, then {Add to Home screen}. Chrome asks {Install} or {Create shortcut}: tap {Create shortcut}, then {Add}.", "highlight": "details .steps ol:last-of-type", "tap": false },
         { "caption": "Tap the new {CMS Admin} cookie icon any time. Your kitchen opens.", "highlight": "#open", "after": [{ "wait": "nav.tabs" }] },
         { "caption": "About once a month it asks for your email and a code. That's normal. Then you're back in.", "highlight": "h1.page", "tap": false }
       ]
@@ -26,7 +26,7 @@
       "before": [{ "wait": "#addNew" }, { "tap": "#addNew" }, { "fill": "#f_title", "text": "Holiday Sugar Cookies" }, { "fill": "#f_price", "text": "4.50" }],
       "steps": [
         { "caption": "Anywhere you add a photo, tap {Choose photo}. Or tap {Take photo} to use the camera.", "highlight": "[data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
-          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/shaun-market.jpg" }, { "wait": ".ps canvas" }, { "pause": 400 }] },
+          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/shaun-market.jpg" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 400 }] },
         { "caption": "Drag the photo with one finger to move it. Pinch, or slide {Zoom}, to make it bigger.", "highlight": ".ps canvas", "tap": false,
           "after": [{ "range": ".ps [data-s=zoom]", "value": 430 }, { "drag": ".ps canvas", "dx": 0, "dy": 45 }] },
         { "caption": "Photo too dark? Slide {Brighten} to the right.", "highlight": ".ps [data-s=bright]", "tap": false,
@@ -52,7 +52,7 @@
         { "caption": "Change {Type} to {Cookie of the Month}. Type the {Title}, {Description} and {Price}.", "highlight": "#f_kind", "tap": false,
           "before": [{ "select": "#f_kind", "value": "cotm" }, { "fill": "#f_title", "text": "Gingerbread Crinkle" }, { "fill": "#f_body", "text": "Soft gingerbread rolled in sugar. December only!" }, { "fill": "#f_price", "text": "4.50" }] },
         { "caption": "Tap {Choose photo}. Frame your cookie in the circle, then tap {Use this photo}.", "highlight": "[data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
-          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/f-fs.webp" }, { "wait": ".ps canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
+          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/f-fs.webp" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
         { "caption": "Tap {Save}. It shows at the top of the home page right away.", "highlight": "form.edit [type=submit]", "after": [{ "wait": "article.card h3" }, { "pause": 500 }] }
       ]
     },
@@ -68,7 +68,7 @@
         { "caption": "Leave {Type} as {Special}. Type a {Title}, a short {Description} and the {Price}. No price? People can text you instead.", "highlight": "#f_title", "tap": false,
           "before": [{ "fill": "#f_title", "text": "Christmas Cookie Kits" }, { "fill": "#f_body", "text": "3 cookies, 3 colors of frosting and sprinkles." }, { "fill": "#f_price", "text": "10" }] },
         { "caption": "Tap {Choose photo}. Specials show as a wide picture, so frame it in the wide box.", "highlight": "[data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
-          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/flight.webp" }, { "wait": ".ps canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
+          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/flight.webp" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
         { "caption": "Pick an {Ends} date so it disappears on its own.", "highlight": "#f_ends", "tap": false, "before": [{ "fill": "#f_ends", "text": "{+12d}" }] },
         { "caption": "Tap {Save}.", "highlight": "form.edit [type=submit]", "after": [{ "wait": "article.card h3" }, { "pause": 500 }] }
       ]
@@ -85,7 +85,7 @@
         { "caption": "Type the {Title}, pick the {Date}, and add {Details} like the time and place.", "highlight": "#f_date", "tap": false,
           "before": [{ "fill": "#f_title", "text": "Holiday Market" }, { "fill": "#f_date", "text": "{+9d}" }, { "fill": "#f_body", "text": "Find Shaun's table by the tree, 10am to 3pm." }] },
         { "caption": "Under {Flyer}, tap {Choose photo}. The whole flyer is used, nothing gets cut off. Tap {Use this photo}.", "highlight": "[data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
-          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/shaun-market.jpg" }, { "wait": ".ps canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
+          "after": [{ "file": "[data-upl] input[data-pick]:not([capture])", "path": "public/assets/shaun-market.jpg" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
         { "caption": "If people should sign up, paste the link in {RSVP link}.", "highlight": "#f_rsvp_url", "tap": false, "before": [{ "fill": "#f_rsvp_url", "text": "https://www.instagram.com/cmscookieco/" }] },
         { "caption": "Tap {Save}. The event leaves the site by itself after the date.", "highlight": "form.edit [type=submit]", "after": [{ "wait": "article.card h3" }, { "pause": 500 }] }
       ]
@@ -103,7 +103,7 @@
         { "caption": "Type the {Flavor name}, a {Short name} for the box buttons, and a {Description}.", "highlight": "#f_short", "tap": false,
           "before": [{ "fill": "#f_name", "text": "Peppermint Mocha" }, { "fill": "#f_short", "text": "Peppermint" }, { "fill": "#f_description", "text": "Chocolate cookie with crushed candy canes." }] },
         { "caption": "Tap {Choose photo}, frame the cookie in the circle, and tap {Use this photo}.", "highlight": "#flavorForm [data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
-          "after": [{ "file": "#flavorForm input[data-pick]:not([capture])", "path": "public/assets/f-dcc.webp" }, { "wait": ".ps canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
+          "after": [{ "file": "#flavorForm input[data-pick]:not([capture])", "path": "public/assets/f-dcc.webp" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 700 }, { "tap": ".ps [data-a=use]" }, { "waitGone": ".ps" }] },
         { "caption": "Leave {Part of the Cookie Tasting Flight} on if it goes in the flight. Tap {Save}.", "highlight": "#flavorForm [type=submit]", "after": [{ "wait": ".irow[data-id=peppermint]" }] },
         { "caption": "It's in the box builder now. Use {↑} and {↓} to move it in the list.", "highlight": ".irow[data-id=peppermint] [data-move=up]", "tap": false, "before": [{ "scroll": ".irow[data-id=peppermint]" }] }
       ]
@@ -120,7 +120,7 @@
         { "caption": "Type the {Treat name} and {Price}. {Kind of treat} is optional, like “Cookie Cake”.", "highlight": "#f_price", "tap": false,
           "before": [{ "fill": "#f_name", "text": "Mini Cookie Cake" }, { "fill": "#f_price", "text": "18" }, { "fill": "#f_category", "text": "Cookie Cake" }, { "fill": "#f_description", "text": "6-inch cookie cake with your message." }] },
         { "caption": "Tap {Choose photo}. Want a price tag on it? Tap {Add sticker}, then {Price tag}.", "highlight": "#treatForm [data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
-          "after": [{ "file": "#treatForm input[data-pick]:not([capture])", "path": "public/assets/lunchbox.webp" }, { "wait": ".ps canvas" }, { "pause": 400 }, { "tap": ".ps [data-a=sticker]" }, { "tap": ".ps-sheet [data-k=price]" }, { "tap": ".ps [data-a=done-layer]" }, { "pause": 500 }] },
+          "after": [{ "file": "#treatForm input[data-pick]:not([capture])", "path": "public/assets/lunchbox.webp" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 400 }, { "tap": ".ps [data-a=sticker]" }, { "tap": ".ps-sheet [data-k=price]" }, { "tap": ".ps [data-a=done-layer]" }, { "pause": 500 }] },
         { "caption": "Tap {Use this photo}.", "highlight": ".ps [data-a=use]", "after": [{ "waitGone": ".ps" }] },
         { "caption": "Tap {Save}. Switch it off any time to hide it.", "highlight": "#treatForm [type=submit]", "after": [{ "wait": ".irow[data-kind=treat]" }, { "scroll": "#treatSec" }, { "pause": 500 }] }
       ]

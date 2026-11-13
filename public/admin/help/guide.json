@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T03:23:41.849Z",
+  "generated": "2026-11-13T03:58:17.877Z",
   "tasks": [
     {
       "id": "home",
@@ -17,7 +17,7 @@
           "image": "/admin/help/home/2.webp"
         },
         {
-          "caption": "Android: tap the three dots ⋮ in the corner, then {Add to Home screen}, then {Add}.",
+          "caption": "Android: tap the three dots ⋮ in the corner, then {Add to Home screen}. Chrome asks {Install} or {Create shortcut}: tap {Create shortcut}, then {Add}.",
           "image": "/admin/help/home/3.webp"
         },
         {
@@ -30,7 +30,7 @@
         }
       ],
       "clip": "/admin/help/home/clip.mp4",
-      "clip_seconds": 10.8
+      "clip_seconds": 12.7
     },
     {
       "id": "photo",
@@ -65,7 +65,7 @@
         }
       ],
       "clip": "/admin/help/photo/clip.mp4",
-      "clip_seconds": 16.5
+      "clip_seconds": 19.5
     },
     {
       "id": "cotm",
@@ -96,7 +96,7 @@
         }
       ],
       "clip": "/admin/help/cotm/clip.mp4",
-      "clip_seconds": 12.4
+      "clip_seconds": 12.7
     },
     {
       "id": "special",
@@ -127,7 +127,7 @@
         }
       ],
       "clip": "/admin/help/special/clip.mp4",
-      "clip_seconds": 12.1
+      "clip_seconds": 12
     },
     {
       "id": "event",
@@ -158,7 +158,7 @@
         }
       ],
       "clip": "/admin/help/event/clip.mp4",
-      "clip_seconds": 12
+      "clip_seconds": 12.5
     },
     {
       "id": "flavor",
@@ -193,7 +193,7 @@
         }
       ],
       "clip": "/admin/help/flavor/clip.mp4",
-      "clip_seconds": 14.2
+      "clip_seconds": 14.6
     },
     {
       "id": "treat",
@@ -224,7 +224,7 @@
         }
       ],
       "clip": "/admin/help/treat/clip.mp4",
-      "clip_seconds": 13.2
+      "clip_seconds": 13.3
     },
     {
       "id": "price",
@@ -251,7 +251,7 @@
         }
       ],
       "clip": "/admin/help/price/clip.mp4",
-      "clip_seconds": 11.2
+      "clip_seconds": 11.4
     },
     {
       "id": "order",
@@ -282,7 +282,7 @@
         }
       ],
       "clip": "/admin/help/order/clip.mp4",
-      "clip_seconds": 12.7
+      "clip_seconds": 13.8
     },
     {
       "id": "tip",
@@ -313,7 +313,7 @@
         }
       ],
       "clip": "/admin/help/tip/clip.mp4",
-      "clip_seconds": 10.9
+      "clip_seconds": 10.5
     }
   ]
 }

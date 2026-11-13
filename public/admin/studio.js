@@ -2,7 +2,8 @@
 // no libraries. Usage: const r = await PhotoStudio.open({source, shape, price}); r is null (cancelled) or
 // {photo: Blob, original: Blob|null}. `source` is a File (new photo) or {url, isOriginal} (Edit photo).
 import {
-  SHAPES, MAX_ORIGINAL, initialState, clampState, scales, zoomRange, outputSize, fitInside, encodeUnder, rotatedSize, money,
+  SHAPES, MAX_ORIGINAL, MAX_WORK, HEADER_BYTES, initialState, clampState, scales, zoomRange, outputSize, fitInside, encodeUnder, rotatedSize, money,
+  imageInfo, orientedSize,
 } from "./studio-core.js";
 
 const C = { paper: "#FFF9F2", green: "#1F4A37", pink: "#E54F7C", pinkBtn: "#D63F6D", cocoa: "#4A2A1E", cream: "#FFF4E6", red: "#B42D55" };
@@ -31,22 +32,91 @@ function loadFonts() {
   return fontsReady;
 }
 
-/* ---------------- Decoding (browsers apply EXIF rotation to <img> by default) ---------------- */
-function decode(src) {
+/* ---------------- Decoding: never hold a full-size phone photo in memory ----------------
+   A 50 MP camera photo is ~200 MB once decoded, and Android Chrome runs out of memory. We read the size
+   from the file header, decode straight to at most MAX_ORIGINAL px (createImageBitmap with resize), make
+   the "original" copy from that, then keep only a MAX_WORK px picture to edit. Bitmaps are closed and
+   canvases emptied as soon as they're not needed. */
+export class PhotoTooBig extends Error {}
+const freeCanvas = (c) => { if (c) { c.width = 0; c.height = 0; } };
+const closeBitmap = (b) => { try { b?.close?.(); } catch {} };
+
+// Older browsers without createImageBitmap resize: <img>, then straight into a capped canvas.
+function decodeViaImg(blob, maxLong) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const url = URL.createObjectURL(blob), img = new Image();
     img.decoding = "async";
-    img.onload = () => (img.naturalWidth && img.naturalHeight ? resolve(img) : reject(new Error("empty")));
-    img.onerror = () => reject(new Error("undecodable"));
-    img.src = src;
+    img.onload = () => {
+      try {
+        if (!img.naturalWidth || !img.naturalHeight) throw new Error("empty");
+        const o = fitInside(img.naturalWidth, img.naturalHeight, maxLong), c = document.createElement("canvas");
+        c.width = o.w; c.height = o.h; c.getContext("2d").drawImage(img, 0, 0, o.w, o.h);
+        resolve(c);
+      } catch (e) { reject(e); } finally { URL.revokeObjectURL(url); img.src = ""; }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("undecodable")); };
+    img.src = url;
   });
+}
+
+async function decodeCapped(blob, maxLong) {
+  const info = imageInfo(new Uint8Array(await blob.slice(0, HEADER_BYTES).arrayBuffer()));
+  if (typeof createImageBitmap !== "function") return { pic: await decodeViaImg(blob, maxLong), known: !!info };
+  try {
+    if (info) {
+      const t = fitInside(orientedSize(info).w, orientedSize(info).h, maxLong); // resize sizes are after EXIF rotation
+      const bmp = await createImageBitmap(blob, { imageOrientation: "from-image", resizeWidth: t.w, resizeHeight: t.h, resizeQuality: "high" });
+      return { pic: bmp, known: true };
+    }
+    // Unknown header (rare): decode, then shrink right away.
+    const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
+    if (Math.max(bmp.width, bmp.height) <= maxLong) return { pic: bmp, known: false };
+    const o = fitInside(bmp.width, bmp.height, maxLong);
+    const small = await createImageBitmap(bmp, { resizeWidth: o.w, resizeHeight: o.h, resizeQuality: "high" });
+    closeBitmap(bmp);
+    return { pic: small, known: false };
+  } catch (e) {
+    if (info) throw new PhotoTooBig(e?.message || "decode failed"); // a normal JPEG/PNG/WebP that wouldn't decode: memory
+    throw e;
+  }
+}
+
+async function shrink(pic, maxLong) {
+  if (Math.max(pic.width, pic.height) <= maxLong) return pic;
+  const o = fitInside(pic.width, pic.height, maxLong);
+  if (typeof createImageBitmap === "function") return createImageBitmap(pic, { resizeWidth: o.w, resizeHeight: o.h, resizeQuality: "high" });
+  const c = document.createElement("canvas"); c.width = o.w; c.height = o.h; c.getContext("2d").drawImage(pic, 0, 0, o.w, o.h);
+  return c;
+}
+
+/** Load a File, or a stored photo URL, as {work, original}. `original` (a Blob) is made only when wanted. */
+export async function loadPhoto(source, { wantOriginal }) {
+  const blob = source instanceof Blob ? source : await fetch(source.url, { credentials: "same-origin" }).then((r) => {
+    if (!r.ok) throw new Error("fetch " + r.status);
+    return r.blob();
+  });
+  const { pic } = await decodeCapped(blob, wantOriginal ? MAX_ORIGINAL : MAX_WORK);
+  let original = null;
+  if (wantOriginal) { // the untouched picture (made smaller) so Edit photo can start over from it
+    const c = document.createElement("canvas");
+    c.width = pic.width; c.height = pic.height;
+    c.getContext("2d").drawImage(pic, 0, 0);
+    try {
+      original = await canvasBlob(c, "image/webp", 0.9);
+      if (!original || original.type !== "image/webp") original = await canvasBlob(c, "image/jpeg", 0.9);
+    } finally { freeCanvas(c); }
+    if (!original) throw new PhotoTooBig("original encode failed");
+  }
+  const work = await shrink(pic, MAX_WORK);
+  if (work !== pic) { closeBitmap(pic); if (pic instanceof HTMLCanvasElement) freeCanvas(pic); }
+  return { work, original };
 }
 
 /* ---------------- Drawing ---------------- */
 function drawPhoto(ctx, W, H, img, st, shape) {
-  const { cover } = scales(shape, img.naturalWidth, img.naturalHeight, st.rot);
+  const { cover } = scales(shape, img.width, img.height, st.rot);
   const s = cover * st.zoom * W; // canvas px per source px
-  const iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+  const iw = img.width * s, ih = img.height * s;
   ctx.save();
   ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H); // shows around the photo after "Fit whole photo"
   ctx.translate(W / 2 + st.px * W, H / 2 + st.py * W);
@@ -247,22 +317,27 @@ async function open({ source, shape = "square", price = null, title = "Fix your 
   const hint = $(".ps-hint"), zoomEl = $('[data-s="zoom"]'), brightEl = $('[data-s="bright"]');
   let finish;
   const done = new Promise((r) => (finish = r));
-  const close = (value) => { document.documentElement.style.overflow = prevOverflow; root.remove(); finish(value); };
+  let closed = false;
+  const close = (value) => { if (closed) return; closed = true; document.documentElement.style.overflow = prevOverflow; root.remove(); finish(value); };
   $('[data-a="cancel"]').addEventListener("click", () => close(null));
   $('[data-a="cancel"]').focus();
 
-  // Load the photo (a new File, or a stored URL when editing).
+  // Load the photo (a new File, or a stored URL when editing), already shrunk to a safe size.
   const isFile = source instanceof Blob;
-  const url = isFile ? URL.createObjectURL(source) : source.url;
-  let img;
-  try { [img] = await Promise.all([decode(url), loadFonts()]); }
-  catch {
-    if (isFile) URL.revokeObjectURL(url);
-    await message(root, "That photo won't open", "Sorry, this phone can't open that picture here. Try a different photo, or take a screenshot of it and use the screenshot.");
+  const wantOriginal = isFile || !source.isOriginal;
+  let img, original = null;
+  hint.textContent = "Opening your photo…";
+  try { [{ work: img, original }] = await Promise.all([loadPhoto(source, { wantOriginal }), loadFonts()]); }
+  catch (e) {
+    if (e instanceof PhotoTooBig) await message(root, "That photo is too big", "This phone ran short of memory opening it. Try again, or pick it from your gallery.");
+    else await message(root, "That photo won't open", "Sorry, this phone can't open that picture here. Try a different photo, or take a screenshot of it and use the screenshot.");
     close(null);
     return done;
-  } finally { if (isFile && img) setTimeout(() => URL.revokeObjectURL(url), 0); }
-  const IW = img.naturalWidth, IH = img.naturalHeight;
+  }
+  const release = () => { closeBitmap(img); if (img instanceof HTMLCanvasElement) freeCanvas(img); };
+  if (closed) { release(); return done; } // Cancel was tapped while it was opening
+  done.then(release);
+  const IW = img.width, IH = img.height;
 
   let st = initialState(), selected = null, history = [];
   const snap = () => JSON.stringify(st, (k, v) => (k === "_box" ? undefined : v));
@@ -452,30 +527,24 @@ async function open({ source, shape = "square", price = null, title = "Fix your 
       try {
         const out = outputSize(st, shape, IW, IH);
         const photo = await encodeUnder(async (type, q, scale) => {
-          const c = document.createElement("canvas");
+          const c = document.createElement("canvas"); // one at a time, emptied as soon as it's encoded
           c.width = Math.max(1, Math.round(out.w * scale)); c.height = Math.max(1, Math.round(out.h * scale));
-          render(c.getContext("2d"), c.width, c.height, img, st, shape);
-          return canvasBlob(c, type, q);
+          try { render(c.getContext("2d"), c.width, c.height, img, st, shape); return await canvasBlob(c, type, q); }
+          finally { freeCanvas(c); }
         });
-        let original = null;
-        if (isFile || !source.isOriginal) { // keep the untouched picture (made smaller) so Edit photo can start over from it
-          const o = fitInside(IW, IH, MAX_ORIGINAL), c = document.createElement("canvas");
-          c.width = o.w; c.height = o.h; c.getContext("2d").drawImage(img, 0, 0, o.w, o.h);
-          original = await canvasBlob(c, "image/webp", 0.9);
-          if (!original || original.type !== "image/webp") original = await canvasBlob(c, "image/jpeg", 0.9);
-        }
         if (!photo) throw new Error("encode");
         close({ photo, original, width: out.w, height: out.h });
       } catch {
         btn.disabled = false; btn.textContent = "Use this photo";
-        await message(root, "Hmm, that didn't work", "Your phone couldn't finish the photo. Tap Use this photo again, or try Start over.");
+        await message(root, "Hmm, that didn't work", "Your phone couldn't finish the photo. Try again, or pick it from your gallery.");
       }
     },
   };
   root.addEventListener("click", (e) => { const b = e.target.closest("[data-a]"); if (b && act[b.dataset.a] && !b.disabled) act[b.dataset.a](); });
   layout();
   if (shape === "whole") { const zr = zoomRange(shape, IW, IH, 0); st.zoom = zr.min; }
+  root.dataset.ready = "1"; // the photo is on screen (the Help guide robot waits for this)
   return done;
 }
 
-window.PhotoStudio = { open, SHAPES, rotatedSize };
+window.PhotoStudio = { open, SHAPES, rotatedSize, loadPhoto };

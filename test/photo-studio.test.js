@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   scales, zoomRange, clampState, outputSize, encodeUnder, initialState, frameAspect, fitInside, money, TARGET_BYTES,
+  imageInfo, orientedSize, MAX_ORIGINAL, MAX_WORK,
 } from "../public/admin/studio-core.js";
 import worker from "../src/worker.js";
 import { fakeD1, fakeR2 } from "./helpers/fakes.js";
@@ -66,6 +67,42 @@ test("price tag text comes from the item's price", () => {
   assert.equal(money("4.5"), "$4.50");
   assert.equal(money(12), "$12");
   assert.equal(money(""), "");
+});
+
+/* ---- Big camera photos: size read from the header, decoded straight to a capped size ---- */
+const fx = (n) => new Uint8Array(fs.readFileSync(path.join(import.meta.dirname, "fixtures", n)));
+test("photo size comes from the file header (JPEG + EXIF rotation, PNG, both WebP kinds)", () => {
+  assert.deepEqual(imageInfo(fx("photo-60x40-rot6.jpg")), { type: "jpeg", w: 60, h: 40, orientation: 6 });
+  assert.deepEqual(orientedSize(imageInfo(fx("photo-60x40-rot6.jpg"))), { w: 40, h: 60 }, "turned on its side");
+  assert.deepEqual(imageInfo(fx("photo-61x43.png")), { type: "png", w: 61, h: 43, orientation: 1 });
+  assert.deepEqual(imageInfo(fx("photo-62x44-lossy.webp")), { type: "webp", w: 62, h: 44, orientation: 1 });
+  assert.deepEqual(imageInfo(fx("photo-63x45-lossless.webp")), { type: "webp", w: 63, h: 45, orientation: 1 });
+  assert.equal(imageInfo(fx("photo-60x40-rot6.jpg").subarray(0, 40)), null, "cut-off header: unknown, not a guess");
+  assert.equal(imageInfo(new TextEncoder().encode("not a picture at all, just some words here")), null);
+});
+
+test("a 50-megapixel camera JPEG is planned at 2400 px (original) and 2048 px (editing), never full size", () => {
+  // Real JPEG header (SOI, Exif APP1 with orientation 6, SOF0 8160x6120) — what a 50 MP Android camera writes.
+  const sof = [0xff, 0xc0, 0, 17, 8, 6120 >> 8, 6120 & 255, 8160 >> 8, 8160 & 255, 3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1];
+  const tiff = [0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, 6, 0, 0, 0, 0, 0, 0];
+  const app1 = [0xff, 0xe1, 0, 2 + 6 + tiff.length, ...new TextEncoder().encode("Exif"), 0, 0, ...tiff];
+  const head = new Uint8Array([0xff, 0xd8, ...app1, ...sof, 0xff, 0xda]);
+  const info = imageInfo(head);
+  assert.deepEqual(info, { type: "jpeg", w: 8160, h: 6120, orientation: 6 });
+  const o = orientedSize(info);
+  assert.deepEqual(fitInside(o.w, o.h, MAX_ORIGINAL), { w: 1800, h: 2400 });
+  assert.deepEqual(fitInside(1800, 2400, MAX_WORK), { w: 1536, h: 2048 });
+});
+
+test("studio: decodes with createImageBitmap resize, frees bitmaps/canvases, says what to do if it's too big", () => {
+  const src = fs.readFileSync(path.join(import.meta.dirname, "..", "public", "admin", "studio.js"), "utf8");
+  assert.match(src, /createImageBitmap\(blob, \{ imageOrientation: "from-image", resizeWidth: t\.w, resizeHeight: t\.h/);
+  assert.doesNotMatch(src, /naturalWidth \* s|drawImage\(img, 0, 0, o\.w, o\.h\)\s*;\s*original/, "no full-size <img> drawn at Use time");
+  assert.match(src, /\.close\?\.\(\)/, "bitmaps are closed");
+  assert.match(src, /c\.width = 0; c\.height = 0;/, "canvases are emptied");
+  assert.match(src, /Try again, or pick it from your gallery\./);
+  assert.match(src, /history\.push\(before\)/, "undo keeps settings (JSON), not pixels");
+  assert.doesNotMatch(src, /getImageData|toDataURL/, "no pixel copies kept for undo");
 });
 
 /* ---- Admin: every photo pick goes through the studio; site shapes match ---- */

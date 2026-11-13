@@ -8,13 +8,14 @@ const UPLOAD_TYPES = {
   "image/jpeg": { ext: "jpg", kind: "photo" },
   "image/png": { ext: "png", kind: "photo" },
   "image/webp": { ext: "webp", kind: "photo" },
-  "video/mp4": { ext: "mp4", kind: "video" },
-  // iPhone .MOV: accepted only when the video track is H.264 (checked after upload), and served
-  // as video/mp4 so Chrome/Android will play it (same ISO container family).
+  // Videos are accepted only when the video track is H.264 (checked after upload). HEVC (iPhone "High
+  // Efficiency", many Android phones too) or no recognizable video track is refused and deleted.
+  "video/mp4": { ext: "mp4", kind: "video", codecCheck: true },
+  // iPhone .MOV is served as video/mp4 so Chrome/Android will play it (same ISO container family).
   "video/quicktime": { ext: "mov", kind: "video", serveAs: "video/mp4", codecCheck: true },
 };
 const MOV_SCAN_HEAD = 1024 * 1024;     // moov at the start (faststart)
-const MOV_SCAN_TAIL = 4 * 1024 * 1024; // moov at the end (iPhone default)
+const MOV_SCAN_TAIL = 4 * 1024 * 1024; // moov at the end (iPhone default, most phone .mp4s)
 const FLAVOR_ID_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
 // "Showing today": switched on and inside its optional start/end dates (SQL, ?1 = today).
 const IN_SEASON = "active = 1 AND (starts IS NULL OR starts <= ?1) AND (ends IS NULL OR ends >= ?1)";

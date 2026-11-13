@@ -11,7 +11,73 @@ export const SHAPES = {
 
 export const MAX_LONG = 1600;       // photo shown on the site
 export const MAX_ORIGINAL = 2400;   // kept so "Edit photo" can start again from the real picture
+export const MAX_WORK = 2048;       // the picture the studio edits; big enough for the 1600 px result
 export const TARGET_BYTES = 400 * 1024;
+export const HEADER_BYTES = 1024 * 1024; // how much of a file imageInfo() needs to see
+
+/* ---- Photo size without decoding it ----
+   Phones make 50-megapixel photos now. Decoding one at full size takes ~200 MB, which is what made
+   Android Chrome give up ("low memory"). So we read the size (and the JPEG's EXIF rotation) from the
+   file's first bytes and ask the browser to decode straight to a capped size. */
+const u16be = (b, o) => (b[o] << 8) | b[o + 1];
+const u16le = (b, o) => b[o] | (b[o + 1] << 8);
+const u24le = (b, o) => b[o] | (b[o + 1] << 8) | (b[o + 2] << 16);
+const u32be = (b, o) => ((b[o] << 24) >>> 0) + ((b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]);
+const ascii = (b, o, n) => String.fromCharCode(...b.subarray(o, o + n));
+
+function exifOrientation(b, start, end) {
+  // start points at the TIFF header ("II*\0" or "MM\0*") inside an APP1 Exif segment.
+  if (start + 8 > end) return 1;
+  const le = b[start] === 0x49, r16 = (o) => (le ? u16le(b, o) : u16be(b, o));
+  const r32 = (o) => (le ? (u16le(b, o) + u16le(b, o + 2) * 65536) : u32be(b, o));
+  const ifd = start + r32(start + 4);
+  if (ifd + 2 > end) return 1;
+  const n = r16(ifd);
+  for (let i = 0; i < n; i++) {
+    const e = ifd + 2 + i * 12;
+    if (e + 12 > end) break;
+    if (r16(e) === 0x0112) { const v = r16(e + 8); return v >= 1 && v <= 8 ? v : 1; }
+  }
+  return 1;
+}
+
+/** {type, w, h, orientation} as stored in the file (before EXIF rotation), or null if unknown/truncated. */
+export function imageInfo(b) {
+  if (!b || b.length < 30) return null;
+  if (b[0] === 0xff && b[1] === 0xd8) { // JPEG: walk the segments to the frame header
+    let i = 2, orientation = 1;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xff) return null;
+      const m = b[i + 1];
+      if (m === 0xff) { i++; continue; }                 // fill byte
+      if (m === 0xd8 || m === 0x01 || (m >= 0xd0 && m <= 0xd7)) { i += 2; continue; }
+      if (m === 0xd9 || m === 0xda) return null;         // end / scan before a frame header
+      const len = u16be(b, i + 2);
+      if (m === 0xe1 && ascii(b, i + 4, 4) === "Exif") orientation = exifOrientation(b, i + 10, Math.min(b.length, i + 2 + len));
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+        const h = u16be(b, i + 5), w = u16be(b, i + 7);
+        return w && h ? { type: "jpeg", w, h, orientation } : null;
+      }
+      i += 2 + len;
+    }
+    return null;
+  }
+  if (b[0] === 0x89 && ascii(b, 1, 3) === "PNG" && ascii(b, 12, 4) === "IHDR") {
+    return { type: "png", w: u32be(b, 16), h: u32be(b, 20), orientation: 1 };
+  }
+  if (ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 4) === "WEBP") {
+    const c = ascii(b, 12, 4);
+    if (c === "VP8 ") return { type: "webp", w: u16le(b, 26) & 0x3fff, h: u16le(b, 28) & 0x3fff, orientation: 1 };
+    if (c === "VP8L") return { type: "webp", w: 1 + (((b[22] & 0x3f) << 8) | b[21]), h: 1 + (((b[24] & 0x0f) << 10) | (b[23] << 2) | ((b[22] & 0xc0) >> 6)), orientation: 1 };
+    if (c === "VP8X") return { type: "webp", w: 1 + u24le(b, 24), h: 1 + u24le(b, 27), orientation: 1 };
+  }
+  return null;
+}
+
+/** Size the photo shows at once EXIF rotation is applied (orientations 5–8 swap width and height). */
+export function orientedSize(info) {
+  return info.orientation >= 5 ? { w: info.h, h: info.w } : { w: info.w, h: info.h };
+}
 
 export function rotatedSize(iw, ih, rot) {
   return rot % 180 ? { w: ih, h: iw } : { w: iw, h: ih };

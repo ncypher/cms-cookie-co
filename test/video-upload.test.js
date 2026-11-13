@@ -1,8 +1,9 @@
-// iPhone .mov uploads: H.264 accepted (served as video/mp4), HEVC refused and removed from R2.
+// Video uploads (.mov and .mp4): H.264 accepted (.mov served as video/mp4), HEVC refused and removed from R2.
 // Fixtures were made with ffmpeg (testsrc2, 1s, 160x120):
 //   h264-moov-end.mov  -c:v libx264 -f mov -movflags -faststart        (ftyp qt, moov at end)
 //   hevc-moov-end.mov  -c:v libx265 -tag:v hvc1 -f mov -movflags -faststart
 //   h264.mp4           -c:v libx264 -movflags +faststart
+//   hevc.mp4           -c:v libx265 -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -80,14 +81,43 @@ test(".mov with no recognizable video track is refused the same way", async () =
   assert.equal(env.MEDIA.objects.size, 0);
 });
 
-test("mp4 uploads are unchanged (no codec check, stored as .mp4)", async () => {
+test("H.264 .mp4 is accepted and stored as .mp4 (codec checked)", async () => {
   const env = makeEnv();
   const res = await upload(env, fx("h264.mp4"), "video/mp4");
   assert.equal(res.status, 201);
   const body = await res.json();
-  assert.match(body.key, /\.mp4$/);
+  assert.match(body.key, /^video\/\d{4}\/[0-9a-f-]{36}\.mp4$/);
   assert.equal(body.content_type, "video/mp4");
-  assert.equal(env.MEDIA.reads.length, 1, "only the 16-byte sniff read");
+  assert.ok(env.MEDIA.reads.length >= 2, "sniff + codec read");
+});
+
+test("large H.264 .mp4 with moov at the end: found in the tail, whole file never read", async () => {
+  const env = makeEnv();
+  const big = padAfterFtyp(fx("h264-moov-end.mov"), 7 * 1024 * 1024); // same ISO layout a phone .mp4 has
+  const res = await upload(env, big, "video/mp4");
+  assert.equal(res.status, 201);
+  const read = env.MEDIA.reads.reduce((n, r) => n + (r.end - r.start), 0);
+  assert.ok(read <= 16 + 5 * 1024 * 1024, `read ${read} of ${big.length} bytes`);
+});
+
+test("HEVC .mp4 is refused with the same friendly message and deleted from R2", async () => {
+  for (const bytes of [fx("hevc.mp4"), padAfterFtyp(fx("hevc.mp4"), 7 * 1024 * 1024)]) {
+    const env = makeEnv();
+    const res = await upload(env, bytes, "video/mp4");
+    assert.equal(res.status, 415);
+    assert.equal((await res.json()).error, HEVC_VIDEO);
+    assert.equal(env.MEDIA.objects.size, 0, "nothing left in R2");
+  }
+});
+
+test(".mp4 with no recognizable video track is refused the same way", async () => {
+  const env = makeEnv();
+  const bytes = new Uint8Array(4096);
+  bytes.set([0, 0, 0, 20, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]); // ftyp "isom", no moov
+  const res = await upload(env, bytes, "video/mp4");
+  assert.equal(res.status, 415);
+  assert.equal((await res.json()).error, HEVC_VIDEO);
+  assert.equal(env.MEDIA.objects.size, 0);
 });
 
 test("a non-video file labelled .mov is refused before the codec check", async () => {

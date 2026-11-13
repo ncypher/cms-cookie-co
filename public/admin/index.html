@@ -104,6 +104,7 @@ form.edit, .field, .field > *{min-width:0}
 .progress{height:8px; border-radius:4px; background:var(--blush); overflow:hidden}
 .progress i{display:block; height:100%; width:0; background:var(--pink-btn); transition:width .2s}
 .err{color:#B42D55; font-weight:600; font-size:14px}
+.note-warm{margin:0; padding:10px 12px; border-radius:12px; background:#FFF3E5; font-size:15px; line-height:1.45}
 .empty{text-align:center; color:var(--muted); padding:28px 10px; font:400 19px var(--f-hand)}
 
 /* Orders */
@@ -182,7 +183,7 @@ nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px
   </div>
 </header>
 
-<main class="wrap" id="main"></main>
+<main class="wrap" id="main"><p class="empty" style="margin-top:40px">Opening your kitchen…</p></main>
 
 <nav class="tabs" aria-label="Admin sections">
   <button data-tab="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>Orders<span class="badge" id="openBadge" hidden></span></button>
@@ -250,9 +251,10 @@ function go(t, arg){
   tab = t; history.replaceState(null, "", "#" + t);
   $$("nav.tabs button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
   window.scrollTo(0, 0);
-  TABS[t](arg).catch(e => { if (e.status !== 401 && e.status !== 503) $("#main").innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p></div>`; });
+  return TABS[t](arg).catch(e => { if (e.status !== 401 && e.status !== 503) $("#main").innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p></div>`; });
 }
-$$("nav.tabs button").forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
+// Tapping a tab means she left the form on purpose, so a saved draft is dropped.
+$$("nav.tabs button").forEach(b => b.addEventListener("click", () => { draftStore.clear(); go(b.dataset.tab); }));
 
 /* ============ Orders ============ */
 let orderFilter = "open";
@@ -302,6 +304,27 @@ function orderCard(o){
   </article>`;
 }
 function setBadge(n){ const b = $("#openBadge"); b.hidden = !n; b.textContent = n; }
+
+/* ============ Drafts: survive Android closing the page while the camera is open ============ */
+// Taking a photo hands the phone to the camera app. On Android, Chrome may throw the admin page away to free
+// memory, and the page reloads empty when she comes back. So every form is saved to this tab's
+// sessionStorage as she types, and put back on load. `picking` = she'd just opened the camera/gallery.
+const DRAFT_KEY = "cms-draft", DRAFT_MAX_AGE = 2 * 3600e3;
+const draftStore = {
+  get(){ try{ const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "null"); return d && Date.now() - d.at < DRAFT_MAX_AGE ? d : null; }catch(e){ return null; } },
+  set(d){ try{ sessionStorage.setItem(DRAFT_KEY, JSON.stringify({...d, at: Date.now()})); }catch(e){} },
+  clear(){ try{ sessionStorage.removeItem(DRAFT_KEY); }catch(e){} },
+};
+const LOST_PHOTO = "Your phone closed this page while the camera was open, so the photo didn't come through. Everything you typed is still here. Tap Take photo to try again, or Choose photo to pick it from your gallery.";
+const lostPhotoNote = () => `<p class="note-warm" data-lostphoto role="status">${esc(LOST_PHOTO)}</p>`;
+// Every photo button tells the form when the camera/gallery opens and when a photo comes back.
+function watchPicks(root, onPick){
+  $$("input[data-pick]", root).forEach(inp => {
+    inp.addEventListener("click", () => onPick(true));
+    inp.addEventListener("cancel", () => onPick(false));
+    inp.addEventListener("change", () => onPick(false));
+  });
+}
 
 /* ============ Schema-driven CRUD (specials, events) ============ */
 const SPECIALS = {
@@ -430,6 +453,7 @@ function wireUploads(root, fields){
         const r = await studioUpload({source, shape: shape(), price: f.price ? f.price(root) : null, keepOrigKey, bar});
         if (!r) return;
         hidden.value = r.key; origHidden.value = r.origKey || ""; img.src = r.url; img.dataset.orig = ""; refresh(true);
+        root.dispatchEvent(new Event("photo-ready"));
         toast("Photo ready. Tap Save to keep it.");
       }catch(e){ toast(e.message, true); }
     };
@@ -439,23 +463,45 @@ function wireUploads(root, fields){
       const origUrl = img.dataset.orig || (origHidden.value ? `/media/${origHidden.value}` : "");
       run(origUrl ? {url: origUrl, isOriginal: true} : {url: img.src, isOriginal: false}, origHidden.value || null);
     });
-    $("[data-clear]", box).addEventListener("click", () => { hidden.value = ""; origHidden.value = ""; img.removeAttribute("src"); refresh(false); });
+    $("[data-clear]", box).addEventListener("click", () => { hidden.value = ""; origHidden.value = ""; img.removeAttribute("src"); refresh(false); root.dispatchEvent(new Event("photo-ready")); });
     showHint();
     root.addEventListener("change", e => { if (e.target.name === "kind") showHint(); });
   });
 }
-function openForm(cfg, row){
+function openForm(cfg, row, restored){
   const slot = $(cfg.slot || "#formSlot");
   const flat = cfg.fields.flatMap(f => f.pair || [f]);
+  // A restored draft: the saved values over the row, with photo previews rebuilt from their keys.
+  let v = row;
+  if (restored){
+    v = {...(row || {}), ...restored.values};
+    for (const f of flat) if (f.type === "image"){
+      v[f.preview] = v[f.name] ? `/media/${v[f.name]}` : null;
+      v[f.origPreview] = v[f.orig] ? `/media/${v[f.orig]}` : null;
+    }
+  }
   slot.innerHTML = `<form class="card edit" novalidate>
     <h3>${row ? "Edit " + cfg.noun : cfg.newTitle || "New " + cfg.noun}</h3>
-    ${cfg.fields.map(f => fieldHtml(f, row)).join("")}
+    ${restored?.picking ? lostPhotoNote() : ""}
+    ${cfg.fields.map(f => fieldHtml(f, v)).join("")}
     <p class="err" hidden></p>
     <div class="row"><button class="btn btn-rose" type="submit">Save</button><button class="btn btn-ghost" type="button" data-cancel>Cancel</button></div>
   </form>`;
   const form = $("form", slot);
   wireUploads(form, flat);
-  $("[data-cancel]", form).addEventListener("click", () => slot.innerHTML = "");
+  const values = () => Object.fromEntries(flat.flatMap(f => {
+    const el = form.elements[f.name], out = [[f.name, f.type === "switch" ? el.checked : el.value]];
+    if (f.orig) out.push([f.orig, form.elements[f.orig].value]);
+    return out;
+  }));
+  let picking = false;
+  const saveDraft = () => draftStore.set({tab, path: cfg.path, id: row?.id ?? null, values: values(), picking});
+  form.addEventListener("input", saveDraft);
+  form.addEventListener("change", saveDraft);
+  form.addEventListener("photo-ready", saveDraft);
+  watchPicks(form, on => { picking = on; saveDraft(); if (!on) $("[data-lostphoto]", form)?.remove(); });
+  if (restored) saveDraft();
+  $("[data-cancel]", form).addEventListener("click", () => { draftStore.clear(); slot.innerHTML = ""; });
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const body = {};
@@ -468,6 +514,7 @@ function openForm(cfg, row){
     const btn = $("[type=submit]", form); btn.disabled = true; btn.textContent = "Saving…";
     try{
       await api(row ? "PUT" : "POST", row ? `${cfg.path}/${row.id}` : cfg.path, body);
+      draftStore.clear();
       toast(row ? "Saved" : `${cfg.noun[0].toUpperCase() + cfg.noun.slice(1)} added`);
       cfg.reload ? cfg.reload() : renderCrud(cfg);
     }catch(err){ showErr(form, err.message); btn.disabled = false; btn.textContent = "Save"; }
@@ -478,14 +525,17 @@ function openForm(cfg, row){
 function showErr(form, msg){ const p = $(".err", form); p.textContent = msg; p.hidden = false; }
 
 /* ============ Media ============ */
-let mediaKind = "photo";
+let mediaKind = "photo", mediaRestore = null;
 async function renderMedia(){
   const {media} = await api("GET", "media");
+  const restored = mediaRestore; mediaRestore = null;
+  if (restored) mediaKind = restored.values.kind;
   $("#main").innerHTML = `
     <h1 class="page">Media</h1>
     <p class="meta" style="margin:0 0 12px">Featured videos and Instagram links become the <b>Tip of the Week</b> (newest first). Featured photos show under it.</p>
     <form class="card edit" id="mediaForm" novalidate>
       <h3>Add media</h3>
+      ${restored?.picking ? lostPhotoNote() : ""}
       <div class="bar" style="margin:0">
         ${[["photo","Photo"],["video","Video"],["instagram","Instagram link"]].map(([k,l]) => `<button type="button" class="chip" data-kind="${k}" aria-pressed="${mediaKind===k}">${l}</button>`).join("")}
       </div>
@@ -513,24 +563,33 @@ async function renderMedia(){
       <div class="row"><button class="btn btn-rose" type="submit">Add</button></div>
     </form>
     ${media.length ? media.map(mediaCard).join("") : `<p class="empty">No media yet.</p>`}`;
-  $$("[data-kind]").forEach(b => b.addEventListener("click", () => { mediaKind = b.dataset.kind; renderMedia(); }));
+  $$("[data-kind]").forEach(b => b.addEventListener("click", () => { mediaKind = b.dataset.kind; draftStore.clear(); renderMedia(); }));
   const form = $("#mediaForm");
   $("#mFile")?.addEventListener("change", () => { $("#mFileErr").hidden = true; });
   // Photos: framed in the studio and uploaded as soon as they're picked; Add just saves the row.
-  let mPhoto = null;
+  let mPhoto = restored?.values.photo || null, picking = false;
   const pf = $("#photoField");
+  const saveDraft = () => draftStore.set({tab:"media", path:"media", values:{kind: mediaKind, caption: $("#mCap").value, featured: $("#mFeat").checked, url: $("#mUrl").value, photo: mPhoto}, picking});
+  if (restored){
+    $("#mCap").value = restored.values.caption || ""; $("#mFeat").checked = !!restored.values.featured; $("#mUrl").value = restored.values.url || "";
+    if (mPhoto){ const img = $("img", pf); img.src = mPhoto.url; img.hidden = false; $("[data-editphoto]", pf).hidden = false; $("[data-clear]", pf).hidden = false; }
+    saveDraft();
+  }
+  form.addEventListener("input", saveDraft);
+  form.addEventListener("change", saveDraft);
+  watchPicks(pf, on => { picking = on; saveDraft(); if (!on) $("[data-lostphoto]", form)?.remove(); });
   const runPhoto = async (source, keepOrigKey) => {
     try{
       const r = await studioUpload({source, shape:"square", keepOrigKey, bar: $(".progress", pf)});
       if (!r) return;
-      mPhoto = r; $("#mPhotoErr").hidden = true;
+      mPhoto = r; $("#mPhotoErr").hidden = true; saveDraft();
       const img = $("img", pf); img.src = r.url; img.hidden = false;
       $("[data-editphoto]", pf).hidden = false; $("[data-clear]", pf).hidden = false;
     }catch(e){ toast(e.message, true); }
   };
   $$("[data-pick]", pf).forEach(inp => inp.addEventListener("change", () => { const f = inp.files[0]; inp.value = ""; if (f) runPhoto(f); }));
   $("[data-editphoto]", pf).addEventListener("click", () => mPhoto && runPhoto({url: `/media/${mPhoto.origKey}`, isOriginal: true}, mPhoto.origKey));
-  $("[data-clear]", pf).addEventListener("click", () => { mPhoto = null; $("img", pf).hidden = true; $("[data-editphoto]", pf).hidden = true; $("[data-clear]", pf).hidden = true; });
+  $("[data-clear]", pf).addEventListener("click", () => { mPhoto = null; saveDraft(); $("img", pf).hidden = true; $("[data-editphoto]", pf).hidden = true; $("[data-clear]", pf).hidden = true; });
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const btn = $("[type=submit]", form); btn.disabled = true;
@@ -560,7 +619,7 @@ async function renderMedia(){
         key_or_url = r.key;
       }
       await api("POST", "media", {kind: mediaKind, key_or_url, orig_key, caption: $("#mCap").value.trim(), featured: $("#mFeat").checked});
-      toast("Added"); renderMedia();
+      draftStore.clear(); toast("Added"); renderMedia();
     }catch(err){ showErr(form, err.message); btn.disabled = false; btn.textContent = "Add"; }
   });
   $$("[data-feat]").forEach(inp => inp.addEventListener("change", async () => {
@@ -770,12 +829,29 @@ if (matchMedia("(display-mode: standalone)").matches || navigator.standalone ===
   $("button", b).addEventListener("click", () => { go("help", "home"); });
 }
 
+// Put a half-filled form back after the page was reloaded (see Drafts).
+async function restoreDraft(d){
+  const cfg = {specials: SPECIALS, events: EVENTS, flavors: FLAVORS_CFG, treats: TREATS_CFG}[d.path];
+  if (!cfg) return draftStore.clear();
+  let row = null;
+  if (d.id != null){
+    const data = await api("GET", cfg.path);
+    row = (data[cfg.listKey || cfg.path] || []).find(r => String(r.id) === String(d.id));
+    if (!row) return draftStore.clear(); // it was deleted meanwhile
+  }
+  openForm(cfg, row, d);
+}
+
 /* ============ Boot ============ */
 (async () => {
   try{
     const me = await api("GET", "me");
     $("#who").textContent = me.email;
-    go(tab);
+    const d = draftStore.get();
+    if (d && TABS[d.tab]) tab = d.tab;
+    if (d?.path === "media") mediaRestore = d;
+    await go(tab);
+    if (d && d.path !== "media") restoreDraft(d).catch(() => draftStore.clear());
     api("GET", "orders?filter=open").then(d => setBadge(d.orders.length)).catch(()=>{});
   }catch(e){ if (e.status !== 401 && e.status !== 503) showGate(e.message); }
 })();
