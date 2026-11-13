@@ -4,8 +4,8 @@
   "description": "Shaun's kitchen: orders, specials, events and menu for CMS Cookie Co. & More.",
   "id": "/admin/",
   "start_url": "/admin/",
-  "scope": "/admin/",
-  "display": "standalone",
+  "scope": "/",
+  "display": "browser",
   "background_color": "#FFF9F2",
   "theme_color": "#FFF9F2",
   "icons": [

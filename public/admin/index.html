@@ -8,13 +8,14 @@
 <meta name="theme-color" content="#FFF9F2">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<!-- Home-screen app. Served from public paths: browsers fetch manifests without cookies, so /admin/* would hit the Access login. -->
+<!-- Home-screen icon. Served from public paths: browsers fetch manifests without cookies, so /admin/* would hit the Access login.
+     Deliberately NOT a full-screen web app (no apple-mobile-web-app-capable, manifest display "browser"): a full-screen
+     home-screen app has its own cookie jar and bounces the Cloudflare Access sign-in out to another window, so the
+     icon kept landing on the public site. As a plain browser bookmark it opens /admin/ in Safari/Chrome, where the
+     Access sign-in lasts a month. -->
 <link rel="manifest" href="/pwa/admin.webmanifest">
 <meta name="apple-mobile-web-app-title" content="CMS Admin">
 <meta name="application-name" content="CMS Admin">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;500;600;700&family=Josefin+Sans:wght@600;700&family=Kalam:wght@400;700&display=swap">
@@ -562,18 +563,32 @@ function renderHelp(){
         ${h.tip ? `<p class="tip">${h.tip}</p>` : ""}
         <button class="btn btn-rose btn-sm go" data-goto="${h.go}">Take me there</button></div>
     </details>`).join("")}
-    <details class="card help">
+    <details class="card help" id="homeHelp">
       <summary><span class="ico" aria-hidden="true">📱</span><h3>Put this on your home screen</h3></summary>
       <div class="body">
+        <p class="tip" style="margin-top:12px">Already have a <b>CMS Admin</b> icon from before? Press and hold it, tap <b>Remove</b>, then add it again with these steps.</p>
         <p class="or">iPhone</p>
-        <ol><li><span>Open this page in Safari.</span></li><li><span>Tap the Share button (the square with an arrow).</span></li><li><span>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</span></li></ol>
+        <ol><li><span>Open this page in Safari.</span></li><li><span>Tap the Share button (the square with an arrow).</span></li><li><span>Tap <b>Add to Home Screen</b>.</span></li><li><span>If you see <b>Open as Web App</b>, switch it <b>off</b>.</span></li><li><span>Tap <b>Add</b>.</span></li></ol>
         <p class="or">Android</p>
-        <ol><li><span>Open this page in Chrome.</span></li><li><span>Tap the three dots ⋮ in the top corner.</span></li><li><span>Tap <b>Add to Home screen</b> (or <b>Install app</b>), then <b>Add</b>.</span></li></ol>
-        <p class="tip">You'll get a cookie icon called <b>CMS Admin</b>. Tap it any time to open your kitchen.</p>
+        <ol><li><span>Open this page in Chrome.</span></li><li><span>Tap the three dots ⋮ in the top corner.</span></li><li><span>Tap <b>Add to Home screen</b>, then <b>Add</b>.</span></li></ol>
+        <p class="tip">You'll get a cookie icon called <b>CMS Admin</b>. Tap it any time and your kitchen opens. About once a month it asks for your email and a code. That's normal.</p>
+        <p class="meta" style="margin:10px 0 0">Setting up a new phone? Open <b>cmscookieco3more.com/kitchen</b> and add that page instead. It works before you sign in.</p>
       </div>
     </details>`;
   $$("[data-goto]").forEach(b => b.addEventListener("click", () => go(b.dataset.goto)));
   return Promise.resolve();
+}
+
+/* ============ Old full-screen icon ============ */
+// Icons added before the fix open as a full-screen app, which loses the sign-in. Say how to swap it.
+if (matchMedia("(display-mode: standalone)").matches || navigator.standalone === true){
+  const b = document.createElement("div");
+  b.className = "wrap"; b.id = "oldIcon";
+  b.innerHTML = `<div class="card" style="margin-top:12px; background:#FFF3E5"><b>This home-screen icon is the old kind.</b>
+    <p class="meta" style="margin:4px 0 10px">It can lose your sign-in. Remove it and add it again so it always opens your kitchen.</p>
+    <button class="btn btn-rose btn-sm" type="button">Show me how</button></div>`;
+  $("#main").before(b);
+  $("button", b).addEventListener("click", () => { go("help"); const h = $("#homeHelp"); if (h){ h.open = true; h.scrollIntoView({block:"start"}); } });
 }
 
 /* ============ Boot ============ */

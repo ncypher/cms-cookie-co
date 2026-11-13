@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CMS Admin</title>
+<meta name="theme-color" content="#FFF9F2">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<!-- Same icon and manifest as /admin/, but public, so "Add to Home Screen" works before signing in.
+     A plain bookmark on purpose (no full-screen web-app mode): see the note in /admin/index.html. -->
+<link rel="manifest" href="/pwa/admin.webmanifest">
+<meta name="apple-mobile-web-app-title" content="CMS Admin">
+<meta name="application-name" content="CMS Admin">
+<script>
+  // Once this phone has seen the page, tapping the home-screen icon goes straight to the kitchen.
+  // "?add" shows the page again (and is removed from the address, so the saved icon stays /kitchen/).
+  (function(){
+    var add = /[?&]add\b/.test(location.search), seen = false;
+    try{ seen = localStorage.getItem("cms-kitchen") === "1"; localStorage.setItem("cms-kitchen", "1"); }catch(e){}
+    if (add) history.replaceState(null, "", location.pathname);
+    else if (seen) location.replace("/admin/");
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Figtree:wght@400;600;700&family=Kalam:wght@700&display=swap">
+<style>
+:root{--paper:#FFF9F2; --panel:#FFFDF9; --green:#1F4A37; --pink:#E54F7C; --pink-btn:#D63F6D; --pink-line:#F1AFC0; --cocoa:#4A2A1E; --muted:#7C5A4E; color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0; min-height:100svh; background:var(--paper); color:var(--cocoa); font:400 17px/1.5 "Figtree","Helvetica Neue",Arial,sans-serif; display:grid; place-items:center;
+  padding:max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left))}
+main{width:100%; max-width:420px; text-align:center}
+.icon{width:120px; height:120px; border-radius:28px; box-shadow:0 14px 30px -18px rgba(110,40,50,.6); margin:0 auto 16px; display:block}
+h1{margin:0; font:400 34px/1.05 "Abril Fatface",Georgia,serif; color:var(--green)}
+.sub{margin:8px 0 22px; font:700 20px/1.3 "Kalam","Comic Sans MS",cursive; color:var(--pink)}
+.go{display:flex; align-items:center; justify-content:center; width:100%; min-height:64px; border-radius:999px; background:var(--pink-btn); color:#fff; text-decoration:none; font-weight:700; font-size:20px; box-shadow:0 12px 24px -12px var(--pink-btn)}
+.go:focus-visible{outline:3px solid var(--green); outline-offset:3px}
+details{margin-top:22px; text-align:left; background:var(--panel); border:1.5px solid var(--pink-line); border-radius:16px}
+summary{list-style:none; cursor:pointer; padding:16px; font-weight:700; font-size:17px; min-height:56px; display:flex; align-items:center; gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+"; margin-left:auto; font-size:24px; color:var(--pink)}
+details[open] summary::after{content:"−"}
+.steps{padding:0 16px 16px}
+.steps .os{margin:12px 0 4px; font-weight:700; font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--pink)}
+ol{margin:0; padding-left:22px; display:grid; gap:6px}
+.note{margin:12px 0 0; font-size:15px; color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <img class="icon" src="/assets/admin-icon-192.png" alt="" width="120" height="120">
+  <h1>Shaun's Kitchen</h1>
+  <p class="sub">CMS Cookie Co. admin</p>
+  <a class="go" href="/admin/" id="open">Open my kitchen</a>
+  <details open>
+    <summary>Put this on your home screen</summary>
+    <div class="steps">
+      <p class="os">iPhone</p>
+      <ol><li>Tap the Share button (the square with an arrow).</li><li>Tap <b>Add to Home Screen</b>.</li><li>If you see <b>Open as Web App</b>, switch it <b>off</b>.</li><li>Tap <b>Add</b>.</li></ol>
+      <p class="os">Android</p>
+      <ol><li>Tap the three dots ⋮ in the top corner.</li><li>Tap <b>Add to Home screen</b>, then <b>Add</b>.</li></ol>
+      <p class="note">The cookie icon is called <b>CMS Admin</b>. Tap it and your kitchen opens. About once a month it asks for your email and a code.</p>
+    </div>
+  </details>
+</main>
+</body>
+</html>
