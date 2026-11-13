@@ -136,6 +136,15 @@ form.edit, .field, .field > *{min-width:0}
 #flavorForm:not(:empty), #treatForm:not(:empty){margin-top:12px}
 .subhead{font:700 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:16px 0 0}
 
+/* Menu: three big "add" buttons; sizes editor */
+.bigadd{display:grid; gap:10px; margin:0 0 14px}
+.bigbtn{display:grid; gap:2px; text-align:left; width:100%; border:2px solid var(--pink-line); background:#fff; border-radius:16px; padding:14px 16px; min-height:64px}
+.bigbtn b{font:700 19px/1.2 var(--f-body); color:var(--pink-btn)}
+.bigbtn span{font-size:14.5px; color:var(--muted)}
+.szrow{display:grid; grid-template-columns:1fr 104px auto; gap:8px; align-items:center; margin-top:8px}
+.szrow input{width:100%; font-size:16px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px}
+.szrow .dollar{display:flex; align-items:center; gap:4px; font-weight:700}
+
 /* Requests */
 .statusrow{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px}
 .statusrow .chip{min-height:46px; font-size:15px}
@@ -378,13 +387,15 @@ const SPECIALS = {
     {name:"kind", label:"Type", type:"select", options:[["special","Special"],["cotm","Cookie of the Month"]]},
     {name:"title", label:"Title", type:"text", required:true, max:120},
     {name:"body", label:"Description", type:"textarea", max:1000},
-    {name:"price", label:"Price ($)", type:"money", hint:"Leave empty if it can't be ordered online."},
+    {name:"price", label:"Price ($)", type:"money", hint:"Leave empty if it can't be ordered online, or if you add sizes below."},
+    {name:"sizes", label:"Sizes (optional)", type:"sizes", hint:"Like “Kit for 2 — $10” and “Family kit — $18”. Customers pick one and the price follows."},
     {name:"image_key", orig:"image_orig_key", label:"Photo", type:"image", preview:"image", origPreview:"image_orig",
       shape: form => form.elements.kind.value === "cotm" ? "circle" : "wide", price: form => form.elements.price.value},
     {pair:[{name:"starts", label:"Starts", type:"date"}, {name:"ends", label:"Ends", type:"date"}]},
     {name:"active", label:"Show on the site", type:"switch", default:true},
   ],
-  card: s => `<div class="row"><h3>${esc(s.title)}</h3>${s.price != null ? `<span class="price spacer">${money(s.price)}</span>` : ""}</div>
+  card: s => `<div class="row"><h3>${esc(s.title)}</h3>${s.price != null ? `<span class="price spacer">${s.sizes ? "from " : ""}${money(s.price)}</span>` : ""}</div>
+    ${s.sizes ? `<p class="meta" style="margin:4px 0 0">Sizes: ${s.sizes.map(z => `${esc(z.label)} ${money(z.price)}`).join(" · ")}</p>` : ""}
     <div class="row" style="margin-top:6px">${s.kind === "cotm" ? `<span class="tag">Cookie of the Month</span>` : `<span class="tag">Special</span>`}
       ${s.active ? `<span class="tag green">On</span>` : `<span class="tag warn">Off</span>`}
       ${s.starts || s.ends ? `<span class="meta">${s.starts ? esc(prettyDate(s.starts)) : "Now"} → ${s.ends ? esc(prettyDate(s.ends)) : "no end"}</span>` : ""}</div>
@@ -455,6 +466,13 @@ function fieldHtml(f, v){
   switch (f.type){
     case "select": { const sv = val === true ? "1" : val === false ? "0" : String(val);
       return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}" name="${f.name}">${f.options.map(([k,l]) => `<option value="${k}" ${sv===k?"selected":""}>${l}</option>`).join("")}</select>${hint}</div>`; }
+    case "sizes": {
+      const list = typeof val === "string" ? (val ? JSON.parse(val) : []) : (val || []);
+      return `<div class="field" data-sizesbox="${f.name}"><span class="lbl">${f.label}</span>${hint}
+        <input type="hidden" name="${f.name}" value="${esc(JSON.stringify(list.map(z => ({id: z.id, label: z.label, price: z.price}))))}">
+        <div data-szrows></div>
+        <button type="button" class="btn btn-ghost btn-sm" data-szadd style="justify-self:start; margin-top:8px">+ Add a size</button></div>`;
+    }
     case "number": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="number" inputmode="numeric" step="1" min="${f.min ?? 1}" max="${f.max ?? 1000}" value="${esc(val ?? "")}">${hint}</div>`;
     case "textarea": return `<div class="field"><label for="${id}">${f.label}</label><textarea id="${id}" name="${f.name}" maxlength="${f.max||1000}">${esc(val)}</textarea>${hint}</div>`;
     case "money": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${val ?? ""}">${hint}</div>`;
@@ -462,7 +480,8 @@ function fieldHtml(f, v){
     case "url": return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" type="url" inputmode="url" placeholder="https://" value="${esc(val)}">${hint}</div>`;
     case "switch": return `<label class="switch"><input type="checkbox" name="${f.name}" ${val === true || val === 1 ? "checked" : ""}> ${f.label}</label>`;
     case "image": return photoFieldHtml(f, v);
-    default: return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" value="${esc(val)}" maxlength="${f.max||200}" ${f.required?"required":""}>${hint}</div>`;
+    default: return `<div class="field"><label for="${id}">${f.label}</label><input id="${id}" name="${f.name}" value="${esc(val)}" maxlength="${f.max||200}" ${f.required?"required":""} ${f.suggest ? `list="dl_${f.name}" autocomplete="off"` : ""}>${hint}
+      ${f.suggest ? `<datalist id="dl_${f.name}">${f.suggest().map(o => `<option value="${esc(o)}">`).join("")}</datalist>` : ""}</div>`;
   }
 }
 /* ============ Photos: every pick or snap goes through the Photo Studio ============ */
@@ -528,6 +547,26 @@ function wireUploads(root, fields){
     root.addEventListener("change", e => { if (e.target.name === "kind") showHint(); });
   });
 }
+// Sizes editor: rows of name + price (up to 6), kept as JSON in a hidden input so Save and drafts see it.
+function wireSizeEditor(form){
+  $$("[data-sizesbox]", form).forEach(box => {
+    const hidden = $("input[type=hidden]", box), rowsEl = $("[data-szrows]", box), add = $("[data-szadd]", box);
+    let list = JSON.parse(hidden.value || "[]");
+    const sync = () => { hidden.value = JSON.stringify(list); add.hidden = list.length >= 6; form.dispatchEvent(new Event("input")); };
+    const draw = () => {
+      rowsEl.innerHTML = list.map((z, i) => `<div class="szrow">
+        <input data-szl="${i}" value="${esc(z.label ?? "")}" maxlength="40" placeholder="${i === 0 ? "Kit for 2" : i === 1 ? "Family kit" : "Size name"}" aria-label="Size ${i + 1} name">
+        <span class="dollar">$<input data-szp="${i}" type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${z.price ?? ""}" aria-label="Size ${i + 1} price"></span>
+        <button type="button" class="btn btn-danger btn-sm" data-szdel="${i}" aria-label="Remove size ${i + 1}">✕</button></div>`).join("");
+      $$("[data-szl]", rowsEl).forEach(inp => inp.addEventListener("input", () => { list[+inp.dataset.szl].label = inp.value; sync(); }));
+      $$("[data-szp]", rowsEl).forEach(inp => inp.addEventListener("input", () => { list[+inp.dataset.szp].price = inp.value; sync(); }));
+      $$("[data-szdel]", rowsEl).forEach(b => b.addEventListener("click", () => { list.splice(+b.dataset.szdel, 1); draw(); sync(); }));
+      add.hidden = list.length >= 6;
+    };
+    add.addEventListener("click", () => { if (list.length >= 6) return; list.push({label:"", price:""}); draw(); sync(); $$("[data-szl]", rowsEl).at(-1).focus(); });
+    draw();
+  });
+}
 function openForm(cfg, row, restored){
   const slot = $(cfg.slot || "#formSlot");
   const flat = cfg.fields.flatMap(f => f.pair || [f]);
@@ -549,6 +588,7 @@ function openForm(cfg, row, restored){
   </form>`;
   const form = $("form", slot);
   wireUploads(form, flat);
+  wireSizeEditor(form);
   const values = () => Object.fromEntries(flat.flatMap(f => {
     const el = form.elements[f.name], out = [[f.name, f.type === "switch" ? el.checked : el.value]];
     if (f.orig) out.push([f.orig, form.elements[f.orig].value]);
@@ -567,7 +607,7 @@ function openForm(cfg, row, restored){
     const body = {};
     for (const f of flat){
       const el = form.elements[f.name];
-      body[f.name] = f.type === "switch" ? el.checked : el.value.trim();
+      body[f.name] = f.type === "switch" ? el.checked : f.type === "sizes" ? JSON.parse(el.value || "[]") : el.value.trim();
       if (f.orig) body[f.orig] = form.elements[f.orig].value;
       if (f.required && !body[f.name]){ return showErr(form, `${f.label} is required`); }
     }
@@ -906,6 +946,7 @@ function mediaCard(m){
 
 /* ============ Menu: prices, flavors, treats ============ */
 let SINGLE_PRICE = null; // price tag sticker default for flavors
+let TREAT_GROUPS = [];   // groups Shaun has already used, offered again in the treat form
 const FLAVORS_CFG = {
   path: "flavors", noun: "flavor", newTitle: "Add a flavor", slot: "#flavorForm", reload: () => renderMenu(),
   fields: [
@@ -922,8 +963,10 @@ const TREATS_CFG = {
   path: "treats", noun: "treat", newTitle: "Add a treat", slot: "#treatForm", reload: () => renderMenu(),
   fields: [
     {name:"name", label:"Treat name", type:"text", required:true, max:80},
-    {name:"price", label:"Price ($)", type:"money", required:true},
-    {name:"category", label:"Kind of treat (optional)", type:"text", max:40, hint:"Like “Cookie Cake” or “Cupcakes”. Shows above the name."},
+    {name:"price", label:"Price ($)", type:"money", hint:"Leave empty if you add sizes below."},
+    {name:"sizes", label:"Sizes (optional)", type:"sizes", hint:"Like “Kit for 2 — $10” and “Family kit — $18”. Customers pick one and the price follows."},
+    {name:"category", label:"Group (optional)", type:"text", max:40, suggest: () => [...new Set(["Kits", "Gift boxes", "Party trays", "Other", ...TREAT_GROUPS])],
+      hint:"Pick one or type your own. On the site, treats show under a small heading for their group."},
     {name:"description", label:"Description", type:"textarea", max:300},
     {name:"photo_key", orig:"photo_orig_key", label:"Photo", type:"image", preview:"photo", origPreview:"photo_orig", shape: () => "square", price: form => form.elements.price.value},
     {pair:[{name:"starts", label:"Starts (optional)", type:"date"}, {name:"ends", label:"Ends (optional)", type:"date"}]},
@@ -943,7 +986,7 @@ function itemRow(kind, x, i, n){
   return `<div class="irow" data-kind="${kind}" data-id="${esc(x.id)}">
     <div class="itop">${x.photo ? `<img class="ithumb ${shape}" src="${esc(x.photo)}" alt="" loading="lazy">` : `<span class="ithumb ${shape} none" aria-hidden="true">🍪</span>`}
       <div class="iname"><b>${esc(x.name)}</b>
-        <div class="row" style="gap:6px">${kind === "treat" ? `<span class="price" style="font-size:18px">${money(x.price)}</span>` : (x.short && x.short !== x.name ? `<span class="meta">${esc(x.short)}</span>` : "")}
+        <div class="row" style="gap:6px">${kind === "treat" ? `<span class="price" style="font-size:18px">${x.sizes ? "from " : ""}${money(x.price)}</span>${x.sizes ? `<span class="meta">${x.sizes.length} sizes</span>` : ""}${x.category ? `<span class="meta">· ${esc(x.category)}</span>` : ""}` : (x.short && x.short !== x.name ? `<span class="meta">${esc(x.short)}</span>` : "")}
           ${kind === "flavor" && !x.in_flight ? `<span class="meta">· not in flight</span>` : ""} ${seasonNote(x)}</div></div>
       <label class="switch"><input type="checkbox" data-onoff ${x.active ? "checked" : ""} aria-label="Show ${esc(x.name)} on the site"><span class="sr">On</span></label></div>
     <div class="iact">
@@ -963,6 +1006,11 @@ async function renderMenu(){
     <label class="switch" title="Available"><input type="checkbox" ${m.active ? "checked" : ""} aria-label="${esc(m.name)} available"><span>Available</span></label></div>`;
   $("#main").innerHTML = `
     <h1 class="page">Menu</h1>
+    <div class="bigadd">
+      <button class="bigbtn" type="button" id="bigTreat"><b>+ Add a treat</b><span>always on your menu</span></button>
+      <button class="bigbtn" type="button" id="bigSpecial"><b>+ Add a special</b><span>for a limited time</span></button>
+      <button class="bigbtn" type="button" id="bigFlavor"><b>+ Add a flavor</b><span>for boxes and singles</span></button>
+    </div>
     <p class="meta" style="margin:0 0 12px">Prices save when you leave the box. Switch something off to hide it from the site and stop new orders for it.</p>
     <section class="card"><p class="subhead" style="margin-top:0">Prices</p>${items.map(row).join("")}</section>
     <section class="card" id="flavorSec">
@@ -987,6 +1035,10 @@ async function renderMenu(){
     price.addEventListener("change", () => { const prev = last; last = price.value; save({price: price.value}, () => { price.value = last = prev; }); });
     act.addEventListener("change", () => save({active: act.checked}, () => { act.checked = !act.checked; }));
   });
+  TREAT_GROUPS = [...new Set(treats.map(t => t.category).filter(Boolean))];
+  $("#bigTreat").addEventListener("click", () => $("#addTreat").click());
+  $("#bigFlavor").addEventListener("click", () => $("#addFlavor").click());
+  $("#bigSpecial").addEventListener("click", async () => { await go("specials"); openForm(SPECIALS, null); });
   $("#addFlavor").addEventListener("click", () => { $("#treatForm").innerHTML = ""; openForm(FLAVORS_CFG, null); });
   $("#addTreat").addEventListener("click", () => { $("#flavorForm").innerHTML = ""; openForm(TREATS_CFG, null); });
   $$(".irow").forEach(r => {

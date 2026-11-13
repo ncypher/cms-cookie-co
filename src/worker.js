@@ -103,8 +103,11 @@ function withSecurityHeaders(res, { admin = false } = {}) {
 }
 
 /* ============ Public: content ============ */
+// Sizes: JSON [{id, label, price_cents}] or NULL. Public/admin shape: [{id, label, price}] or null.
+const sizesOf = (row) => { const a = row?.sizes_json ? JSON.parse(row.sizes_json) : null; return a && a.length ? a : null; };
+const shapeSizes = (row) => sizesOf(row)?.map((z) => ({ id: z.id, label: z.label, price: dollars(z.price_cents) })) ?? null;
 function shapeSpecial(s) {
-  return { id: s.id, kind: s.kind, title: s.title, body: s.body, price: dollars(s.price_cents), image: mediaUrl(s.image_key), starts: s.starts, ends: s.ends };
+  return { id: s.id, kind: s.kind, title: s.title, body: s.body, price: dollars(s.price_cents), sizes: shapeSizes(s), image: mediaUrl(s.image_key), starts: s.starts, ends: s.ends };
 }
 function shapeMedia(m) {
   return { id: m.id, kind: m.kind, caption: m.caption, url: m.kind === "instagram" ? m.key_or_url : mediaUrl(m.key_or_url), content_type: m.content_type };
@@ -122,7 +125,7 @@ function eventSignup(e, today) {
   return { price: dollars(e.ticket_price_cents), spots_left: left, closes, state: today > closes ? "closed" : left === 0 ? "soldout" : "open" };
 }
 const shapePackage = (k) => ({ id: k.id, name: k.name, description: k.description, from: dollars(k.from_cents), serves: k.serves, photo: mediaUrl(k.photo_key) });
-const shapeTreat = (t) => ({ id: t.id, name: t.name, price: dollars(t.price_cents), description: t.description, category: t.category, photo: mediaUrl(t.photo_key) });
+const shapeTreat = (t) => ({ id: t.id, name: t.name, price: dollars(t.price_cents), sizes: shapeSizes(t), description: t.description, category: t.category, photo: mediaUrl(t.photo_key) });
 
 async function getContent(env) {
   const today = todayLocal();
@@ -182,7 +185,7 @@ async function priceOrder(env, items) {
   for (const it of items) {
     const qty = Number(it?.qty);
     if (!Number.isInteger(qty) || qty < 1 || qty > 50) throw new HttpError(400, "Quantities must be between 1 and 50");
-    let name, detail = null, unit;
+    let name, detail = null, unit, sizeLabel = null, sizeId = null;
     switch (it.type) {
       case "box": {
         const size = Number(it.size);
@@ -216,7 +219,8 @@ async function priceOrder(env, items) {
       case "treat": {
         const t = await env.DB.prepare(`SELECT * FROM treats WHERE id = ?2 AND ${IN_SEASON}`).bind(today, Number(it.id) || 0).first();
         if (!t) throw new HttpError(400, "That treat isn't available right now");
-        name = t.name; detail = t.category || "Treat"; unit = t.price_cents;
+        const z = pickSize(t, it.size_id, t.name);
+        name = t.name; detail = z ? z.label : t.category || "Treat"; unit = z ? z.price_cents : t.price_cents; sizeLabel = z?.label ?? null; sizeId = z?.id ?? null;
         break;
       }
       case "gram": { const m = item("gram"); name = m.name; unit = m.price_cents; break; }
@@ -232,19 +236,31 @@ async function priceOrder(env, items) {
              AND (starts IS NULL OR starts <= ?2) AND (ends IS NULL OR ends >= ?2)`
         ).bind(Number(it.id) || 0, today).first();
         if (!s) throw new HttpError(400, "That special has ended");
-        name = s.title; detail = s.kind === "cotm" ? "Cookie of the Month" : "Special"; unit = s.price_cents;
+        const z = pickSize(s, it.size_id, s.title);
+        name = s.title; detail = z ? z.label : s.kind === "cotm" ? "Cookie of the Month" : "Special"; unit = z ? z.price_cents : s.price_cents; sizeLabel = z?.label ?? null; sizeId = z?.id ?? null;
         break;
       }
       default:
         throw new HttpError(400, "Unknown item in your order");
     }
-    lines.push({ type: it.type, name, detail, qty, unit_cents: unit, line_cents: unit * qty });
+    lines.push({ type: it.type, name, detail, qty, unit_cents: unit, line_cents: unit * qty, ...(sizeId ? { size_id: sizeId, size: sizeLabel } : {}) });
   }
   return { lines, total_cents: lines.reduce((s, l) => s + l.line_cents, 0) };
 }
 
+// An item with sizes needs one of its current sizes; an item without sizes takes none.
+function pickSize(row, sizeId, name) {
+  const sizes = sizesOf(row);
+  const asked = sizeId != null && sizeId !== "";
+  if (!sizes) { if (asked) throw new HttpError(400, `${name} doesn't come in sizes any more. Please add it again.`); return null; }
+  if (!asked) throw new HttpError(400, `Pick a size for ${name}`);
+  const z = sizes.find((x) => x.id === sizeId);
+  if (!z) throw new HttpError(400, `That size of ${name} isn't available any more. Please add it again.`);
+  return z;
+}
+
 function orderEmailText(o) {
-  const items = o.lines.map((l) => `• ${l.qty} × ${l.name}${l.detail && l.type === "box" ? ` (${l.detail})` : ""} — ${money(l.line_cents)}`).join("\n");
+  const items = o.lines.map((l) => `• ${l.qty} × ${l.name}${l.detail && (l.type === "box" || l.size) ? ` (${l.detail})` : ""} — ${money(l.line_cents)}`).join("\n");
   const [y, m, d] = o.wanted_date.split("-").map(Number);
   const wanted = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
   return [
@@ -693,7 +709,7 @@ async function deleteMediaIfUnused(env, ...keys) {
 const releaseReplaced = (env, prev, row, cols) => deleteMediaIfUnused(env, ...cols.filter((c) => prev?.[c] && prev[c] !== row[c]).map((c) => prev[c]));
 
 const shapeOrder = (o) => ({ ...o, items: JSON.parse(o.items_json), items_json: undefined, total: dollars(o.total_cents), confirmed: !!o.confirmed, paid: !!o.paid });
-const shapeAdminSpecial = (s) => ({ ...s, price: dollars(s.price_cents), image: mediaUrl(s.image_key), image_orig: mediaUrl(s.image_orig_key), active: !!s.active });
+const shapeAdminSpecial = (s) => ({ ...s, sizes_json: undefined, sizes: shapeSizes(s), price: dollars(s.price_cents), image: mediaUrl(s.image_key), image_orig: mediaUrl(s.image_orig_key), active: !!s.active });
 const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key), flyer_orig: mediaUrl(e.flyer_orig_key),
   published: !!e.published, signups_open: !!e.signups_open, ticket_price: dollars(e.ticket_price_cents), taken: e.taken ?? 0, signups: e.signups ?? 0,
   paid_cents: e.paid_cents ?? 0, expected_cents: e.expected_cents ?? 0 });
@@ -730,12 +746,33 @@ async function photoPair(env, b, keyField, origField, label) {
   return { [keyField]: key, [origField]: orig };
 }
 
+// Up to 6 sizes of label + price. Existing ids are kept (so a cart still matches); new rows get a new id.
+function sizesFromBody(v) {
+  if (v == null || v === "") return null;
+  if (!Array.isArray(v)) throw new HttpError(400, "Sizes must be a list");
+  const rows = v.filter((z) => z && (String(z.label ?? "").trim() || String(z.price ?? "").trim()));
+  if (rows.length > 6) throw new HttpError(400, "6 sizes at most");
+  const seen = new Set();
+  const out = rows.map((z, i) => {
+    const label = str(typeof z.label === "string" ? z.label : "", { max: 40, required: true, field: `Size ${i + 1} name` });
+    const price_cents = priceToCents(z.price, { field: `Price for ${label}`, allowNull: false });
+    let id = typeof z.id === "string" && /^[a-z0-9]{6}$/.test(z.id) && !seen.has(z.id) ? z.id : null;
+    while (!id || seen.has(id)) id = [...crypto.getRandomValues(new Uint8Array(3))].map((x) => x.toString(16).padStart(2, "0")).join("");
+    seen.add(id);
+    return { id, label, price_cents };
+  });
+  if (new Set(out.map((z) => z.label.toLowerCase())).size !== out.length) throw new HttpError(400, "Two sizes have the same name");
+  return out.length ? out : null;
+}
+
 async function specialFromBody(env, b) {
+  const sizes = sizesFromBody(b.sizes);
   return {
     kind: b.kind === "cotm" ? "cotm" : "special",
     title: str(b.title, { max: 120, required: true, field: "Title" }),
     body: str(b.body, { max: 1000, field: "Description" }),
-    price_cents: priceToCents(b.price),
+    price_cents: sizes ? sizes[0].price_cents : priceToCents(b.price), // with sizes, the first size is the "from" price
+    sizes_json: sizes ? JSON.stringify(sizes) : null,
     ...(await photoPair(env, b, "image_key", "image_orig_key", "Image")),
     starts: optDate(b.starts, "Start date"),
     ends: optDate(b.ends, "End date"),
@@ -778,7 +815,7 @@ const shapeAdminFlavor = (r) => ({
   photo_key: r.photo_key, photo_orig_key: r.photo_orig_key, photo_orig: mediaUrl(r.photo_orig_key),
   starts: r.starts, ends: r.ends, in_flight: !!r.in_flight, active: !!r.active, sort: r.sort,
 });
-const shapeAdminTreat = (t) => ({ ...t, price: dollars(t.price_cents), photo: mediaUrl(t.photo_key), photo_orig: mediaUrl(t.photo_orig_key), active: !!t.active });
+const shapeAdminTreat = (t) => ({ ...t, sizes_json: undefined, sizes: shapeSizes(t), price: dollars(t.price_cents), photo: mediaUrl(t.photo_key), photo_orig: mediaUrl(t.photo_orig_key), active: !!t.active });
 
 async function flavorFromBody(env, b) {
   const name = str(b.name, { max: 60, required: true, field: "Name" });
@@ -793,9 +830,11 @@ async function flavorFromBody(env, b) {
   };
 }
 async function treatFromBody(env, b) {
+  const sizes = sizesFromBody(b.sizes);
   return {
     name: str(b.name, { max: 80, required: true, field: "Name" }),
-    price_cents: priceToCents(b.price, { field: "Price", allowNull: false }),
+    price_cents: sizes ? sizes[0].price_cents : priceToCents(b.price, { field: "Price", allowNull: false }),
+    sizes_json: sizes ? JSON.stringify(sizes) : null,
     description: str(b.description, { max: 300, field: "Description" }),
     category: str(b.category, { max: 40, field: "Category" }),
     ...(await photoPair(env, b, "photo_key", "photo_orig_key", "Photo")),

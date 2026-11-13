@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T20:46:02.901Z",
+  "generated": "2026-11-13T20:55:14.307Z",
   "tasks": [
     {
       "id": "home",
@@ -65,7 +65,7 @@
         }
       ],
       "clip": "/admin/help/photo/clip.mp4",
-      "clip_seconds": 10.1
+      "clip_seconds": 11.2
     },
     {
       "id": "cotm",
@@ -127,7 +127,7 @@
         }
       ],
       "clip": "/admin/help/special/clip.mp4",
-      "clip_seconds": 8.2
+      "clip_seconds": 8.1
     },
     {
       "id": "event",
@@ -193,7 +193,7 @@
         }
       ],
       "clip": "/admin/help/signups/clip.mp4",
-      "clip_seconds": 9.5
+      "clip_seconds": 9.3
     },
     {
       "id": "flavor",
@@ -228,7 +228,7 @@
         }
       ],
       "clip": "/admin/help/flavor/clip.mp4",
-      "clip_seconds": 9.7
+      "clip_seconds": 9.6
     },
     {
       "id": "treat",
@@ -317,7 +317,7 @@
         }
       ],
       "clip": "/admin/help/order/clip.mp4",
-      "clip_seconds": 8.9
+      "clip_seconds": 9
     },
     {
       "id": "pay",
@@ -352,7 +352,7 @@
         }
       ],
       "clip": "/admin/help/pay/clip.mp4",
-      "clip_seconds": 10.3
+      "clip_seconds": 10.5
     },
     {
       "id": "spreadsheet",
@@ -387,7 +387,7 @@
         }
       ],
       "clip": "/admin/help/spreadsheet/clip.mp4",
-      "clip_seconds": 8.7
+      "clip_seconds": 8.6
     },
     {
       "id": "tip",

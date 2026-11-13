@@ -338,6 +338,15 @@ button{font:inherit; color:inherit; cursor:pointer}
 .tr .buy{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:2px}
 @media (max-width:420px){ .tr-grid{grid-template-columns:1fr 1fr; gap:12px} }
 
+/* Sizes ("Kit for 2", "Family kit"): pick one, the price follows */
+.sizes{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px}
+.sz{border:1.5px solid var(--pink-soft); background:#fff; color:var(--cocoa); border-radius:999px; padding:8px 13px; min-height:40px; font:700 14px var(--f-body)}
+.sz[aria-pressed="true"]{background:var(--green); border-color:var(--green); color:#fff}
+.tr .sizes{justify-content:center}
+.sp .buy{display:flex; align-items:center; gap:12px; padding-inline:6px; flex-wrap:wrap}
+.tr-group{font:600 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:18px 0 10px; text-align:center}
+.tr-group:first-child{margin-top:0}
+
 /* Catering (switched on in admin) */
 .catering-panel{margin-top:32px}
 .catering-panel .intro{text-align:center; font:400 20px/1.35 var(--f-hand); max-width:640px; margin:0 auto 14px}
@@ -555,7 +564,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 
   <section class="panel treats-panel" id="treatsPanel" hidden>
     <span class="hearts l">♥</span><h2 class="tag">More Treats</h2><span class="hearts r">♥</span>
-    <div class="tr-grid" id="treatGrid"></div>
+    <div id="treatGrid"></div>
   </section>
 
   <section class="panel catering-panel" id="catering" hidden>
@@ -924,8 +933,8 @@ function toApiItem(c){
   if (c.type==="box") return {...base, size:c.size, flavors:c.flavors};
   if (c.type==="single") return {...base, flavor:c.key.replace("single-","")};
   if (c.type==="mini") return {...base, size:+c.key.replace("mini","")};
-  if (c.type==="special") return {...base, id:+c.key.replace("special-","")};
-  if (c.type==="treat") return {...base, id:+c.key.replace("treat-","")};
+  // Newer cart lines carry itemId/sizeId; older saved carts only have the key ("treat-7").
+  if (c.type==="special" || c.type==="treat") return {...base, id: c.itemId ?? +c.key.replace(c.type + "-", ""), ...(c.sizeId ? {size_id: c.sizeId} : {})};
   return base;
 }
 
@@ -1178,18 +1187,48 @@ function applyFlavors(list){
   $("#flightTry").textContent = `Try all ${inF} flavors!`;
   if (!inF) document.querySelectorAll('[data-item="flight"]').forEach(el => el.hidden = true);
 }
+/* ---- Sizes: chips under the item; the price shown follows the chip ---- */
+function sizePicker(key, x){
+  if (!x.sizes) return "";
+  return `<div class="sizes" role="group" aria-label="Pick a size" data-sizes="${key}">${x.sizes.map((z, i) =>
+    `<button type="button" class="sz" data-sz="${esc(z.id)}" aria-pressed="${i === 0}">${esc(z.label)}</button>`).join("")}</div>`;
+}
+const pickedSize = (key, x) => { if (!x.sizes) return null; const id = document.querySelector(`[data-sizes="${key}"] [aria-pressed="true"]`)?.dataset.sz; return x.sizes.find(z => z.id === id) || x.sizes[0]; };
+function wireSizes(key, x, addBtn){
+  document.querySelectorAll(`[data-sizes="${key}"] .sz`).forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(`[data-sizes="${key}"] .sz`).forEach(o => o.setAttribute("aria-pressed", o === b));
+    const z = pickedSize(key, x);
+    document.querySelectorAll(`[data-pricefor="${key}"]`).forEach(el => el.textContent = money(z.price));
+    if (addBtn) addBtn.setAttribute("aria-label", `Add ${x.name || x.title}, ${z.label}, ${money(z.price)}`);
+  }));
+}
+// One cart line per item and size. itemId/sizeId go to the server, which prices them.
+function addSized(type, x, defaultDetail, extra = {}){
+  const key = `${type}-${x.id}`, z = pickedSize(key, x);
+  addItem({key: z ? `${key}-${z.id}` : key, type, itemId: x.id, sizeId: z?.id || null, name: x.name || x.title, detail: z ? z.label : defaultDetail, price: z ? z.price : x.price, ...extra});
+}
+
 function renderTreats(list){
   TREATS = Array.isArray(list) ? list : [];
   $("#treatsPanel").hidden = !TREATS.length;
-  $("#treatGrid").innerHTML = TREATS.map(t => `<div class="tr">
+  // A small heading per group once Shaun groups anything; until then it looks exactly as before.
+  const grouped = TREATS.some(t => t.category);
+  const card = t => { const price = t.sizes ? t.sizes[0].price : t.price; return `<div class="tr">
       ${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.name)}" loading="lazy">` : `<div class="noimg">${cookieSVG("fs", 13, {heart:true})}</div>`}
-      ${t.category ? `<span class="cat">${esc(t.category)}</span>` : ""}
+      ${!grouped && t.category ? `<span class="cat">${esc(t.category)}</span>` : ""}
       <b>${esc(t.name)}</b>${t.description ? `<p>${esc(t.description)}</p>` : ""}
-      <div class="buy"><span class="price tnum">${money(t.price)}</span><button class="btn btn-rose btn-sm" data-treat="${t.id}" aria-label="Add ${esc(t.name)}, ${money(t.price)}">Add</button></div></div>`).join("");
-  document.querySelectorAll("[data-treat]").forEach(b => b.addEventListener("click", ()=>{
+      ${sizePicker("treat-" + t.id, t)}
+      <div class="buy"><span class="price tnum" data-pricefor="treat-${t.id}">${money(price)}</span><button class="btn btn-rose btn-sm" data-treat="${t.id}" aria-label="Add ${esc(t.name)}${t.sizes ? ", " + esc(t.sizes[0].label) : ""}, ${money(price)}">Add</button></div></div>`; };
+  const groups = [];
+  for (const t of TREATS){ const g = t.category || "Other"; let x = groups.find(y => y.name === g); if (!x) groups.push(x = {name: g, items: []}); x.items.push(t); }
+  $("#treatGrid").innerHTML = grouped
+    ? groups.map(g => `<h3 class="tr-group">${esc(g.name)}</h3><div class="tr-grid">${g.items.map(card).join("")}</div>`).join("")
+    : `<div class="tr-grid">${TREATS.map(card).join("")}</div>`;
+  document.querySelectorAll("[data-treat]").forEach(b => {
     const t = TREATS.find(x => x.id === +b.dataset.treat); if (!t) return;
-    addItem({key:"treat-"+t.id, type:"treat", name:t.name, detail:t.category || "Treat", price:t.price, art:[], photo:t.photo});
-  }));
+    wireSizes("treat-" + t.id, t, b);
+    b.addEventListener("click", () => addSized("treat", t, t.category || "Treat", {art:[], photo:t.photo}));
+  });
 }
 function longDate(v, opts){ const [y,m,d] = v.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US", opts); }
 const IG_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff"/></svg>`;
@@ -1201,12 +1240,16 @@ function renderContent(c){
     $("#cotm").innerHTML = `<div class="cotm">
       ${m.image ? `<img src="${esc(m.image)}" alt="${esc(m.title)}" width="240" height="240" loading="lazy">` : `<div style="width:120px">${cookieSVG("fs", 11, {heart:true})}</div>`}
       <div><h3>${esc(m.title)}</h3>${m.body ? `<p>${esc(m.body)}</p>` : ""}
-        ${m.price != null ? `<div class="buy"><span class="price tnum">${money(m.price)}</span><button class="btn btn-rose btn-sm" data-special="${m.id}">Add one</button></div>` : ""}</div></div>`;
+        ${m.price != null ? `${sizePicker("special-" + m.id, m)}<div class="buy"><span class="price tnum" data-pricefor="special-${m.id}">${money(m.sizes ? m.sizes[0].price : m.price)}</span><button class="btn btn-rose btn-sm" data-special="${m.id}">Add one</button></div>` : ""}</div></div>`;
   }
   if (show("#specialsPanel", c.specials.length > 0)){ any = true;
     $("#specials").innerHTML = c.specials.map(s => `<div class="sp">
       ${s.image ? `<img src="${esc(s.image)}" alt="" loading="lazy">` : ""}
-      ${s.price != null
+      ${s.price != null && s.sizes
+        ? `<div class="prow" style="cursor:default">${esc(s.title)} <span class="dots"></span><span class="amt" data-pricefor="special-${s.id}">${money(s.sizes[0].price)}</span></div>
+           <div style="padding-inline:6px">${sizePicker("special-" + s.id, s)}</div>
+           <div class="buy"><button class="btn btn-rose btn-sm" data-special="${s.id}">Add to order</button></div>`
+        : s.price != null
         ? `<button class="prow" data-special="${s.id}">${esc(s.title)} <span class="dots"></span><span class="amt">${money(s.price)}</span><span class="go" aria-hidden="true">+</span></button>`
         : `<div class="prow" style="cursor:default">${esc(s.title)}</div>`}
       ${s.body ? `<p>${esc(s.body)}</p>` : ""}
@@ -1239,10 +1282,11 @@ function renderContent(c){
     const ev = c.events.find(x => x.id === +b.dataset.reserve); if (ev) openReserve(ev);
   }));
   const specials = [c.cookieOfTheMonth, ...c.specials].filter(Boolean);
-  document.querySelectorAll("[data-special]").forEach(b => b.addEventListener("click", ()=>{
+  document.querySelectorAll("[data-special]").forEach(b => {
     const s = specials.find(x => x.id === +b.dataset.special); if (!s) return;
-    addItem({key:"special-"+s.id, type:"special", name:s.title, detail: s.kind==="cotm" ? "Cookie of the Month" : "Special", price:s.price, art:["fs"]});
-  }));
+    wireSizes("special-" + s.id, s, b);
+    b.addEventListener("click", () => addSized("special", s, s.kind==="cotm" ? "Cookie of the Month" : "Special", {art:["fs"]}));
+  });
 }
 /* ============ Event signups ============ */
 // "?preview=ID" (opened from Admin) shows a Draft event to a signed-in admin; signups go through the admin API.

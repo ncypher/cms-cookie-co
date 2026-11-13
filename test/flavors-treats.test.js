@@ -159,7 +159,7 @@ test("treats: shown in content, priced by the server (never by the browser)", as
   const t = await admin(e, "POST", "treats", { name: "Cookie Cake Bites", price: "12.50", category: "Cookie Cake", description: "A dozen bites" });
   assert.equal(t.status, 201);
   const c = await content(e);
-  assert.deepEqual(c.treats, [{ id: t.body.treat.id, name: "Cookie Cake Bites", price: 12.5, description: "A dozen bites", category: "Cookie Cake", photo: null }]);
+  assert.deepEqual(c.treats, [{ id: t.body.treat.id, name: "Cookie Cake Bites", price: 12.5, sizes: null, description: "A dozen bites", category: "Cookie Cake", photo: null }]);
   const o = await order(e, [{ type: "treat", id: t.body.treat.id, qty: 2, price: 0.01 }]);
   assert.equal(o.status, 201);
   assert.equal(o.body.total, 25);
