@@ -6,6 +6,7 @@
 import { chromium } from "playwright";
 import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -23,12 +24,30 @@ try { sh("ffmpeg", ["-version"]); } catch { throw new Error("ffmpeg is needed fo
 
 /* ---- local dev server + seed ---- */
 async function up() { try { return (await fetch(BASE + "/api/content")).ok; } catch { return false; } }
+/* ---- a pretend Square: the guide never calls the real one ---- */
+const MOCK = "http://127.0.0.1:8790";
+async function mockUp() { try { return (await fetch(MOCK + "/health")).ok; } catch { return false; } }
+let mockProc = null;
+if (!(await mockUp())) {
+  mockProc = spawn(process.execPath, ["scripts/square-mock.mjs"], { cwd: ROOT, stdio: "ignore", env: { ...process.env, GUIDE_BASE: BASE, SQUARE_MOCK_PORT: "8790" } });
+  for (let i = 0; i < 20 && !(await mockUp()); i++) await new Promise((r) => setTimeout(r, 250));
+  if (!(await mockUp())) throw new Error("The pretend Square didn't start on " + MOCK);
+}
+// These --var values win over .dev.vars, so real Square keys there are never used by the guide.
+const SQUARE_VARS = { SQUARE_API_BASE: MOCK, SQUARE_APP_ID: "sandbox-guide-mock", SQUARE_APP_SECRET: "guide-mock-secret",
+  SQUARE_TOKEN_ENC_KEY: crypto.randomBytes(32).toString("hex"), SQUARE_WEBHOOK_SIGNATURE_KEY: "guide-mock", DEV_ORIGIN: BASE };
+
 let devProc = null;
 if (!(await up())) {
-  console.log("Starting wrangler dev…");
-  devProc = spawn("npx", ["wrangler", "dev"], { cwd: ROOT, shell: process.platform === "win32", stdio: "ignore" });
+  console.log("Starting wrangler dev (with the pretend Square)…");
+  devProc = spawn("npx", ["wrangler", "dev", ...Object.entries(SQUARE_VARS).flatMap(([k, v]) => ["--var", `${k}:${v}`])], { cwd: ROOT, shell: process.platform === "win32", stdio: "ignore" });
   for (let i = 0; i < 60 && !(await up()); i++) await new Promise((r) => setTimeout(r, 1000));
   if (!(await up())) throw new Error("wrangler dev didn't start on " + BASE);
+}
+const sqState = await (await fetch(BASE + "/api/admin/square")).json().catch(() => ({}));
+if (!sqState.square?.mock) {
+  if (mockProc) mockProc.kill();
+  throw new Error("wrangler dev is already running without the pretend Square (it could reach the real one). Stop it and run `npm run guide` again; the guide starts its own.");
 }
 const me = await (await fetch(BASE + "/api/admin/me")).json().catch(() => ({}));
 if (!me.dev) throw new Error("Admin needs ACCESS_DEV_BYPASS=true in .dev.vars (copy .dev.vars.example).");
@@ -67,6 +86,9 @@ async function act(page, a) {
   if (a.press) return page.keyboard.press(a.press);
   if (a.scroll) return loc(a.scroll).scrollIntoViewIfNeeded();
   if (a.pause) return page.waitForTimeout(a.pause);
+  if (a.goto) return page.goto(a.goto.startsWith("http") ? a.goto : BASE + a.goto);
+  if (a.tapIf) { const l = loc(a.tapIf); if (await l.waitFor({ state: "visible", timeout: a.timeout || 2500 }).then(() => true, () => false)) await l.click(); return; }
+  if (a.check) { const l = loc(a.check); await l.waitFor({ state: "attached" }); if (!(await l.isChecked())) await l.click(); return; }
   if (a.range) return loc(a.range).evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }, a.value);
   if (a.drag) {
     const b = await loc(a.drag).boundingBox();
@@ -147,11 +169,13 @@ try {
     if (failed) break;
     const clip = encodeClip(await video.path(), path.join(dir, "clip.mp4"));
     console.log(`✓ ${task.id}: ${steps.length} pictures, clip ${clip.seconds}s ${(clip.bytes / 1024).toFixed(0)} KB${clip.speed > 1 ? ` (sped up ×${clip.speed})` : ""}`);
-    guide.tasks.push({ id: task.id, icon: task.icon, title: task.title, go: task.go, tip: task.tip, steps, clip: `/admin/help/${task.id}/clip.mp4`, clip_seconds: clip.seconds });
+    guide.tasks.push({ id: task.id, icon: task.icon, title: task.title, go: task.go, tip: task.tip, ...(task.needs ? { needs: task.needs } : {}), steps, clip: `/admin/help/${task.id}/clip.mp4`, clip_seconds: clip.seconds });
   }
 } finally {
   await browser.close();
-  if (devProc) devProc.kill();
+  // On Windows, npx runs under a shell: kill the whole tree or wrangler/workerd stay running on the port.
+  if (devProc) { if (process.platform === "win32") { try { execFileSync("taskkill", ["/pid", String(devProc.pid), "/T", "/F"], { stdio: "ignore" }); } catch {} } else devProc.kill(); }
+  if (mockProc) mockProc.kill();
 }
 if (failed) { console.error(`Guide not written. See ${path.relative(ROOT, TMP)} for the screenshot where it stopped.`); process.exit(1); }
 // Keep the order from tasks.json.

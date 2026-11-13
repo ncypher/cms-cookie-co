@@ -10,7 +10,7 @@ const guide = JSON.parse(fs.readFileSync(path.join(ROOT, "public", "admin", "hel
 const pub = (url) => path.join(ROOT, "public", ...url.split("/").filter(Boolean));
 
 test("tasks.json covers every task in the brief, 4–6 steps each", () => {
-  assert.deepEqual(spec.tasks.map((t) => t.id), ["home", "photo", "cotm", "special", "event", "signups", "flavor", "treat", "sized", "price", "order", "pay", "catering", "request", "spreadsheet", "tip"]);
+  assert.deepEqual(spec.tasks.map((t) => t.id), ["home", "photo", "cotm", "special", "event", "signups", "flavor", "treat", "sized", "price", "order", "pay", "square", "cardpaid", "paylink", "catering", "request", "spreadsheet", "tip"]);
   for (const t of spec.tasks) {
     assert.ok(t.steps.length >= 4 && t.steps.length <= 6, `${t.id} has ${t.steps.length} steps`);
     for (const s of t.steps) { assert.ok(s.caption.trim(), t.id); assert.ok(s.highlight, t.id); }
@@ -56,6 +56,21 @@ test("admin Help is built from guide.json (lazy pictures + Show me), not a hard-
 test("guide runner refuses anything but local dev", () => {
   const src = fs.readFileSync(path.join(ROOT, "scripts", "guide.mjs"), "utf8");
   assert.match(src, /only runs against local wrangler dev/);
+});
+
+test("Square Help cards: made against a pretend Square, hidden until card payments are set up", () => {
+  const sq = spec.tasks.filter((t) => ["square", "cardpaid", "paylink"].includes(t.id));
+  assert.deepEqual(sq.map((t) => t.title), ["Connect Square (card payments)", "When a customer pays by card", "Send a pay link"]);
+  for (const t of sq) assert.equal(t.needs, "square", t.id);
+  assert.ok(guide.tasks.filter((t) => t.needs === "square").length === 3, "guide.json keeps the needs flag");
+  const src = fs.readFileSync(path.join(ROOT, "scripts", "guide.mjs"), "utf8");
+  assert.match(src, /SQUARE_API_BASE: MOCK/, "the guide's wrangler dev points Square at the mock");
+  assert.match(src, /if \(!sqState\.square\?\.mock\)/, "and refuses a dev server that could reach the real Square");
+  const mock = fs.readFileSync(path.join(ROOT, "scripts", "square-mock.mjs"), "utf8");
+  assert.match(mock, /listen\(PORT, "127\.0\.0\.1"/);
+  assert.doesNotMatch(mock, /squareup(sandbox)?\.com/, "the mock never calls Square");
+  const html = fs.readFileSync(path.join(ROOT, "public", "admin", "index.html"), "utf8");
+  assert.match(html, /GUIDE\.tasks\.filter\(t => t\.needs !== "square" \|\| sq\.configured\)/);
 });
 
 test("admin and public inline scripts parse (no syntax errors)", () => {

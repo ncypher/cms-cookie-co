@@ -61,3 +61,6 @@ INSERT INTO requests (id, kind, name, phone, email, event_date, headcount, fulfi
    'Baby shower, pink and gold please.', 'new', 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-5 hours')),
   ('REQ-1111-4242', 'custom', 'Sample Coworker', '(555) 555-0199', NULL, date('now', '+9 days'), 12, NULL, '["Cookie Cupcakes"]', NULL,
    'Office birthday.', 'quoted', 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 day'));
+
+-- Square: always start "not connected" (the Help guide connects to a local mock Square).
+DELETE FROM square_connection; DELETE FROM square_links; DELETE FROM square_oauth_states; DELETE FROM square_events;

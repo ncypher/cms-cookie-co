@@ -1183,6 +1183,7 @@ async function renderPayments(){
   $$("[data-pay]").forEach(sec => {
     const p = payments.find(x => x.id === sec.dataset.pay); if (!p || p.coming_soon) return;
     const on = $("[data-payon]", sec), name = $("[data-payname]", sec);
+    if (!on) return; // Card before Connect Square: there's no switch yet, only the Connect button
     const save = async (body) => {
       const {payment} = await api("PUT", "payments/" + p.id, body);
       Object.assign(p, payment); on.checked = p.enabled; if (name) name.value = p.handle || "";
@@ -1224,10 +1225,13 @@ async function renderHelp(openId){
     if (!res.ok) throw new ApiError("Help couldn't load. Check your connection and tap Help again.", res.status);
     GUIDE = await res.json();
   }
+  // Card-payment cards only show once the site has Square set up (until then card is "coming soon").
+  const sq = await squareState();
+  const tasks = GUIDE.tasks.filter(t => t.needs !== "square" || sq.configured);
   $("#main").innerHTML = `
     <h1 class="page">How do I…</h1>
     <p class="meta" style="margin:0 0 12px">Tap a card to open it. Tap <b>Show me</b> to watch it done. The pink words match the buttons you'll see.</p>
-    ${GUIDE.tasks.map(t => `<details class="card help" id="help-${esc(t.id)}">
+    ${tasks.map(t => `<details class="card help" id="help-${esc(t.id)}">
       <summary><span class="ico" aria-hidden="true">${esc(t.icon)}</span><h3>${esc(t.title)}</h3></summary>
       <div class="body">
         <button class="btn btn-green btn-sm go" type="button" data-clip="${esc(t.clip)}" data-title="${esc(t.title)}">▶ Show me${t.clip_seconds ? ` <span style="font-weight:500">(${Math.round(t.clip_seconds)} sec)</span>` : ""}</button>

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T21:00:04.216Z",
+  "generated": "2026-11-13T21:51:40.353Z",
   "tasks": [
     {
       "id": "home",
@@ -30,7 +30,7 @@
         }
       ],
       "clip": "/admin/help/home/clip.mp4",
-      "clip_seconds": 7.3
+      "clip_seconds": 7.5
     },
     {
       "id": "photo",
@@ -158,7 +158,7 @@
         }
       ],
       "clip": "/admin/help/event/clip.mp4",
-      "clip_seconds": 8.2
+      "clip_seconds": 8.3
     },
     {
       "id": "signups",
@@ -193,7 +193,7 @@
         }
       ],
       "clip": "/admin/help/signups/clip.mp4",
-      "clip_seconds": 9.4
+      "clip_seconds": 9.3
     },
     {
       "id": "flavor",
@@ -228,7 +228,7 @@
         }
       ],
       "clip": "/admin/help/flavor/clip.mp4",
-      "clip_seconds": 9.6
+      "clip_seconds": 9.7
     },
     {
       "id": "treat",
@@ -259,7 +259,7 @@
         }
       ],
       "clip": "/admin/help/treat/clip.mp4",
-      "clip_seconds": 9.3
+      "clip_seconds": 8.5
     },
     {
       "id": "sized",
@@ -290,7 +290,7 @@
         }
       ],
       "clip": "/admin/help/sized/clip.mp4",
-      "clip_seconds": 14
+      "clip_seconds": 7.8
     },
     {
       "id": "price",
@@ -317,7 +317,7 @@
         }
       ],
       "clip": "/admin/help/price/clip.mp4",
-      "clip_seconds": 8
+      "clip_seconds": 7.9
     },
     {
       "id": "order",
@@ -348,7 +348,7 @@
         }
       ],
       "clip": "/admin/help/order/clip.mp4",
-      "clip_seconds": 10.3
+      "clip_seconds": 9
     },
     {
       "id": "pay",
@@ -383,7 +383,107 @@
         }
       ],
       "clip": "/admin/help/pay/clip.mp4",
-      "clip_seconds": 10.6
+      "clip_seconds": 10.5
+    },
+    {
+      "id": "square",
+      "icon": "💳",
+      "title": "Connect Square (card payments)",
+      "go": "payments",
+      "tip": "You only do this once. If Square ever stops working, Payments tells you and shows {Connect Square} again. {Disconnect} turns card payments off completely.",
+      "needs": "square",
+      "steps": [
+        {
+          "caption": "Tap {Payments} at the bottom of the screen.",
+          "image": "/admin/help/square/1.webp"
+        },
+        {
+          "caption": "On {Card (Square)}, tap {Connect Square}.",
+          "image": "/admin/help/square/2.webp"
+        },
+        {
+          "caption": "Square opens. Sign in with your Square email and password if it asks, then tap {Allow}.",
+          "image": "/admin/help/square/3.webp"
+        },
+        {
+          "caption": "You're back here. It says {Connected as} and your business name.",
+          "image": "/admin/help/square/4.webp"
+        },
+        {
+          "caption": "Ready? Switch Card on. Customers then see {Pay with card} after they order or sign up.",
+          "image": "/admin/help/square/5.webp"
+        },
+        {
+          "caption": "Square takes a fee on each card payment. See your Square app for the amount. Refunds and payouts: tap {Open Square}.",
+          "image": "/admin/help/square/6.webp"
+        }
+      ],
+      "clip": "/admin/help/square/clip.mp4",
+      "clip_seconds": 10.3
+    },
+    {
+      "id": "cardpaid",
+      "icon": "✅",
+      "title": "When a customer pays by card",
+      "go": "orders",
+      "tip": "Orders, event signups and catering quotes paid by card all switch to {Paid by card} by themselves. The spreadsheets have a Payment method column.",
+      "needs": "square",
+      "steps": [
+        {
+          "caption": "After a customer orders, they see {Pay with card} (when Card is switched on).",
+          "image": "/admin/help/cardpaid/1.webp"
+        },
+        {
+          "caption": "Square's own page opens. They type their card there, never on your website.",
+          "image": "/admin/help/cardpaid/2.webp"
+        },
+        {
+          "caption": "Paid! They come back to a thank-you note with their order number.",
+          "image": "/admin/help/cardpaid/3.webp"
+        },
+        {
+          "caption": "In {Orders} it already says {Paid by card}. You don't need to switch anything.",
+          "image": "/admin/help/cardpaid/4.webp"
+        },
+        {
+          "caption": "Need to give money back? Tap {Refund? Open Square} and refund it in Square.",
+          "image": "/admin/help/cardpaid/5.webp"
+        }
+      ],
+      "clip": "/admin/help/cardpaid/clip.mp4",
+      "clip_seconds": 19.5
+    },
+    {
+      "id": "paylink",
+      "icon": "📲",
+      "title": "Send a pay link",
+      "go": "orders",
+      "tip": "The link is for exactly what they owe: the order total, the signup, or the quote you typed for a catering request. Square emails them a receipt.",
+      "needs": "square",
+      "steps": [
+        {
+          "caption": "In {Orders}, on an order that isn't paid yet, tap {💳 Send pay link}.",
+          "image": "/admin/help/paylink/1.webp"
+        },
+        {
+          "caption": "A card payment link appears, for exactly what they owe.",
+          "image": "/admin/help/paylink/2.webp"
+        },
+        {
+          "caption": "Tap {Text it to …}. Your messages app opens with the link typed in. Hit send.",
+          "image": "/admin/help/paylink/3.webp"
+        },
+        {
+          "caption": "Or tap {Copy link} and paste it in any message.",
+          "image": "/admin/help/paylink/4.webp"
+        },
+        {
+          "caption": "Signups and catering requests have the same button, once you've typed a quote.",
+          "image": "/admin/help/paylink/5.webp"
+        }
+      ],
+      "clip": "/admin/help/paylink/clip.mp4",
+      "clip_seconds": 19.5
     },
     {
       "id": "catering",
@@ -480,7 +580,7 @@
         }
       ],
       "clip": "/admin/help/spreadsheet/clip.mp4",
-      "clip_seconds": 8.8
+      "clip_seconds": 8.9
     },
     {
       "id": "tip",
@@ -511,7 +611,7 @@
         }
       ],
       "clip": "/admin/help/tip/clip.mp4",
-      "clip_seconds": 7.3
+      "clip_seconds": 7.2
     }
   ]
 }

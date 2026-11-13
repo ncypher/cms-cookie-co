@@ -209,6 +209,57 @@
       ]
     },
     {
+      "id": "square",
+      "icon": "💳",
+      "title": "Connect Square (card payments)",
+      "go": "payments",
+      "needs": "square",
+      "tip": "You only do this once. If Square ever stops working, Payments tells you and shows {Connect Square} again. {Disconnect} turns card payments off completely.",
+      "start": "/admin/#orders",
+      "steps": [
+        { "caption": "Tap {Payments} at the bottom of the screen.", "highlight": "nav.tabs button[data-tab=payments]", "after": [{ "wait": "#sqConnect" }] },
+        { "caption": "On {Card (Square)}, tap {Connect Square}.", "highlight": "#sqConnect", "after": [{ "wait": "#allow" }] },
+        { "caption": "Square opens. Sign in with your Square email and password if it asks, then tap {Allow}.", "highlight": "#allow", "after": [{ "wait": "[data-pay=card] .sqname" }, { "pause": 700 }] },
+        { "caption": "You're back here. It says {Connected as} and your business name.", "highlight": "[data-pay=card] .sqname", "tap": false },
+        { "caption": "Ready? Switch Card on. Customers then see {Pay with card} after they order or sign up.", "highlight": "[data-pay=card] label.switch", "after": [{ "pause": 900 }] },
+        { "caption": "Square takes a fee on each card payment. See your Square app for the amount. Refunds and payouts: tap {Open Square}.", "highlight": "[data-pay=card] a.btn-green", "tap": false }
+      ]
+    },
+    {
+      "id": "cardpaid",
+      "icon": "✅",
+      "title": "When a customer pays by card",
+      "go": "orders",
+      "needs": "square",
+      "tip": "Orders, event signups and catering quotes paid by card all switch to {Paid by card} by themselves. The spreadsheets have a Payment method column.",
+      "start": "/admin/#payments",
+      "before": [{ "tapIf": "#sqConnect" }, { "tapIf": "#allow", "timeout": 6000 }, { "wait": "[data-pay=card] .sqname" }, { "check": "[data-pay=card] [data-payon]" }, { "pause": 800 }, { "goto": "/" }, { "wait": "[data-add=gram]" }, { "pause": 800 }, { "tap": "[data-add=gram]" }, { "tap": "#cartBtn" }, { "tap": "#toDetails" }, { "fill": "#oName", "text": "Jamie Rivera" }, { "fill": "#oPhone", "text": "7345550123" }, { "fill": "#oDate", "text": "{+5d}" }, { "tap": "#placeOrder" }, { "tap": "#sendDirect" }, { "wait": "[data-cardpay]" }],
+      "steps": [
+        { "caption": "After a customer orders, they see {Pay with card} (when Card is switched on).", "highlight": "[data-cardpay]", "after": [{ "wait": "#pay" }] },
+        { "caption": "Square's own page opens. They type their card there, never on your website.", "highlight": "#pay", "after": [{ "wait": "#rsv .done .copybox" }, { "pause": 500 }] },
+        { "caption": "Paid! They come back to a thank-you note with their order number.", "highlight": "#rsv .done", "tap": false, "after": [{ "goto": "/admin/#orders" }, { "wait": "article[data-order]" }] },
+        { "caption": "In {Orders} it already says {Paid by card}. You don't need to switch anything.", "highlight": "article[data-order] .status", "tap": false },
+        { "caption": "Need to give money back? Tap {Refund? Open Square} and refund it in Square.", "highlight": "article[data-order] .contact a[target=_blank]", "tap": false }
+      ]
+    },
+    {
+      "id": "paylink",
+      "icon": "📲",
+      "title": "Send a pay link",
+      "go": "orders",
+      "needs": "square",
+      "tip": "The link is for exactly what they owe: the order total, the signup, or the quote you typed for a catering request. Square emails them a receipt.",
+      "start": "/admin/#payments",
+      "before": [{ "tapIf": "#sqConnect" }, { "tapIf": "#allow", "timeout": 6000 }, { "wait": "[data-pay=card] .sqname" }, { "check": "[data-pay=card] [data-payon]" }, { "pause": 800 }, { "goto": "/" }, { "wait": "[data-add=gram]" }, { "pause": 800 }, { "tap": "[data-add=gram]" }, { "tap": "#cartBtn" }, { "tap": "#toDetails" }, { "fill": "#oName", "text": "Sam Lee" }, { "fill": "#oPhone", "text": "7345550188" }, { "fill": "#oDate", "text": "{+6d}" }, { "tap": "#placeOrder" }, { "tap": "#sendDirect" }, { "wait": "#finish" }, { "goto": "/admin/#orders" }, { "wait": "[data-paylink]" }],
+      "steps": [
+        { "caption": "In {Orders}, on an order that isn't paid yet, tap {💳 Send pay link}.", "highlight": "[data-paylink]", "after": [{ "wait": ".paylink input" }, { "pause": 400 }] },
+        { "caption": "A card payment link appears, for exactly what they owe.", "highlight": ".paylink input", "tap": false },
+        { "caption": "Tap {Text it to …}. Your messages app opens with the link typed in. Hit send.", "highlight": ".paylink a.btn-green", "tap": false },
+        { "caption": "Or tap {Copy link} and paste it in any message.", "highlight": "[data-copylink]", "tap": false },
+        { "caption": "Signups and catering requests have the same button, once you've typed a quote.", "highlight": "nav.tabs button[data-tab=requests]", "tap": false }
+      ]
+    },
+    {
       "id": "catering",
       "icon": "🍽️",
       "title": "Turn on Catering and add a package",
