@@ -1,4 +1,4 @@
--- LOCAL DEMO CONTENT ONLY. Applied by `npm run db:seed:dev` (always --local).
+-- LOCAL DEMO CONTENT ONLY. Applied by `npm run seed:dev` and `npm run guide` (always --local).
 -- Never run this against the production database; Shaun adds real content in /admin.
 -- Image/video keys match objects uploaded to local R2 by scripts/seed-dev.mjs.
 DELETE FROM specials; DELETE FROM events; DELETE FROM media;
@@ -22,3 +22,20 @@ INSERT INTO media (kind, key_or_url, caption, featured, content_type, size_bytes
   ('photo', 'img/2026/33333333-3333-4333-8333-333333333333.webp', 'Tasting flights boxed for the market', 1, 'image/webp', NULL),
   ('instagram', 'https://www.instagram.com/cmscookieco/', 'Follow along on Instagram', 0, NULL, NULL),
   ('video', 'video/2026/44444444-4444-4444-8444-444444444444.mp4', 'Tip of the Week: chill your dough 30 minutes for thicker, chewier cookies.', 1, 'video/mp4', NULL);
+
+-- Reset the menu to the flyer and drop anything added in admin, so `npm run guide` always starts the same way.
+DELETE FROM treats;
+DELETE FROM menu WHERE kind = 'flavor' AND key NOT IN ('flavor-cc', 'flavor-dcc', 'flavor-dcss', 'flavor-fs');
+UPDATE menu SET active = 1, starts = NULL, ends = NULL, in_flight = 1, photo_key = NULL, photo_orig_key = NULL WHERE kind = 'flavor';
+UPDATE menu SET active = 1, price_cents = CASE key
+  WHEN 'dozen' THEN 2500 WHEN 'half' THEN 1300 WHEN 'single' THEN 400 WHEN 'flight' THEN 1000
+  WHEN 'mini12' THEN 1200 WHEN 'mini24' THEN 2000 WHEN 'gram' THEN 900 END
+  WHERE kind = 'item';
+UPDATE menu SET sort = CASE key WHEN 'flavor-cc' THEN 110 WHEN 'flavor-dcc' THEN 120 WHEN 'flavor-dcss' THEN 130 WHEN 'flavor-fs' THEN 140 ELSE sort END;
+
+-- One open sample order (made-up customer) for the "confirm an order" guide.
+DELETE FROM orders;
+INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, items_json, total_cents, email_status, created_at) VALUES
+  ('CMS-1114-2048', 'Sample Customer', '(555) 555-0100', date('now', '+4 days'), 'pickup', NULL, 'Birthday! Pink sprinkles please.',
+   '[{"type":"box","name":"Dozen box","detail":"6 Choc Chip, 6 Frosted Sugar","qty":1,"unit_cents":2500,"line_cents":2500},{"type":"gram","name":"Cookie Gram","detail":null,"qty":1,"unit_cents":900,"line_cents":900}]',
+   3400, 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-2 hours'));

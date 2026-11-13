@@ -164,6 +164,11 @@ nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px
 .help .tip::before{content:"♥ "; color:var(--pink)}
 .help .or{margin:12px 0 0; font:700 13px var(--f-caps); letter-spacing:.12em; text-transform:uppercase; color:var(--pink)}
 .help .go{margin-top:12px}
+.help .stepimg{display:block; width:min(240px,72vw); height:auto; margin:8px 0 2px; border-radius:14px; border:1.5px solid var(--pink-line); background:#f4ece6; box-shadow:0 8px 18px -12px rgba(74,42,30,.5)}
+.clipview{position:fixed; inset:0; z-index:60; background:#1E0C08; display:grid; grid-template-rows:auto 1fr; padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))}
+.clipview .cv-top{display:flex; align-items:center; gap:10px; color:#fff; padding-bottom:10px}
+.clipview .cv-top b{flex:1; font:700 19px/1.2 var(--f-hand)}
+.clipview video{width:100%; height:100%; max-height:calc(100svh - 90px); object-fit:contain; background:#000; border-radius:12px}
 @media (max-width:380px){ .two{grid-template-columns:1fr} }
 @media (prefers-reduced-motion: reduce){ *,*::before,*::after{transition-duration:.001ms!important} }
 </style>
@@ -239,13 +244,13 @@ function showGate(msg){
 
 /* ============ Tabs ============ */
 let tab = (location.hash.slice(1) || "orders");
-const TABS = {orders: renderOrders, specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu, help: renderHelp};
-function go(t){
+const TABS = {orders: renderOrders, specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu, help: id => renderHelp(id)};
+function go(t, arg){
   if (!TABS[t]) t = "orders";
   tab = t; history.replaceState(null, "", "#" + t);
   $$("nav.tabs button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
   window.scrollTo(0, 0);
-  TABS[t]().catch(e => { if (e.status !== 401 && e.status !== 503) $("#main").innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p></div>`; });
+  TABS[t](arg).catch(e => { if (e.status !== 401 && e.status !== 503) $("#main").innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p></div>`; });
 }
 $$("nav.tabs button").forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
 
@@ -711,61 +716,46 @@ async function renderMenu(){
 }
 
 /* ============ Help ============ */
+// Cards come from /admin/help/guide.json, written by `npm run guide` from guide/tasks.json, so the words
+// here and the pictures/clips were made from the same steps. {Words} in a caption = a button label.
 const ui = s => `<b class="ui">${s}</b>`;
-const HELP = [
-  {ico:"⭐", title:"Set the Cookie of the Month", go:"specials", steps:[
-    `Tap ${ui("Specials")} at the bottom of the screen.`,
-    `Tap ${ui("+ New special")}. (To change last month's, tap ${ui("Edit")} on it instead.)`,
-    `Change ${ui("Type")} to ${ui("Cookie of the Month")}, then fill in the ${ui("Title")} and ${ui("Description")}.`,
-    `Type a ${ui("Price")} if people can order it here, and tap ${ui("Add photo")} to pick a picture.`,
-    `Tap ${ui("Save")}. It shows at the top of the home page right away.`],
-    tip:`Only the newest Cookie of the Month shows. Pick an ${ui("Ends")} date and it comes down by itself.`},
-  {ico:"🏷️", title:"Post a special", go:"specials", steps:[
-    `Tap ${ui("Specials")}, then ${ui("+ New special")}.`,
-    `Leave ${ui("Type")} as ${ui("Special")}. Type a ${ui("Title")} and a short ${ui("Description")}.`,
-    `Type the ${ui("Price")}. Leave it empty if you'd rather people text you.`,
-    `Tap ${ui("Add photo")} and choose a picture.`,
-    `Pick an ${ui("Ends")} date so it disappears on its own, then tap ${ui("Save")}.`],
-    tip:`Need to take it down early? Tap ${ui("Edit")} and switch off ${ui("Show on the site")}.`},
-  {ico:"📅", title:"Add an event", go:"events", steps:[
-    `Tap ${ui("Events")}, then ${ui("+ New event")}.`,
-    `Type the ${ui("Title")}, pick the ${ui("Date")}, and add ${ui("Details")} like the time and place.`,
-    `Under ${ui("Flyer")}, tap ${ui("Add photo")} and choose your flyer picture.`,
-    `If people should sign up, paste the link in ${ui("RSVP link")}.`,
-    `Tap ${ui("Save")}. The event leaves the site by itself after the date.`],
-    tip:`The flyer has to be a picture. If it's a PDF, take a screenshot of it and use that.`},
-  {ico:"🎬", title:"Share a tip video", go:"media", steps:[
-    `Tap ${ui("Media")}.`,
-    `<span><b>From Instagram (easiest):</b> in Instagram, open your reel, tap Share, then Copy link. Back here, tap ${ui("Instagram link")}, paste it, add a ${ui("Caption")}, and tap ${ui("Add")}.</span>`,
-    `<span><b>From your phone:</b> tap ${ui("Video")}, choose the video, write a ${ui("Caption")}, and tap ${ui("Add")}.<br><b>First time only:</b> iPhone Settings → Camera → Formats → Most Compatible.</span>`,
-    `Leave ${ui("Feature on the home page")} switched on. The newest one becomes the Tip of the Week.`,
-    `Want to tag people? Tag them on the Instagram post itself.`],
-    tip:`If a video won't upload, post it as an Instagram reel and paste the link instead. Videos can be up to 100 MB, about a minute or two.`},
-];
-function renderHelp(){
+const caption = s => esc(s).replace(/\{([^}]+)\}/g, (_, w) => ui(w));
+let GUIDE = null;
+async function renderHelp(openId){
+  if (!GUIDE){
+    const res = await fetch("/admin/help/guide.json", {credentials:"same-origin"});
+    if (!res.ok) throw new ApiError("Help couldn't load. Check your connection and tap Help again.", res.status);
+    GUIDE = await res.json();
+  }
   $("#main").innerHTML = `
     <h1 class="page">How do I…</h1>
-    <p class="meta" style="margin:0 0 12px">Tap a card to open it. The pink words match the buttons you'll see.</p>
-    ${HELP.map((h, i) => `<details class="card help" ${i === 0 ? "open" : ""}>
-      <summary><span class="ico" aria-hidden="true">${h.ico}</span><h3>${h.title}</h3></summary>
-      <div class="body"><ol>${h.steps.map(s => `<li><span>${s}</span></li>`).join("")}</ol>
-        ${h.tip ? `<p class="tip">${h.tip}</p>` : ""}
-        <button class="btn btn-rose btn-sm go" data-goto="${h.go}">Take me there</button></div>
-    </details>`).join("")}
-    <details class="card help" id="homeHelp">
-      <summary><span class="ico" aria-hidden="true">📱</span><h3>Put this on your home screen</h3></summary>
+    <p class="meta" style="margin:0 0 12px">Tap a card to open it. Tap <b>Show me</b> to watch it done. The pink words match the buttons you'll see.</p>
+    ${GUIDE.tasks.map(t => `<details class="card help" id="help-${esc(t.id)}">
+      <summary><span class="ico" aria-hidden="true">${esc(t.icon)}</span><h3>${esc(t.title)}</h3></summary>
       <div class="body">
-        <p class="tip" style="margin-top:12px">Already have a <b>CMS Admin</b> icon from before? Press and hold it, tap <b>Remove</b>, then add it again with these steps.</p>
-        <p class="or">iPhone</p>
-        <ol><li><span>Open this page in Safari.</span></li><li><span>Tap the Share button (the square with an arrow).</span></li><li><span>Tap <b>Add to Home Screen</b>.</span></li><li><span>If you see <b>Open as Web App</b>, switch it <b>off</b>.</span></li><li><span>Tap <b>Add</b>.</span></li></ol>
-        <p class="or">Android</p>
-        <ol><li><span>Open this page in Chrome.</span></li><li><span>Tap the three dots ⋮ in the top corner.</span></li><li><span>Tap <b>Add to Home screen</b>, then <b>Add</b>.</span></li></ol>
-        <p class="tip">You'll get a cookie icon called <b>CMS Admin</b>. Tap it any time and your kitchen opens. About once a month it asks for your email and a code. That's normal.</p>
-        <p class="meta" style="margin:10px 0 0">Setting up a new phone? Open <b>cmscookieco3more.com/kitchen</b> and add that page instead. It works before you sign in.</p>
+        <button class="btn btn-green btn-sm go" type="button" data-clip="${esc(t.clip)}" data-title="${esc(t.title)}">▶ Show me${t.clip_seconds ? ` <span style="font-weight:500">(${Math.round(t.clip_seconds)} sec)</span>` : ""}</button>
+        <ol>${t.steps.map((s, i) => `<li><span>${caption(s.caption)}
+          <img class="stepimg" src="${esc(s.image)}" alt="Step ${i + 1}: the button to tap is circled in pink" loading="lazy" width="240" height="519"></span></li>`).join("")}</ol>
+        ${t.tip ? `<p class="tip">${caption(t.tip)}</p>` : ""}
+        ${t.go ? `<button class="btn btn-rose btn-sm go" data-goto="${esc(t.go)}">Take me there</button>` : ""}
       </div>
-    </details>`;
+    </details>`).join("")}`;
   $$("[data-goto]").forEach(b => b.addEventListener("click", () => go(b.dataset.goto)));
-  return Promise.resolve();
+  $$("[data-clip]").forEach(b => b.addEventListener("click", () => showClip(b.dataset.clip, b.dataset.title)));
+  const first = $(openId ? `#help-${CSS.escape(openId)}` : "details.help");
+  if (first){ first.open = true; if (openId) first.scrollIntoView({block:"start"}); }
+}
+function showClip(src, title){
+  const d = document.createElement("div");
+  d.className = "clipview"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-label", title);
+  d.innerHTML = `<div class="cv-top"><b>${esc(title)}</b><button class="btn btn-ghost btn-sm" type="button">Close</button></div>
+    <video src="${esc(src)}" playsinline muted autoplay controls preload="auto"></video>`;
+  document.body.append(d);
+  const close = () => { d.remove(); document.removeEventListener("keydown", esc_); };
+  const esc_ = e => { if (e.key === "Escape") close(); };
+  $("button", d).addEventListener("click", close);
+  document.addEventListener("keydown", esc_);
+  $("button", d).focus();
 }
 
 /* ============ Old full-screen icon ============ */
@@ -777,7 +767,7 @@ if (matchMedia("(display-mode: standalone)").matches || navigator.standalone ===
     <p class="meta" style="margin:4px 0 10px">It can lose your sign-in. Remove it and add it again so it always opens your kitchen.</p>
     <button class="btn btn-rose btn-sm" type="button">Show me how</button></div>`;
   $("#main").before(b);
-  $("button", b).addEventListener("click", () => { go("help"); const h = $("#homeHelp"); if (h){ h.open = true; h.scrollIntoView({block:"start"}); } });
+  $("button", b).addEventListener("click", () => { go("help", "home"); });
 }
 
 /* ============ Boot ============ */

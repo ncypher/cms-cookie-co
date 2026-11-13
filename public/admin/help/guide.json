@@ -1,0 +1,319 @@
+{
+  "generated": "2026-11-13T03:23:41.849Z",
+  "tasks": [
+    {
+      "id": "home",
+      "icon": "📱",
+      "title": "Put admin on your home screen",
+      "go": null,
+      "tip": "Had a CMS Admin icon from before? Press and hold it, tap {Remove}, then add it again with these steps.",
+      "steps": [
+        {
+          "caption": "On your phone, open cmscookieco3more.com/kitchen in Safari (iPhone) or Chrome (Android).",
+          "image": "/admin/help/home/1.webp"
+        },
+        {
+          "caption": "iPhone: tap the Share button (square with an arrow), then {Add to Home Screen}. If you see {Open as Web App}, switch it off. Tap {Add}.",
+          "image": "/admin/help/home/2.webp"
+        },
+        {
+          "caption": "Android: tap the three dots ⋮ in the corner, then {Add to Home screen}, then {Add}.",
+          "image": "/admin/help/home/3.webp"
+        },
+        {
+          "caption": "Tap the new {CMS Admin} cookie icon any time. Your kitchen opens.",
+          "image": "/admin/help/home/4.webp"
+        },
+        {
+          "caption": "About once a month it asks for your email and a code. That's normal. Then you're back in.",
+          "image": "/admin/help/home/5.webp"
+        }
+      ],
+      "clip": "/admin/help/home/clip.mp4",
+      "clip_seconds": 10.8
+    },
+    {
+      "id": "photo",
+      "icon": "🖼️",
+      "title": "Fix a photo (frame it, brighten, add words)",
+      "go": "specials",
+      "tip": "Changed your mind? {Undo}, {Start over} and {Cancel} are always there. Nothing is saved until you tap {Save} on the form.",
+      "steps": [
+        {
+          "caption": "Anywhere you add a photo, tap {Choose photo}. Or tap {Take photo} to use the camera.",
+          "image": "/admin/help/photo/1.webp"
+        },
+        {
+          "caption": "Drag the photo with one finger to move it. Pinch, or slide {Zoom}, to make it bigger.",
+          "image": "/admin/help/photo/2.webp"
+        },
+        {
+          "caption": "Photo too dark? Slide {Brighten} to the right.",
+          "image": "/admin/help/photo/3.webp"
+        },
+        {
+          "caption": "Tap {Add words}, type them, and pick a style: pink ribbon, script or bold.",
+          "image": "/admin/help/photo/4.webp"
+        },
+        {
+          "caption": "Tap {Add to photo}. Drag the words where you like, pinch to resize, then tap {Done}.",
+          "image": "/admin/help/photo/5.webp"
+        },
+        {
+          "caption": "Happy with it? Tap {Use this photo}.",
+          "image": "/admin/help/photo/6.webp"
+        }
+      ],
+      "clip": "/admin/help/photo/clip.mp4",
+      "clip_seconds": 16.5
+    },
+    {
+      "id": "cotm",
+      "icon": "⭐",
+      "title": "Set the Cookie of the Month",
+      "go": "specials",
+      "tip": "Only the newest Cookie of the Month shows. Pick an {Ends} date and it comes down by itself.",
+      "steps": [
+        {
+          "caption": "Tap {Specials} at the bottom of the screen.",
+          "image": "/admin/help/cotm/1.webp"
+        },
+        {
+          "caption": "Tap {+ New special}. (To change last month's, tap {Edit} on it instead.)",
+          "image": "/admin/help/cotm/2.webp"
+        },
+        {
+          "caption": "Change {Type} to {Cookie of the Month}. Type the {Title}, {Description} and {Price}.",
+          "image": "/admin/help/cotm/3.webp"
+        },
+        {
+          "caption": "Tap {Choose photo}. Frame your cookie in the circle, then tap {Use this photo}.",
+          "image": "/admin/help/cotm/4.webp"
+        },
+        {
+          "caption": "Tap {Save}. It shows at the top of the home page right away.",
+          "image": "/admin/help/cotm/5.webp"
+        }
+      ],
+      "clip": "/admin/help/cotm/clip.mp4",
+      "clip_seconds": 12.4
+    },
+    {
+      "id": "special",
+      "icon": "🏷️",
+      "title": "Post a special",
+      "go": "specials",
+      "tip": "Need to take it down early? Tap {Edit} and switch off {Show on the site}.",
+      "steps": [
+        {
+          "caption": "Tap {Specials}, then {+ New special}.",
+          "image": "/admin/help/special/1.webp"
+        },
+        {
+          "caption": "Leave {Type} as {Special}. Type a {Title}, a short {Description} and the {Price}. No price? People can text you instead.",
+          "image": "/admin/help/special/2.webp"
+        },
+        {
+          "caption": "Tap {Choose photo}. Specials show as a wide picture, so frame it in the wide box.",
+          "image": "/admin/help/special/3.webp"
+        },
+        {
+          "caption": "Pick an {Ends} date so it disappears on its own.",
+          "image": "/admin/help/special/4.webp"
+        },
+        {
+          "caption": "Tap {Save}.",
+          "image": "/admin/help/special/5.webp"
+        }
+      ],
+      "clip": "/admin/help/special/clip.mp4",
+      "clip_seconds": 12.1
+    },
+    {
+      "id": "event",
+      "icon": "📅",
+      "title": "Add an event",
+      "go": "events",
+      "tip": "A PDF flyer? Take a screenshot of it and use the screenshot.",
+      "steps": [
+        {
+          "caption": "Tap {Events}, then {+ New event}.",
+          "image": "/admin/help/event/1.webp"
+        },
+        {
+          "caption": "Type the {Title}, pick the {Date}, and add {Details} like the time and place.",
+          "image": "/admin/help/event/2.webp"
+        },
+        {
+          "caption": "Under {Flyer}, tap {Choose photo}. The whole flyer is used, nothing gets cut off. Tap {Use this photo}.",
+          "image": "/admin/help/event/3.webp"
+        },
+        {
+          "caption": "If people should sign up, paste the link in {RSVP link}.",
+          "image": "/admin/help/event/4.webp"
+        },
+        {
+          "caption": "Tap {Save}. The event leaves the site by itself after the date.",
+          "image": "/admin/help/event/5.webp"
+        }
+      ],
+      "clip": "/admin/help/event/clip.mp4",
+      "clip_seconds": 12
+    },
+    {
+      "id": "flavor",
+      "icon": "🍪",
+      "title": "Add a new flavor",
+      "go": "menu",
+      "tip": "Only around for a season? Fill in {Starts} and {Ends} and it shows up and comes down by itself.",
+      "steps": [
+        {
+          "caption": "Tap {Menu} at the bottom of the screen.",
+          "image": "/admin/help/flavor/1.webp"
+        },
+        {
+          "caption": "Tap {+ Add a flavor}.",
+          "image": "/admin/help/flavor/2.webp"
+        },
+        {
+          "caption": "Type the {Flavor name}, a {Short name} for the box buttons, and a {Description}.",
+          "image": "/admin/help/flavor/3.webp"
+        },
+        {
+          "caption": "Tap {Choose photo}, frame the cookie in the circle, and tap {Use this photo}.",
+          "image": "/admin/help/flavor/4.webp"
+        },
+        {
+          "caption": "Leave {Part of the Cookie Tasting Flight} on if it goes in the flight. Tap {Save}.",
+          "image": "/admin/help/flavor/5.webp"
+        },
+        {
+          "caption": "It's in the box builder now. Use {↑} and {↓} to move it in the list.",
+          "image": "/admin/help/flavor/6.webp"
+        }
+      ],
+      "clip": "/admin/help/flavor/clip.mp4",
+      "clip_seconds": 14.2
+    },
+    {
+      "id": "treat",
+      "icon": "🧁",
+      "title": "Add a new treat",
+      "go": "menu",
+      "tip": "Treats show in a {More Treats} box on the home page, with an {Add} button so people can order them.",
+      "steps": [
+        {
+          "caption": "Tap {Menu}, then {+ Add a treat}.",
+          "image": "/admin/help/treat/1.webp"
+        },
+        {
+          "caption": "Type the {Treat name} and {Price}. {Kind of treat} is optional, like “Cookie Cake”.",
+          "image": "/admin/help/treat/2.webp"
+        },
+        {
+          "caption": "Tap {Choose photo}. Want a price tag on it? Tap {Add sticker}, then {Price tag}.",
+          "image": "/admin/help/treat/3.webp"
+        },
+        {
+          "caption": "Tap {Use this photo}.",
+          "image": "/admin/help/treat/4.webp"
+        },
+        {
+          "caption": "Tap {Save}. Switch it off any time to hide it.",
+          "image": "/admin/help/treat/5.webp"
+        }
+      ],
+      "clip": "/admin/help/treat/clip.mp4",
+      "clip_seconds": 13.2
+    },
+    {
+      "id": "price",
+      "icon": "💲",
+      "title": "Change a price or turn something off",
+      "go": "menu",
+      "tip": "Switched off things disappear from the site, and nobody can order them, until you switch them back on.",
+      "steps": [
+        {
+          "caption": "Tap {Menu} at the bottom of the screen.",
+          "image": "/admin/help/price/1.webp"
+        },
+        {
+          "caption": "Tap a price and type the new one. Tap anywhere else and it saves by itself.",
+          "image": "/admin/help/price/2.webp"
+        },
+        {
+          "caption": "Out of something? Tap its switch to turn it off. Tap again to turn it back on.",
+          "image": "/admin/help/price/3.webp"
+        },
+        {
+          "caption": "Grey means hidden from the site. Green means people can order it.",
+          "image": "/admin/help/price/4.webp"
+        }
+      ],
+      "clip": "/admin/help/price/clip.mp4",
+      "clip_seconds": 11.2
+    },
+    {
+      "id": "order",
+      "icon": "🛍️",
+      "title": "Confirm an order and mark it paid",
+      "go": "orders",
+      "tip": "New orders also arrive in your email. {Open} shows orders that still need confirming or paying; {All} shows everything.",
+      "steps": [
+        {
+          "caption": "Tap {Orders}. New orders are at the top with a pink {New} tag.",
+          "image": "/admin/help/order/1.webp"
+        },
+        {
+          "caption": "Tap {Text} to message the customer and agree on the details.",
+          "image": "/admin/help/order/2.webp"
+        },
+        {
+          "caption": "All set? Switch on {Confirmed}.",
+          "image": "/admin/help/order/3.webp"
+        },
+        {
+          "caption": "When they've paid, switch on {Paid}. Done orders drop off the {Open} list.",
+          "image": "/admin/help/order/4.webp"
+        },
+        {
+          "caption": "Tap {All} to see older orders again.",
+          "image": "/admin/help/order/5.webp"
+        }
+      ],
+      "clip": "/admin/help/order/clip.mp4",
+      "clip_seconds": 12.7
+    },
+    {
+      "id": "tip",
+      "icon": "🎬",
+      "title": "Share a tip video",
+      "go": "media",
+      "tip": "Video from your phone? Tap {Video} instead and choose it. First time only on iPhone: Settings → Camera → Formats → Most Compatible. If a video won't upload, post it as an Instagram reel and paste the link.",
+      "steps": [
+        {
+          "caption": "Tap {Media} at the bottom of the screen.",
+          "image": "/admin/help/tip/1.webp"
+        },
+        {
+          "caption": "Easiest: in Instagram, open your reel, tap Share, then Copy link. Here, tap {Instagram link}.",
+          "image": "/admin/help/tip/2.webp"
+        },
+        {
+          "caption": "Paste the link and write a {Caption}.",
+          "image": "/admin/help/tip/3.webp"
+        },
+        {
+          "caption": "Leave {Feature on the home page} on. The newest one becomes the Tip of the Week.",
+          "image": "/admin/help/tip/4.webp"
+        },
+        {
+          "caption": "Tap {Add}.",
+          "image": "/admin/help/tip/5.webp"
+        }
+      ],
+      "clip": "/admin/help/tip/clip.mp4",
+      "clip_seconds": 10.9
+    }
+  ]
+}
