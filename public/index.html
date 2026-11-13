@@ -312,6 +312,18 @@ button{font:inherit; color:inherit; cursor:pointer}
 .pick img{width:46px; height:46px; border-radius:50%; object-fit:cover; flex:none}
 @media (max-width:900px){ .build-panel .builder{grid-template-columns:1fr} }
 
+/* More treats (added by Shaun in admin) */
+.treats-panel{margin-top:32px}
+.tr-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px}
+.tr{display:grid; gap:6px; align-content:start; text-align:center}
+.tr img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px}
+.tr .noimg{aspect-ratio:1; border-radius:10px; background:var(--blush); display:grid; place-items:center; padding:18%}
+.tr b{font:700 19px/1.2 var(--f-hand); color:var(--green)}
+.tr .cat{font:600 11.5px var(--f-caps); letter-spacing:.1em; text-transform:uppercase; color:var(--pink)}
+.tr p{font-size:14.5px; line-height:1.4; color:var(--muted)}
+.tr .buy{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:2px}
+@media (max-width:420px){ .tr-grid{grid-template-columns:1fr 1fr; gap:12px} }
+
 /* Bottom trio */
 .trio{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:stretch; margin-top:14px}
 .trio .panel{padding-top:22px; margin-top:0}
@@ -508,10 +520,15 @@ button{font:inherit; color:inherit; cursor:pointer}
     </div>
   </section>
 
+  <section class="panel treats-panel" id="treatsPanel" hidden>
+    <span class="hearts l">♥</span><h2 class="tag">More Treats</h2><span class="hearts r">♥</span>
+    <div class="tr-grid" id="treatGrid"></div>
+  </section>
+
   <div class="trio">
     <section class="panel flight" data-item="flight">
       <h2 class="ptitle">Cookie Tasting Flight</h2>
-      <p class="try">Try all 4 flavors!</p>
+      <p class="try" id="flightTry">Try all 4 flavors!</p>
       <p class="big" data-price="flight">$10</p>
       <img src="assets/flight.webp" alt="Kraft box holding one of each of the four cookie flavors" width="488" height="372" loading="lazy">
       <button class="btn btn-rose btn-sm" data-add="flight">Add a flight</button>
@@ -619,12 +636,8 @@ const CONFIG = {
 };
 // Defaults match the flyer; /api/content overrides them with Shaun's current menu.
 const PRICES = { single:4, box6:13, box12:25, flight:10, mini12:12, mini24:20, gram:9 };
-let FLAVORS = [
-  {id:"cc",   name:"Chocolate Chip",          short:"Choc Chip",    blurb:"The classic. Golden edges, soft middle, chocolate in every bite."},
-  {id:"dcc",  name:"Double Chocolate Chip",   short:"Double Choc",  blurb:"Chocolate dough loaded with even more chocolate chips."},
-  {id:"dcss", name:"Dark Chocolate Sea Salt", short:"Sea Salt",     blurb:"Dark chocolate chunks finished with flaky sea salt."},
-  {id:"fs",   name:"Frosted Sugar Cookie",    short:"Frosted Sugar",blurb:"Soft sugar cookie, a thick swirl of frosting, sprinkles on top."}
-];
+// Flavors and treats come from /api/content (Shaun adds them in admin).
+let FLAVORS = [], TREATS = [];
 const REQUESTS = ["Cookie Cake Bites","Cookie Cupcakes","Mini Cookie Cakes","Cookie Sheet Cake","Custom design / theme","Baking or cooking lesson","Cooking party"];
 
 /* ============ Helpers ============ */
@@ -684,6 +697,13 @@ function cookieSVG(flavor, seed=7, opts={}){
   const label = opts.label ? `role="img" aria-label="${esc(opts.label)}"` : `aria-hidden="true"`;
   return `<svg viewBox="0 0 100 100" ${label}>${mask}<g ${mask?`mask="url(#${id}m)"`:""}>${inner}</g></svg>`;
 }
+// The first four flavors have hand-drawn cookies for the box; any flavor added later shows its photo.
+const DRAWN = new Set(["cc","dcc","dcss","fs"]);
+function cookieArt(id, seed){
+  if (DRAWN.has(id)) return cookieSVG(id, seed);
+  const f = fl(id);
+  return f && f.photo ? `<img src="${esc(f.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">` : cookieSVG("cc", seed);
+}
 const miniStack = (ids, h) => ids.map((f,i)=>`<span style="display:inline-block;height:${h}px;width:${h}px;margin-left:${i?-h*0.22:0}px;transform:rotate(${(i*23)%40-20}deg)">${cookieSVG(f, 30+i)}</span>`).join("");
 
 /* ============ Cart ============ */
@@ -711,7 +731,7 @@ function renderBox(){
   for (let i=0;i<boxSize;i++){
     const f = boxFill[i];
     html += f
-      ? `<button class="slot filled${i===lastPop?" pop":""}" data-slot="${i}" aria-label="Remove ${fl(f).name} from slot ${i+1}">${cookieSVG(f, 50+i)}<span class="x" aria-hidden="true">×</span></button>`
+      ? `<button class="slot filled${i===lastPop?" pop":""}" data-slot="${i}" aria-label="Remove ${esc(fl(f)?.name || "cookie")} from slot ${i+1}">${cookieArt(f, 50+i)}<span class="x" aria-hidden="true">×</span></button>`
       : `<div class="slot" aria-label="Empty slot"><span class="slot-empty">${i+1}</span></div>`;
   }
   slots.innerHTML = html; lastPop = -1;
@@ -726,7 +746,7 @@ function renderBox(){
   $("#size6").setAttribute("aria-pressed", boxSize===6); $("#size12").setAttribute("aria-pressed", boxSize===12);
   $("#picker").innerHTML = FLAVORS.map((f,i)=>{
     const c = boxFill.filter(x=>x===f.id).length;
-    return `<button class="pick" data-pick="${f.id}" ${full?"disabled":""} aria-label="Add ${f.name} to the box"><span style="display:block;width:46px;height:46px">${cookieSVG(f.id, 21+i)}</span><span style="min-width:0"><b>${f.short}</b><span>${f.name===f.short?"":"tap to add"}</span></span><span class="n tnum">${c}</span></button>`;
+    return `<button class="pick" data-pick="${f.id}" ${full?"disabled":""} aria-label="Add ${esc(f.name)} to the box"><span style="display:block;width:46px;height:46px">${cookieArt(f.id, 21+i)}</span><span style="min-width:0"><b>${esc(f.short)}</b><span>${f.name===f.short?"":"tap to add"}</span></span><span class="n tnum">${c}</span></button>`;
   }).join("");
   document.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", ()=>{
     if (boxFill.length >= boxSize) return;
@@ -734,8 +754,8 @@ function renderBox(){
   }));
 }
 document.querySelectorAll("[data-size]").forEach(b => b.addEventListener("click", ()=>{ boxSize = +b.dataset.size; boxFill = boxFill.slice(0, boxSize); renderBox(); }));
-$("#mixEven").addEventListener("click", ()=>{ boxFill = Array.from({length:boxSize}, (_,i)=>FLAVORS[i%FLAVORS.length].id).sort(); renderBox(); });
-$("#surprise").addEventListener("click", ()=>{ while (boxFill.length < boxSize) boxFill.push(FLAVORS[Math.floor(Math.random()*FLAVORS.length)].id); renderBox(); });
+$("#mixEven").addEventListener("click", ()=>{ if (!FLAVORS.length) return; boxFill = Array.from({length:boxSize}, (_,i)=>FLAVORS[i%FLAVORS.length].id).sort(); renderBox(); });
+$("#surprise").addEventListener("click", ()=>{ if (!FLAVORS.length) return; while (boxFill.length < boxSize) boxFill.push(FLAVORS[Math.floor(Math.random()*FLAVORS.length)].id); renderBox(); });
 $("#clearBox").addEventListener("click", ()=>{ boxFill = []; renderBox(); });
 $("#addBox").addEventListener("click", ()=>{
   const counts = FLAVORS.map(f => [f, boxFill.filter(x=>x===f.id).length]).filter(x=>x[1]);
@@ -756,7 +776,7 @@ document.querySelectorAll("[data-mini]").forEach(b => b.addEventListener("click"
 }));
 document.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", ()=>{
   const t = b.dataset.add;
-  if (t==="flight") addItem({key:"flight", type:"flight", name:"Cookie Tasting Flight", detail:"One of each flavor", price:PRICES.flight, art:["cc","dcc","dcss","fs"]});
+  if (t==="flight"){ const inF = FLAVORS.filter(f => f.in_flight); addItem({key:"flight", type:"flight", name:"Cookie Tasting Flight", detail:"One of each: " + inF.map(f => f.short).join(", "), price:PRICES.flight, art: inF.map(f => f.id)}); }
   if (t==="mini") addItem({key:"mini"+miniSize, type:"mini", name:`Mini Cookie Lunch Box (${miniSize})`, detail:`${miniSize} mini cookies`, price: miniSize===12?PRICES.mini12:PRICES.mini24, art:["dcc","cc","fs"]});
   if (t==="gram") addItem({key:"gram", type:"gram", name:"Cookie Gram", detail:"Add recipient & message in notes", price:PRICES.gram, art:["fs"]});
 }));
@@ -787,7 +807,7 @@ function renderCart(){
   foot.hidden = false;
   el.innerHTML = cart.map((c,i)=>`
     <div class="line-item">
-      <div class="thumb">${cookieSVG(c.art[0], 40+i)}</div>
+      <div class="thumb">${c.photo ? `<img src="${esc(c.photo)}" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:10px">` : cookieArt(c.art[0] || "cc", 40+i)}</div>
       <div style="min-width:0"><b>${esc(c.name)}</b><small>${esc(c.detail)}</small></div>
       <div class="right"><span class="price tnum" style="font-size:17px">${money(c.price*c.qty)}</span>
         <div class="qty"><button data-dec="${i}" aria-label="One less ${esc(c.name)}">−</button><span class="tnum">${c.qty}</span><button data-inc="${i}" aria-label="One more ${esc(c.name)}">+</button></div></div>
@@ -838,6 +858,7 @@ function toApiItem(c){
   if (c.type==="single") return {...base, flavor:c.key.replace("single-","")};
   if (c.type==="mini") return {...base, size:+c.key.replace("mini","")};
   if (c.type==="special") return {...base, id:+c.key.replace("special-","")};
+  if (c.type==="treat") return {...base, id:+c.key.replace("treat-","")};
   return base;
 }
 
@@ -919,12 +940,11 @@ renderCartBadge();
 
 
 /* ============ Concept 2 extras ============ */
-const PHOTO = {cc:"assets/f-cc.webp", dcc:"assets/f-dcc.webp", dcss:"assets/f-dcss.webp", fs:"assets/f-fs.webp"};
 function renderFlavorGrid(){
   $("#flavorGrid").innerHTML = FLAVORS.map(f=>`
-    <div class="fl"><img src="${PHOTO[f.id]}" alt="${f.name}" width="220" height="226">
-      <b>${f.name}</b>
-      <button class="fl-add" data-single="${f.id}" aria-label="Add one ${f.name}, ${money(PRICES.single)}">+ ${money(PRICES.single)}</button></div>`).join("");
+    <div class="fl">${f.photo ? `<img src="${esc(f.photo)}" alt="${esc(f.name)}" width="220" height="226">` : `<span style="display:block;width:min(118px,100%);aspect-ratio:1">${cookieArt(f.id, 5)}</span>`}
+      <b>${esc(f.name)}</b>
+      <button class="fl-add" data-single="${f.id}" aria-label="Add one ${esc(f.name)}, ${money(PRICES.single)}">+ ${money(PRICES.single)}</button></div>`).join("");
   document.querySelectorAll("[data-single]").forEach(b => b.addEventListener("click", ()=>{
     const f = fl(b.dataset.single);
     addItem({key:"single-"+f.id, type:"single", name:f.name, detail:"Single cookie", price:PRICES.single, art:[f.id]});
@@ -942,7 +962,7 @@ document.querySelectorAll("[data-quick]").forEach(b => b.addEventListener("click
   addItem({key:"mini"+n, type:"mini", name:`Mini Cookie Lunch Box (${n})`, detail:`${n} mini cookies`, price: n===12?PRICES.mini12:PRICES.mini24, art:["dcc","cc","fs"]});
 }));
 // flavor photos in the box picker
-function photoPicker(){ document.querySelectorAll("#picker .pick").forEach(p=>{ const s = p.querySelector("span"); if (s && s.querySelector("svg")) s.innerHTML = `<img src="${PHOTO[p.dataset.pick]}" alt="">`; }); }
+function photoPicker(){ document.querySelectorAll("#picker .pick").forEach(p=>{ const s = p.querySelector("span"); const f = fl(p.dataset.pick); if (s && s.querySelector("svg") && f?.photo) s.innerHTML = `<img src="${esc(f.photo)}" alt="">`; }); }
 new MutationObserver(photoPicker).observe($("#picker"), {childList:true}); photoPicker();
 
 /* ============ Live content from /api/content ============ */
@@ -958,9 +978,27 @@ function applyMenu(menu){
   // A box size Shaun has turned off can't stay selected.
   if (byKey.dozen && !byKey.dozen.active && boxSize===12 && byKey.half?.active) { boxSize = 6; boxFill = boxFill.slice(0,6); }
   if (byKey.half && !byKey.half.active && boxSize===6 && byKey.dozen?.active) boxSize = 12;
-  const activeFlavors = FLAVORS.filter(f => byKey["flavor-"+f.id]?.active !== false);
-  if (activeFlavors.length){ FLAVORS = activeFlavors; boxFill = boxFill.filter(id => FLAVORS.some(f => f.id===id)); }
   renderFlavorGrid(); renderBox();
+}
+function applyFlavors(list){
+  FLAVORS = Array.isArray(list) ? list : [];
+  boxFill = boxFill.filter(id => FLAVORS.some(f => f.id===id));
+  const inF = FLAVORS.filter(f => f.in_flight).length;
+  $("#flightTry").textContent = `Try all ${inF} flavors!`;
+  if (!inF) document.querySelectorAll('[data-item="flight"]').forEach(el => el.hidden = true);
+}
+function renderTreats(list){
+  TREATS = Array.isArray(list) ? list : [];
+  $("#treatsPanel").hidden = !TREATS.length;
+  $("#treatGrid").innerHTML = TREATS.map(t => `<div class="tr">
+      ${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.name)}" loading="lazy">` : `<div class="noimg">${cookieSVG("fs", 13, {heart:true})}</div>`}
+      ${t.category ? `<span class="cat">${esc(t.category)}</span>` : ""}
+      <b>${esc(t.name)}</b>${t.description ? `<p>${esc(t.description)}</p>` : ""}
+      <div class="buy"><span class="price tnum">${money(t.price)}</span><button class="btn btn-rose btn-sm" data-treat="${t.id}" aria-label="Add ${esc(t.name)}, ${money(t.price)}">Add</button></div></div>`).join("");
+  document.querySelectorAll("[data-treat]").forEach(b => b.addEventListener("click", ()=>{
+    const t = TREATS.find(x => x.id === +b.dataset.treat); if (!t) return;
+    addItem({key:"treat-"+t.id, type:"treat", name:t.name, detail:t.category || "Treat", price:t.price, art:[], photo:t.photo});
+  }));
 }
 function longDate(v, opts){ const [y,m,d] = v.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US", opts); }
 const IG_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff"/></svg>`;
@@ -1016,7 +1054,7 @@ async function loadContent(){
     const res = await fetch(CONFIG.contentEndpoint, {headers:{Accept:"application/json"}});
     if (!res.ok) throw new Error(res.status);
     const c = await res.json();
-    applyMenu(c.menu); renderContent(c);
+    applyFlavors(c.flavors); applyMenu(c.menu); renderTreats(c.treats); renderContent(c);
   }catch(e){ /* Static flyer prices still work; checkout falls back to text/email if the API is down. */ }
 }
 loadContent();

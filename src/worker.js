@@ -15,8 +15,10 @@ const UPLOAD_TYPES = {
 };
 const MOV_SCAN_HEAD = 1024 * 1024;     // moov at the start (faststart)
 const MOV_SCAN_TAIL = 4 * 1024 * 1024; // moov at the end (iPhone default)
-const FLAVOR_IDS = ["cc", "dcc", "dcss", "fs"];
-const SHORT = { cc: "Choc Chip", dcc: "Double Choc", dcss: "Sea Salt", fs: "Frosted Sugar" };
+const FLAVOR_ID_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
+// "Showing today": switched on and inside its optional start/end dates (SQL, ?1 = today).
+const IN_SEASON = "active = 1 AND (starts IS NULL OR starts <= ?1) AND (ends IS NULL OR ends >= ?1)";
+const inSeason = (r, today) => !!r.active && (!r.starts || r.starts <= today) && (!r.ends || r.ends >= today);
 const MEDIA_KEY_RE = /^(img|video)\/\d{4}\/[0-9a-f-]{36}\.(jpg|png|webp|mp4|mov)$/;
 const ORDER_LIMIT = 5;
 const ORDER_WINDOW_MS = 10 * 60 * 1000;
@@ -102,10 +104,14 @@ function shapeMedia(m) {
   return { id: m.id, kind: m.kind, caption: m.caption, url: m.kind === "instagram" ? m.key_or_url : mediaUrl(m.key_or_url), content_type: m.content_type };
 }
 
+const flavorPhoto = (r) => (r.photo_key ? mediaUrl(r.photo_key) : r.asset || null);
+const shapeFlavor = (r) => ({ id: r.key.slice(7), name: r.name, short: r.short || r.name, description: r.description, photo: flavorPhoto(r), in_flight: !!r.in_flight });
+const shapeTreat = (t) => ({ id: t.id, name: t.name, price: dollars(t.price_cents), description: t.description, category: t.category, photo: mediaUrl(t.photo_key) });
+
 async function getContent(env) {
   const today = todayLocal();
-  const [menu, specials, events, media] = await env.DB.batch([
-    env.DB.prepare("SELECT key, kind, name, price_cents, active FROM menu ORDER BY sort"),
+  const [menu, specials, events, media, flavors, treats] = await env.DB.batch([
+    env.DB.prepare("SELECT key, kind, name, price_cents, active FROM menu WHERE kind = 'item' ORDER BY sort"),
     env.DB.prepare(
       `SELECT * FROM specials WHERE active = 1
          AND (starts IS NULL OR starts <= ?1) AND (ends IS NULL OR ends >= ?1)
@@ -113,12 +119,16 @@ async function getContent(env) {
     ).bind(today),
     env.DB.prepare("SELECT * FROM events WHERE date >= ?1 ORDER BY date, id LIMIT 6").bind(today),
     env.DB.prepare("SELECT * FROM media WHERE featured = 1 ORDER BY id DESC LIMIT 12"),
+    env.DB.prepare(`SELECT * FROM menu WHERE kind = 'flavor' AND ${IN_SEASON} ORDER BY sort, key`).bind(today),
+    env.DB.prepare(`SELECT * FROM treats WHERE ${IN_SEASON} ORDER BY sort, id`).bind(today),
   ]);
   const all = specials.results.map(shapeSpecial);
   const featured = media.results.map(shapeMedia);
   return {
     today,
     menu: menu.results.map((m) => ({ key: m.key, kind: m.kind, name: m.name, price: dollars(m.price_cents), active: !!m.active })),
+    flavors: flavors.results.map(shapeFlavor),
+    treats: treats.results.map(shapeTreat),
     cookieOfTheMonth: all.find((s) => s.kind === "cotm") || null,
     specials: all.filter((s) => s.kind === "special"),
     events: events.results.map((e) => ({ id: e.id, title: e.title, date: e.date, body: e.body, flyer: mediaUrl(e.flyer_key), rsvp_url: e.rsvp_url })),
@@ -131,12 +141,14 @@ async function getContent(env) {
 async function priceOrder(env, items) {
   if (!Array.isArray(items) || !items.length) throw new HttpError(400, "Your order is empty");
   if (items.length > 30) throw new HttpError(400, "Too many items in one order");
-  const { results } = await env.DB.prepare("SELECT key, kind, name, price_cents, active FROM menu").all();
-  const menu = Object.fromEntries(results.map((r) => [r.key, r]));
-  const activeFlavor = (id) => FLAVOR_IDS.includes(id) && menu["flavor-" + id]?.active;
+  const today = todayLocal();
+  const { results } = await env.DB.prepare("SELECT * FROM menu ORDER BY sort, key").all();
+  const menu = new Map(results.map((r) => [r.key, r]));
+  const flavors = new Map(results.filter((r) => r.kind === "flavor" && inSeason(r, today)).map((r) => [r.key.slice(7), r]));
+  const activeFlavor = (id) => (typeof id === "string" ? flavors.get(id) : undefined);
   const item = (key) => {
-    const m = menu[key];
-    if (!m || !m.active || m.price_cents == null) throw new HttpError(400, `${m ? m.name : key} isn't available right now`);
+    const m = menu.get(key);
+    if (!m || m.kind !== "item" || !m.active || m.price_cents == null) throw new HttpError(400, `${m ? m.name : key} isn't available right now`);
     return m;
   };
   const lines = [];
@@ -149,23 +161,37 @@ async function priceOrder(env, items) {
         const size = Number(it.size);
         if (size !== 6 && size !== 12) throw new HttpError(400, "Boxes come in 6 or 12");
         const m = item(size === 6 ? "half" : "dozen");
-        const flavors = it.flavors && typeof it.flavors === "object" ? it.flavors : {};
+        const picked = it.flavors && typeof it.flavors === "object" ? it.flavors : {};
         let sum = 0; const parts = [];
-        for (const [id, n] of Object.entries(flavors)) {
-          if (!activeFlavor(id)) throw new HttpError(400, `That flavor isn't available right now`);
+        for (const [id, n] of Object.entries(picked)) {
+          const f = activeFlavor(id);
+          if (!f) throw new HttpError(400, `That flavor isn't available right now`);
           if (!Number.isInteger(n) || n < 0) throw new HttpError(400, "Box flavor counts are invalid");
-          if (n) { sum += n; parts.push(`${n} ${SHORT[id]}`); }
+          if (n) { sum += n; parts.push(`${n} ${f.short || f.name}`); }
         }
         if (sum !== size) throw new HttpError(400, `A ${size === 6 ? "half-dozen" : "dozen"} box needs exactly ${size} cookies`);
         name = size === 6 ? "Half-dozen box" : "Dozen box"; detail = parts.join(", "); unit = m.price_cents;
         break;
       }
       case "single": {
-        if (!activeFlavor(it.flavor)) throw new HttpError(400, "That flavor isn't available right now");
-        name = menu["flavor-" + it.flavor].name; detail = "Single cookie"; unit = item("single").price_cents;
+        const f = activeFlavor(it.flavor);
+        if (!f) throw new HttpError(400, "That flavor isn't available right now");
+        name = f.name; detail = "Single cookie"; unit = item("single").price_cents;
         break;
       }
-      case "flight": { const m = item("flight"); name = m.name; detail = "One of each flavor"; unit = m.price_cents; break; }
+      case "flight": {
+        const m = item("flight");
+        const inFlight = [...flavors.values()].filter((f) => f.in_flight);
+        if (!inFlight.length) throw new HttpError(400, `${m.name} isn't available right now`);
+        name = m.name; detail = "One of each: " + inFlight.map((f) => f.short || f.name).join(", "); unit = m.price_cents;
+        break;
+      }
+      case "treat": {
+        const t = await env.DB.prepare(`SELECT * FROM treats WHERE id = ?2 AND ${IN_SEASON}`).bind(today, Number(it.id) || 0).first();
+        if (!t) throw new HttpError(400, "That treat isn't available right now");
+        name = t.name; detail = t.category || "Treat"; unit = t.price_cents;
+        break;
+      }
       case "gram": { const m = item("gram"); name = m.name; unit = m.price_cents; break; }
       case "mini": {
         const size = Number(it.size);
@@ -174,7 +200,6 @@ async function priceOrder(env, items) {
         break;
       }
       case "special": {
-        const today = todayLocal();
         const s = await env.DB.prepare(
           `SELECT * FROM specials WHERE id = ?1 AND active = 1 AND price_cents IS NOT NULL
              AND (starts IS NULL OR starts <= ?2) AND (ends IS NULL OR ends >= ?2)`
@@ -378,6 +403,8 @@ const MEDIA_REFS = [
   ["specials", "image_key"], ["specials", "image_orig_key"],
   ["events", "flyer_key"], ["events", "flyer_orig_key"],
   ["media", "key_or_url"], ["media", "orig_key"],
+  ["menu", "photo_key"], ["menu", "photo_orig_key"],
+  ["treats", "photo_key"], ["treats", "photo_orig_key"],
 ];
 async function deleteMediaIfUnused(env, ...keys) {
   let deleted = 0;
@@ -426,6 +453,57 @@ async function eventFromBody(env, b) {
     ...(await photoPair(env, b, "flyer_key", "flyer_orig_key", "Flyer")),
     rsvp_url: httpsUrl(b.rsvp_url, "RSVP link"),
   };
+}
+
+function slugify(s) {
+  return String(s).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "flavor";
+}
+function dateRange(b) {
+  const starts = optDate(b.starts, "Start date"), ends = optDate(b.ends, "End date");
+  if (starts && ends && ends < starts) throw new HttpError(400, "The end date is before the start date");
+  return { starts, ends };
+}
+const shapeAdminFlavor = (r) => ({
+  id: r.key.slice(7), key: r.key, name: r.name, short: r.short, description: r.description, photo: flavorPhoto(r),
+  photo_key: r.photo_key, photo_orig_key: r.photo_orig_key, photo_orig: mediaUrl(r.photo_orig_key),
+  starts: r.starts, ends: r.ends, in_flight: !!r.in_flight, active: !!r.active, sort: r.sort,
+});
+const shapeAdminTreat = (t) => ({ ...t, price: dollars(t.price_cents), photo: mediaUrl(t.photo_key), photo_orig: mediaUrl(t.photo_orig_key), active: !!t.active });
+
+async function flavorFromBody(env, b) {
+  const name = str(b.name, { max: 60, required: true, field: "Name" });
+  return {
+    name,
+    short: str(b.short, { max: 20, field: "Short name" }) || name.slice(0, 20),
+    description: str(b.description, { max: 300, field: "Description" }),
+    ...(await photoPair(env, b, "photo_key", "photo_orig_key", "Photo")),
+    ...dateRange(b),
+    in_flight: bool01(b.in_flight ?? true),
+    active: bool01(b.active ?? true),
+  };
+}
+async function treatFromBody(env, b) {
+  return {
+    name: str(b.name, { max: 80, required: true, field: "Name" }),
+    price_cents: priceToCents(b.price, { field: "Price", allowNull: false }),
+    description: str(b.description, { max: 300, field: "Description" }),
+    category: str(b.category, { max: 40, field: "Category" }),
+    ...(await photoPair(env, b, "photo_key", "photo_orig_key", "Photo")),
+    ...dateRange(b),
+    active: bool01(b.active ?? true),
+  };
+}
+
+// Up/down buttons: swap with the neighbour, then renumber the whole list so sorts stay tidy.
+async function moveRow(DB, { table, idCol, where, base }, id, dir) {
+  const { results } = await DB.prepare(`SELECT ${idCol} AS id FROM ${table} ${where} ORDER BY sort, ${idCol}`).all();
+  const ids = results.map((r) => String(r.id));
+  const i = ids.indexOf(String(id));
+  if (i < 0) throw new HttpError(404, "Not found");
+  const j = dir === "up" ? i - 1 : dir === "down" ? i + 1 : i;
+  if (j < 0 || j >= ids.length || j === i) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  await DB.batch(ids.map((v, k) => DB.prepare(`UPDATE ${table} SET sort = ?1 WHERE ${idCol} = ?2`).bind(base + k * 10, table === "treats" ? Number(v) : v)));
 }
 
 async function adminApi(request, env, path, admin) {
@@ -557,6 +635,82 @@ async function adminApi(request, env, path, admin) {
     if (m === "DELETE" && id) {
       const row = await DB.prepare("DELETE FROM media WHERE id = ?1 RETURNING *").bind(Number(id)).first();
       if (row && row.kind !== "instagram") await deleteMediaIfUnused(env, row.key_or_url, row.orig_key);
+      return json({ ok: true });
+    }
+  }
+
+  if (seg[0] === "flavors") {
+    const key = id ? "flavor-" + id : null;
+    if (id && !FLAVOR_ID_RE.test(id)) throw new HttpError(404, "Flavor not found");
+    if (m === "GET" && !id) {
+      const { results } = await DB.prepare("SELECT * FROM menu WHERE kind = 'flavor' ORDER BY sort, key").all();
+      return json({ flavors: results.map(shapeAdminFlavor) });
+    }
+    if (m === "POST" && id && seg[2] === "move") {
+      await moveRow(DB, { table: "menu", idCol: "key", where: "WHERE kind = 'flavor'", base: 100 }, key, (await readJson(request)).dir);
+      return json({ ok: true });
+    }
+    if (m === "POST" && !id) {
+      const f = await flavorFromBody(env, await readJson(request));
+      let slug = slugify(f.short || f.name);
+      for (let n = 2; await DB.prepare("SELECT 1 FROM menu WHERE key = ?1").bind("flavor-" + slug).first(); n++) slug = `${slugify(f.short || f.name).slice(0, 28)}-${n}`;
+      const { s } = await DB.prepare("SELECT COALESCE(MAX(sort), 100) + 10 AS s FROM menu WHERE kind = 'flavor'").first();
+      const row = { key: "flavor-" + slug, kind: "flavor", price_cents: null, sort: s, ...f };
+      const cols = Object.keys(row);
+      const saved = await DB.prepare(`INSERT INTO menu (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...Object.values(row)).first();
+      return json({ flavor: shapeAdminFlavor(saved) }, 201);
+    }
+    if (m === "PUT" && id) {
+      const prev = await DB.prepare("SELECT * FROM menu WHERE key = ?1 AND kind = 'flavor'").bind(key).first();
+      if (!prev) throw new HttpError(404, "Flavor not found");
+      const f = await flavorFromBody(env, await readJson(request));
+      const cols = Object.keys(f);
+      const row = await DB.prepare(`UPDATE menu SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE key = ?${cols.length + 1} RETURNING *`).bind(...Object.values(f), key).first();
+      await releaseReplaced(env, prev, row, ["photo_key", "photo_orig_key"]);
+      return json({ flavor: shapeAdminFlavor(row) });
+    }
+    if (m === "DELETE" && id) {
+      const row = await DB.prepare("DELETE FROM menu WHERE key = ?1 AND kind = 'flavor' RETURNING *").bind(key).first();
+      if (!row) throw new HttpError(404, "Flavor not found");
+      await deleteMediaIfUnused(env, row.photo_key, row.photo_orig_key);
+      return json({ ok: true });
+    }
+  }
+
+  if (seg[0] === "treats") {
+    if (m === "GET" && !id) {
+      const { results } = await DB.prepare("SELECT * FROM treats ORDER BY sort, id").all();
+      return json({ treats: results.map(shapeAdminTreat) });
+    }
+    if (m === "POST" && id && seg[2] === "move") {
+      await moveRow(DB, { table: "treats", idCol: "id", where: "", base: 10 }, Number(id), (await readJson(request)).dir);
+      return json({ ok: true });
+    }
+    if (m === "POST" && !id) {
+      const t = await treatFromBody(env, await readJson(request));
+      const { s } = await DB.prepare("SELECT COALESCE(MAX(sort), 0) + 10 AS s FROM treats").first();
+      const row = { ...t, sort: s }, cols = Object.keys(row);
+      const saved = await DB.prepare(`INSERT INTO treats (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...Object.values(row)).first();
+      return json({ treat: shapeAdminTreat(saved) }, 201);
+    }
+    if (m === "PUT" && id) {
+      const prev = await DB.prepare("SELECT * FROM treats WHERE id = ?1").bind(Number(id)).first();
+      if (!prev) throw new HttpError(404, "Treat not found");
+      const t = await treatFromBody(env, await readJson(request)), cols = Object.keys(t);
+      const row = await DB.prepare(`UPDATE treats SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE id = ?${cols.length + 1} RETURNING *`).bind(...Object.values(t), Number(id)).first();
+      await releaseReplaced(env, prev, row, ["photo_key", "photo_orig_key"]);
+      return json({ treat: shapeAdminTreat(row) });
+    }
+    if (m === "PATCH" && id) { // on/off switch
+      const b = await readJson(request);
+      const row = await DB.prepare("UPDATE treats SET active = ?1 WHERE id = ?2 RETURNING *").bind(bool01(b.active), Number(id)).first();
+      if (!row) throw new HttpError(404, "Treat not found");
+      return json({ treat: shapeAdminTreat(row) });
+    }
+    if (m === "DELETE" && id) {
+      const row = await DB.prepare("DELETE FROM treats WHERE id = ?1 RETURNING *").bind(Number(id)).first();
+      if (!row) throw new HttpError(404, "Treat not found");
+      await deleteMediaIfUnused(env, row.photo_key, row.photo_orig_key);
       return json({ ok: true });
     }
   }

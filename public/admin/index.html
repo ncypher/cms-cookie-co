@@ -122,6 +122,17 @@ form.edit, .field, .field > *{min-width:0}
 .mrow input[type=number]{width:78px; font-size:16px; border:1.5px solid var(--line); border-radius:10px; padding:8px 8px; background:#fff}
 .mrow .switch{min-height:auto}
 .mrow .switch span{display:none}
+.irow{padding:12px 0; border-bottom:1px dashed var(--pink-soft); display:grid; gap:8px}
+.irow:last-child{border-bottom:0}
+.itop{display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center}
+.ithumb{width:52px; height:52px; object-fit:cover; background:var(--blush); display:grid; place-items:center; font-size:24px}
+.ithumb.circle{border-radius:50%} .ithumb.square{border-radius:10px}
+.iname{min-width:0} .iname b{font:700 18px/1.2 var(--f-hand); display:block; overflow-wrap:anywhere}
+.irow .switch{min-height:auto} .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+.iact{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.iact [data-move]{min-width:48px; font-size:18px}
+.iact .confirm{flex:1 1 100%; font-size:15px}
+#flavorForm:not(:empty), #treatForm:not(:empty){margin-top:12px}
 .subhead{font:700 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:16px 0 0}
 
 /* Tab bar */
@@ -429,10 +440,10 @@ function wireUploads(root, fields){
   });
 }
 function openForm(cfg, row){
-  const slot = $("#formSlot");
+  const slot = $(cfg.slot || "#formSlot");
   const flat = cfg.fields.flatMap(f => f.pair || [f]);
   slot.innerHTML = `<form class="card edit" novalidate>
-    <h3>${row ? "Edit " + cfg.noun : "New " + cfg.noun}</h3>
+    <h3>${row ? "Edit " + cfg.noun : cfg.newTitle || "New " + cfg.noun}</h3>
     ${cfg.fields.map(f => fieldHtml(f, row)).join("")}
     <p class="err" hidden></p>
     <div class="row"><button class="btn btn-rose" type="submit">Save</button><button class="btn btn-ghost" type="button" data-cancel>Cancel</button></div>
@@ -453,7 +464,7 @@ function openForm(cfg, row){
     try{
       await api(row ? "PUT" : "POST", row ? `${cfg.path}/${row.id}` : cfg.path, body);
       toast(row ? "Saved" : `${cfg.noun[0].toUpperCase() + cfg.noun.slice(1)} added`);
-      renderCrud(cfg);
+      cfg.reload ? cfg.reload() : renderCrud(cfg);
     }catch(err){ showErr(form, err.message); btn.disabled = false; btn.textContent = "Save"; }
   });
   slot.scrollIntoView({behavior:"smooth", block:"start"});
@@ -582,26 +593,120 @@ function mediaCard(m){
   </article>`;
 }
 
-/* ============ Menu ============ */
+/* ============ Menu: prices, flavors, treats ============ */
+let SINGLE_PRICE = null; // price tag sticker default for flavors
+const FLAVORS_CFG = {
+  path: "flavors", noun: "flavor", newTitle: "Add a flavor", slot: "#flavorForm", reload: () => renderMenu(),
+  fields: [
+    {name:"name", label:"Flavor name", type:"text", required:true, max:60},
+    {name:"short", label:"Short name", type:"text", max:20, hint:"Shown on the box builder buttons, like “Choc Chip”. Leave empty to use the full name."},
+    {name:"description", label:"Description", type:"textarea", max:300},
+    {name:"photo_key", orig:"photo_orig_key", label:"Photo", type:"image", preview:"photo", origPreview:"photo_orig", shape: () => "circle", price: () => SINGLE_PRICE},
+    {name:"in_flight", label:"Part of the Cookie Tasting Flight", type:"switch", default:true},
+    {pair:[{name:"starts", label:"Starts (optional)", type:"date"}, {name:"ends", label:"Ends (optional)", type:"date"}]},
+    {name:"active", label:"Show on the site", type:"switch", default:true},
+  ],
+};
+const TREATS_CFG = {
+  path: "treats", noun: "treat", newTitle: "Add a treat", slot: "#treatForm", reload: () => renderMenu(),
+  fields: [
+    {name:"name", label:"Treat name", type:"text", required:true, max:80},
+    {name:"price", label:"Price ($)", type:"money", required:true},
+    {name:"category", label:"Kind of treat (optional)", type:"text", max:40, hint:"Like “Cookie Cake” or “Cupcakes”. Shows above the name."},
+    {name:"description", label:"Description", type:"textarea", max:300},
+    {name:"photo_key", orig:"photo_orig_key", label:"Photo", type:"image", preview:"photo", origPreview:"photo_orig", shape: () => "square", price: form => form.elements.price.value},
+    {pair:[{name:"starts", label:"Starts (optional)", type:"date"}, {name:"ends", label:"Ends (optional)", type:"date"}]},
+    {name:"active", label:"Show on the site", type:"switch", default:true},
+  ],
+};
+function seasonNote(x){
+  const t = todayStr();
+  if (x.starts && x.starts > t) return `<span class="tag warn">Starts ${esc(prettyDate(x.starts))}</span>`;
+  if (x.ends && x.ends < t) return `<span class="tag warn">Ended ${esc(prettyDate(x.ends))}</span>`;
+  if (x.ends) return `<span class="meta">until ${esc(prettyDate(x.ends))}</span>`;
+  return "";
+}
+// One row in the Flavors / Treats lists: photo, name, on/off, then up / down / Edit / Delete.
+function itemRow(kind, x, i, n){
+  const shape = kind === "flavor" ? "circle" : "square";
+  return `<div class="irow" data-kind="${kind}" data-id="${esc(x.id)}">
+    <div class="itop">${x.photo ? `<img class="ithumb ${shape}" src="${esc(x.photo)}" alt="" loading="lazy">` : `<span class="ithumb ${shape} none" aria-hidden="true">🍪</span>`}
+      <div class="iname"><b>${esc(x.name)}</b>
+        <div class="row" style="gap:6px">${kind === "treat" ? `<span class="price" style="font-size:18px">${money(x.price)}</span>` : (x.short && x.short !== x.name ? `<span class="meta">${esc(x.short)}</span>` : "")}
+          ${kind === "flavor" && !x.in_flight ? `<span class="meta">· not in flight</span>` : ""} ${seasonNote(x)}</div></div>
+      <label class="switch"><input type="checkbox" data-onoff ${x.active ? "checked" : ""} aria-label="Show ${esc(x.name)} on the site"><span class="sr">On</span></label></div>
+    <div class="iact">
+      <button class="btn btn-ghost btn-sm" data-move="up" ${i === 0 ? "disabled" : ""} aria-label="Move ${esc(x.name)} up">↑</button>
+      <button class="btn btn-ghost btn-sm" data-move="down" ${i === n - 1 ? "disabled" : ""} aria-label="Move ${esc(x.name)} down">↓</button>
+      <button class="btn btn-ghost btn-sm" data-iedit>Edit</button>
+      <button class="btn btn-danger btn-sm" data-idel>Delete</button>
+    </div>
+  </div>`;
+}
 async function renderMenu(){
-  const {menu} = await api("GET", "menu");
-  const items = menu.filter(m => m.kind === "item"), flavors = menu.filter(m => m.kind === "flavor");
+  const [{menu}, {flavors}, {treats}] = await Promise.all([api("GET", "menu"), api("GET", "flavors"), api("GET", "treats")]);
+  const items = menu.filter(m => m.kind === "item");
+  SINGLE_PRICE = items.find(m => m.key === "single")?.price ?? null;
   const row = m => `<div class="mrow" data-key="${esc(m.key)}"><b>${esc(m.name)}</b>
-    ${m.kind === "item" ? `<span class="dollar">$<input type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${m.price}" aria-label="Price for ${esc(m.name)}"></span>` : `<span></span>`}
+    <span class="dollar">$<input type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${m.price}" aria-label="Price for ${esc(m.name)}"></span>
     <label class="switch" title="Available"><input type="checkbox" ${m.active ? "checked" : ""} aria-label="${esc(m.name)} available"><span>Available</span></label></div>`;
   $("#main").innerHTML = `
     <h1 class="page">Menu</h1>
     <p class="meta" style="margin:0 0 12px">Prices save when you leave the box. Switch something off to hide it from the site and stop new orders for it.</p>
     <section class="card"><p class="subhead" style="margin-top:0">Prices</p>${items.map(row).join("")}</section>
-    <section class="card"><p class="subhead" style="margin-top:0">Flavors</p>${flavors.map(row).join("")}</section>`;
+    <section class="card" id="flavorSec">
+      <div class="row"><p class="subhead" style="margin:0">Flavors</p><button class="btn btn-rose btn-sm spacer" id="addFlavor">+ Add a flavor</button></div>
+      <p class="meta" style="margin:6px 0 0">These fill the box builder. Use ↑ ↓ to change the order.</p>
+      <div id="flavorForm"></div>
+      ${flavors.length ? flavors.map((f, i) => itemRow("flavor", f, i, flavors.length)).join("") : `<p class="empty">No flavors yet.</p>`}
+    </section>
+    <section class="card" id="treatSec">
+      <div class="row"><p class="subhead" style="margin:0">More treats</p><button class="btn btn-rose btn-sm spacer" id="addTreat">+ Add a treat</button></div>
+      <p class="meta" style="margin:6px 0 0">Extra things people can order, like cookie cakes or cupcakes.</p>
+      <div id="treatForm"></div>
+      ${treats.length ? treats.map((t, i) => itemRow("treat", t, i, treats.length)).join("") : `<p class="empty">No treats yet. Tap “+ Add a treat”.</p>`}
+    </section>`;
   $$(".mrow").forEach(r => {
     const key = r.dataset.key, price = $("input[type=number]", r), act = $("input[type=checkbox]", r);
     const save = async (body, revert) => {
-      try{ const {item} = await api("PUT", "menu/" + encodeURIComponent(key), body); toast(`${item.name}: ${"price" in body ? money(item.price) : (item.active ? "on" : "off")}`); if (price) price.value = item.price; }
+      try{ const {item} = await api("PUT", "menu/" + encodeURIComponent(key), body); toast(`${item.name}: ${"price" in body ? money(item.price) : (item.active ? "on" : "off")}`); price.value = item.price; }
       catch(e){ revert(); toast(e.message, true); }
     };
-    if (price){ let last = price.value; price.addEventListener("change", () => { const prev = last; last = price.value; save({price: price.value}, () => { price.value = last = prev; }); }); }
+    let last = price.value;
+    price.addEventListener("change", () => { const prev = last; last = price.value; save({price: price.value}, () => { price.value = last = prev; }); });
     act.addEventListener("change", () => save({active: act.checked}, () => { act.checked = !act.checked; }));
+  });
+  $("#addFlavor").addEventListener("click", () => { $("#treatForm").innerHTML = ""; openForm(FLAVORS_CFG, null); });
+  $("#addTreat").addEventListener("click", () => { $("#flavorForm").innerHTML = ""; openForm(TREATS_CFG, null); });
+  $$(".irow").forEach(r => {
+    const kind = r.dataset.kind, cfg = kind === "flavor" ? FLAVORS_CFG : TREATS_CFG;
+    const x = (kind === "flavor" ? flavors : treats).find(v => String(v.id) === r.dataset.id);
+    const path = `${cfg.path}/${encodeURIComponent(x.id)}`;
+    $("[data-onoff]", r).addEventListener("change", async e => {
+      const inp = e.target; inp.disabled = true;
+      try{
+        if (kind === "flavor") await api("PUT", "menu/" + encodeURIComponent("flavor-" + x.id), {active: inp.checked});
+        else await api("PATCH", path, {active: inp.checked});
+        x.active = inp.checked; toast(`${x.name}: ${inp.checked ? "on the site" : "hidden"}`);
+      }catch(err){ inp.checked = !inp.checked; toast(err.message, true); }
+      inp.disabled = false;
+    });
+    $$("[data-move]", r).forEach(b => b.addEventListener("click", async () => {
+      try{ await api("POST", path + "/move", {dir: b.dataset.move}); await renderMenu(); $(`.irow[data-kind="${kind}"][data-id="${CSS.escape(String(x.id))}"] [data-move="${b.dataset.move}"]`)?.focus(); }
+      catch(e){ toast(e.message, true); }
+    }));
+    $("[data-iedit]", r).addEventListener("click", () => { $("#flavorForm").innerHTML = ""; $("#treatForm").innerHTML = ""; openForm(cfg, x); });
+    // Delete asks right here in the row (no pop-up), then removes it.
+    $("[data-idel]", r).addEventListener("click", () => {
+      const act = $(".iact", r), keep = act.innerHTML;
+      act.innerHTML = `<span class="confirm">Delete <b>${esc(x.name)}</b>? Orders already placed keep it.</span>
+        <button class="btn btn-danger btn-sm" data-yes>Yes, delete</button><button class="btn btn-ghost btn-sm" data-no>Keep it</button>`;
+      $("[data-no]", act).addEventListener("click", () => renderMenu());
+      $("[data-yes]", act).addEventListener("click", async () => {
+        try{ await api("DELETE", path); toast(`${x.name} deleted`); renderMenu(); }catch(e){ toast(e.message, true); act.innerHTML = keep; }
+      });
+      $("[data-no]", act).focus();
+    });
   });
 }
 
