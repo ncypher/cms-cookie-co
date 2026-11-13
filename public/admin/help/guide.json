@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T03:58:17.877Z",
+  "generated": "2026-11-13T04:17:01.079Z",
   "tasks": [
     {
       "id": "home",
@@ -283,6 +283,41 @@
       ],
       "clip": "/admin/help/order/clip.mp4",
       "clip_seconds": 13.8
+    },
+    {
+      "id": "pay",
+      "icon": "💵",
+      "title": "How customers pay you",
+      "go": "payments",
+      "tip": "Nobody pays through the website. Venmo and Cash App money goes straight into your Venmo or Cash App, and cash is paid when they pick up.",
+      "steps": [
+        {
+          "caption": "Tap {Payments} at the bottom of the screen.",
+          "image": "/admin/help/pay/1.webp"
+        },
+        {
+          "caption": "Customers only see the ways that are switched on. After they order, they get a button that opens Venmo with the amount and order number filled in.",
+          "image": "/admin/help/pay/2.webp"
+        },
+        {
+          "caption": "To change your Venmo name, tap the box and type the new one. Tap anywhere else and it saves by itself.",
+          "image": "/admin/help/pay/3.webp"
+        },
+        {
+          "caption": "Want Cash App too? Type your $cashtag, then switch Cash App on.",
+          "image": "/admin/help/pay/4.webp"
+        },
+        {
+          "caption": "Money came in? Tap {Orders}. The Venmo note has the order number in it.",
+          "image": "/admin/help/pay/5.webp"
+        },
+        {
+          "caption": "Find that order and switch on {Paid}.",
+          "image": "/admin/help/pay/6.webp"
+        }
+      ],
+      "clip": "/admin/help/pay/clip.mp4",
+      "clip_seconds": 15.7
     },
     {
       "id": "tip",

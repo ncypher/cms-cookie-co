@@ -39,3 +39,7 @@ INSERT INTO orders (id, name, phone, wanted_date, fulfillment, dietary, notes, i
   ('CMS-1114-2048', 'Sample Customer', '(555) 555-0100', date('now', '+4 days'), 'pickup', NULL, 'Birthday! Pink sprinkles please.',
    '[{"type":"box","name":"Dozen box","detail":"6 Choc Chip, 6 Frosted Sugar","qty":1,"unit_cents":2500,"line_cents":2500},{"type":"gram","name":"Cookie Gram","detail":null,"qty":1,"unit_cents":900,"line_cents":900}]',
    3400, 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-2 hours'));
+
+-- Ways to pay back to the launch settings (Venmo @CmsCookieCo + cash at pickup on, Cash App off).
+UPDATE payment_methods SET enabled = CASE id WHEN 'venmo' THEN 1 WHEN 'cash' THEN 1 ELSE 0 END,
+  handle = CASE id WHEN 'venmo' THEN 'CmsCookieCo' ELSE NULL END, updated_at = NULL, updated_by = NULL;

@@ -22,6 +22,10 @@ const IN_SEASON = "active = 1 AND (starts IS NULL OR starts <= ?1) AND (ends IS 
 const inSeason = (r, today) => !!r.active && (!r.starts || r.starts <= today) && (!r.ends || r.ends >= today);
 const MEDIA_KEY_RE = /^(img|video)\/\d{4}\/[0-9a-f-]{36}\.(jpg|png|webp|mp4|mov)$/;
 const ORDER_LIMIT = 5;
+// Ways to pay (Admin -> Payments). Venmo and Cash App need a name; "card" is a coming-soon placeholder.
+const PAY_LABEL = { venmo: "Venmo", cashapp: "Cash App", cash: "Cash at pickup", card: "Card (Square)" };
+const PAY_NEEDS_HANDLE = new Set(["venmo", "cashapp"]);
+const PAY_HANDLE_RE = /^[A-Za-z0-9_-]{1,30}$/;
 const ORDER_WINDOW_MS = 10 * 60 * 1000;
 
 /* ============ Helpers ============ */
@@ -111,7 +115,7 @@ const shapeTreat = (t) => ({ id: t.id, name: t.name, price: dollars(t.price_cent
 
 async function getContent(env) {
   const today = todayLocal();
-  const [menu, specials, events, media, flavors, treats] = await env.DB.batch([
+  const [menu, specials, events, media, flavors, treats, payments] = await env.DB.batch([
     env.DB.prepare("SELECT key, kind, name, price_cents, active FROM menu WHERE kind = 'item' ORDER BY sort"),
     env.DB.prepare(
       `SELECT * FROM specials WHERE active = 1
@@ -122,6 +126,7 @@ async function getContent(env) {
     env.DB.prepare("SELECT * FROM media WHERE featured = 1 ORDER BY id DESC LIMIT 12"),
     env.DB.prepare(`SELECT * FROM menu WHERE kind = 'flavor' AND ${IN_SEASON} ORDER BY sort, key`).bind(today),
     env.DB.prepare(`SELECT * FROM treats WHERE ${IN_SEASON} ORDER BY sort, id`).bind(today),
+    env.DB.prepare("SELECT id, handle FROM payment_methods WHERE enabled = 1 AND id <> 'card' ORDER BY sort, id"),
   ]);
   const all = specials.results.map(shapeSpecial);
   const featured = media.results.map(shapeMedia);
@@ -135,6 +140,8 @@ async function getContent(env) {
     events: events.results.map((e) => ({ id: e.id, title: e.title, date: e.date, body: e.body, flyer: mediaUrl(e.flyer_key), rsvp_url: e.rsvp_url })),
     tip: featured.find((m) => m.kind === "video" || m.kind === "instagram") || null,
     photos: featured.filter((m) => m.kind === "photo"),
+    // Only the ways Shaun has switched on (never the card placeholder). Venmo/Cash App without a name are skipped.
+    payments: payments.results.filter((p) => !PAY_NEEDS_HANDLE.has(p.id) || p.handle).map((p) => ({ id: p.id, handle: p.handle })),
   };
 }
 
@@ -327,6 +334,34 @@ async function serveMedia(request, env, key) {
   return new Response(obj.body, { headers });
 }
 
+/* ============ Payments (admin) ============ */
+// "@CmsCookieCo" / "$CmsCookieCo" -> "CmsCookieCo". Letters, digits, - and _ only (it ends up in links).
+function payHandle(v, id) {
+  if (v == null) return null;
+  if (typeof v !== "string") throw new HttpError(400, `${PAY_LABEL[id]} name must be text`);
+  const s = v.trim().replace(/^[@$]/, "");
+  if (!s) return null;
+  if (s.length > 30) throw new HttpError(400, `${PAY_LABEL[id]} name is too long (30 letters at most)`);
+  if (!PAY_HANDLE_RE.test(s)) throw new HttpError(400, `${PAY_LABEL[id]} names can only use letters, numbers, - and _`);
+  return s;
+}
+const shapePayment = (p) => ({ id: p.id, label: PAY_LABEL[p.id], enabled: !!p.enabled, handle: p.handle, coming_soon: p.id === "card", updated_at: p.updated_at, updated_by: p.updated_by });
+
+async function updatePayment(request, env, id, admin) {
+  const cur = await env.DB.prepare("SELECT * FROM payment_methods WHERE id = ?1").bind(id).first();
+  if (!cur) throw new HttpError(404, "Payment method not found");
+  if (id === "card") throw new HttpError(400, "Card payments are coming soon. There's nothing to switch on yet.");
+  const b = await readJson(request);
+  const handle = PAY_NEEDS_HANDLE.has(id) ? ("handle" in b ? payHandle(b.handle, id) : cur.handle) : null;
+  const enabled = "enabled" in b ? bool01(b.enabled) : cur.enabled;
+  if (enabled && PAY_NEEDS_HANDLE.has(id) && !handle) {
+    throw new HttpError(400, `Type your ${PAY_LABEL[id]} name first, then switch it on.`);
+  }
+  const row = await env.DB.prepare("UPDATE payment_methods SET enabled = ?1, handle = ?2, updated_at = ?3, updated_by = ?4 WHERE id = ?5 RETURNING *")
+    .bind(enabled, handle, new Date().toISOString(), admin.email, id).first();
+  return json({ payment: shapePayment(row) });
+}
+
 /* ============ Admin API ============ */
 function sniffOk(bytes, type) {
   const b = bytes, ascii = (o, n) => String.fromCharCode(...b.slice(o, o + n));
@@ -516,6 +551,14 @@ async function adminApi(request, env, path, admin) {
   if (seg[0] === "me" && m === "GET") return json({ email: admin.email, dev: !!admin.dev });
 
   if (seg[0] === "upload" && m === "PUT") return uploadMedia(request, env);
+
+  if (seg[0] === "payments") {
+    if (m === "GET" && !id) {
+      const { results } = await DB.prepare("SELECT * FROM payment_methods ORDER BY sort, id").all();
+      return json({ payments: results.map(shapePayment) });
+    }
+    if (m === "PUT" && id) return updatePayment(request, env, id, admin);
+  }
 
   if (seg[0] === "orders") {
     if (m === "GET" && !id) {

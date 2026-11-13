@@ -47,7 +47,8 @@ Local D1 and R2 data live in `.wrangler/state` (gitignored). Order emails don't 
 - **Flavors** are `menu` rows with `kind = 'flavor'` (short name, description, photo, optional start/end dates, in-flight flag); **treats** are rows in `treats`. Shaun adds, reorders and switches them off in Admin → Menu. Anything off or outside its dates is hidden and refused at checkout.
 - **Photos** picked in admin go through the Photo Studio, which uploads a framed WebP (≤ 1600 px, ≤ 400 KB) plus the untouched original (≤ 2400 px) so "Edit photo" can start over. The shape follows where the photo goes, and the home page shows that same shape: circle (Cookie of the Month, flavors), square (treats, gallery), 4:3 (specials), whole (event flyers, tap to enlarge).
 - **Prices** live in the D1 `menu` table. The page shows the flyer prices first, then updates them from `/api/content`. Checkout sends only item types and quantities, and the Worker re-prices every order from D1, so a tampered browser can't change a total.
-- **Orders** are validated, stored in D1, and emailed to Shaun from orders@cmscookieco3more.com. If the API is unreachable, the checkout's text, email and copy buttons still work. Venmo is @CmsCookieCo.
+- **Orders** are validated, stored in D1, and emailed to Shaun from orders@cmscookieco3more.com. If the API is unreachable, the checkout's text, email and copy buttons still work.
+- **Payments** (`payment_methods`): Shaun switches Venmo, Cash App and cash at pickup on/off and sets the names in Admin → Payments. Checkout and the contact panel show only what's on; the Venmo QR is drawn from the stored name by `public/assets/qr.js` (no CDN). The card row is a "coming soon" placeholder customers never see. No money passes through the site.
 - **Cookie of the Month and Specials** are rows in `specials` (`kind` = `cotm` or `special`). They show while `active` is on and today falls within their `starts`/`ends` dates.
 - **Events** show until their date passes.
 - **Tip of the Week** is the newest featured video or Instagram link in `media`. Featured photos show in a strip under it.
@@ -55,4 +56,4 @@ Local D1 and R2 data live in `.wrangler/state` (gitignored). Order emails don't 
 
 ## Edit contact info
 
-Phone, email and Venmo are in the `CONFIG` block near the top of the `<script>` in `public/index.html`. The notification addresses are in `wrangler.jsonc` (`NOTIFY_TO`, `NOTIFY_FROM`, and the `send_email` allowlist).
+Venmo and Cash App names are in Admin → Payments. Phone and email are in the `CONFIG` block near the top of the `<script>` in `public/index.html`. The notification addresses are in `wrangler.jsonc` (`NOTIFY_TO`, `NOTIFY_FROM`, and the `send_email` allowlist).

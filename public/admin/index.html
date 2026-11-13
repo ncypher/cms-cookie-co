@@ -136,9 +136,22 @@ form.edit, .field, .field > *{min-width:0}
 #flavorForm:not(:empty), #treatForm:not(:empty){margin-top:12px}
 .subhead{font:700 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:16px 0 0}
 
+/* Payments */
+.pay .payhead{display:flex; align-items:center; gap:12px}
+.pay .payhead h3{flex:1}
+.payico{width:40px; height:40px; border-radius:10px; flex:none; display:grid; place-items:center; color:#fff; font:800 22px/1 var(--f-body)}
+.payico.venmo{background:#3D95CE} .payico.cashapp{background:#00C244} .payico.cash{background:var(--green); font-size:19px} .payico.card{background:#8C7B74; font-size:19px}
+.prefix{display:flex; align-items:center; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding-left:13px}
+.prefix:focus-within{border-color:var(--pink)}
+.prefix span{font-weight:700; color:var(--muted)}
+.field .prefix input:not([type=checkbox]){border:0; padding-left:4px; background:transparent}
+.pay .field{margin-top:12px}
+.pay .meta{margin:10px 0 0}
+.card.soon{opacity:.6; background:#F6F0EC}
+
 /* Tab bar */
-nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; border-top:1.5px solid var(--pink-soft); display:grid; grid-template-columns:repeat(6,1fr); padding:6px max(6px, env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px, env(safe-area-inset-left,0px))}
-nav.tabs button{border:0; background:none; display:grid; justify-items:center; gap:2px; padding:6px 0; font:700 10.5px var(--f-caps); letter-spacing:.02em; text-transform:uppercase; color:var(--muted); border-radius:12px; position:relative}
+nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; border-top:1.5px solid var(--pink-soft); display:flex; gap:2px; padding:6px max(4px, env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px, env(safe-area-inset-left,0px))}
+nav.tabs button{flex:1 1 auto; min-width:0; border:0; background:none; display:grid; justify-items:center; gap:2px; padding:6px 2px; font:700 10px var(--f-caps); letter-spacing:0; text-transform:uppercase; color:var(--muted); border-radius:12px; position:relative; white-space:nowrap}
 nav.tabs svg{width:24px; height:24px}
 nav.tabs button[aria-current="page"]{color:var(--green); background:var(--blush)}
 nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px; height:18px; border-radius:9px; background:var(--pink-btn); color:#fff; font:700 11px/18px var(--f-body); padding:0 5px}
@@ -191,6 +204,7 @@ nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px
   <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
   <button data-tab="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-5-5-8 8"/></svg>Media</button>
   <button data-tab="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Menu</button>
+  <button data-tab="payments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M2.5 10.5h19"/><path d="M6.5 15h4"/></svg>Payments</button>
   <button data-tab="help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6"/><path d="M12 17.2v.1"/></svg>Help</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -245,7 +259,7 @@ function showGate(msg){
 
 /* ============ Tabs ============ */
 let tab = (location.hash.slice(1) || "orders");
-const TABS = {orders: renderOrders, specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu, help: id => renderHelp(id)};
+const TABS = {orders: renderOrders, specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu, payments: renderPayments, help: id => renderHelp(id)};
 function go(t, arg){
   if (!TABS[t]) t = "orders";
   tab = t; history.replaceState(null, "", "#" + t);
@@ -771,6 +785,67 @@ async function renderMenu(){
       });
       $("[data-no]", act).focus();
     });
+  });
+}
+
+/* ============ Payments: which ways customers see, and the names in the pay links ============ */
+const PAY_RE = /^[A-Za-z0-9_-]{1,30}$/;
+const PAY_INFO = {
+  venmo: {ico:"v", prefix:"@", nameLabel:"Your Venmo name", say:"Customers tap a button that opens Venmo with the amount and order number filled in. The money lands in your Venmo."},
+  cashapp: {ico:"$", prefix:"$", nameLabel:"Your Cash App $cashtag", say:"Customers tap a button that opens Cash App with the amount filled in. The money lands in your Cash App."},
+  cash: {ico:"💵", say:"Customers are told they can pay with cash when they pick up."},
+  card: {ico:"💳", say:"Coming soon. Customers don't see this yet."},
+};
+async function renderPayments(){
+  const {payments} = await api("GET", "payments");
+  const card = p => {
+    const info = PAY_INFO[p.id];
+    if (p.coming_soon) return `<section class="card pay soon" data-pay="${p.id}"><div class="payhead"><span class="payico card" aria-hidden="true">${info.ico}</span><h3>${esc(p.label)}</h3><span class="tag">Coming soon</span></div>
+      <p class="meta">${esc(info.say)}</p></section>`;
+    return `<section class="card pay" data-pay="${p.id}">
+      <div class="payhead"><span class="payico ${p.id}" aria-hidden="true">${info.ico}</span><h3>${esc(p.label)}</h3>
+        <label class="switch"><input type="checkbox" data-payon ${p.enabled ? "checked" : ""} aria-label="Show ${esc(p.label)} to customers"><span class="sr">On</span></label></div>
+      ${info.prefix ? `<div class="field"><label for="ph_${p.id}">${info.nameLabel}</label>
+        <div class="prefix"><span aria-hidden="true">${info.prefix}</span><input id="ph_${p.id}" data-payname value="${esc(p.handle || "")}" maxlength="31" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="${p.id === "venmo" ? "CmsCookieCo" : "YourCashtag"}"></div>
+        <span class="hint">Saves by itself when you tap somewhere else. Letters, numbers, - and _ only.</span></div>` : ""}
+      <p class="meta">${esc(info.say)}</p>
+    </section>`;
+  };
+  $("#main").innerHTML = `
+    <h1 class="page">Payments</h1>
+    <p class="meta" style="margin:0 0 12px">Customers only see the ways that are switched on: after they order, and in the contact box on the home page. Nobody pays through this website. Money goes straight to you.</p>
+    ${payments.map(card).join("")}
+    <div class="card" style="background:#FFF3E5"><b>Got paid?</b><p class="meta" style="margin:4px 0 10px">Open the order and switch on <b>Paid</b>. The Venmo note has the order number in it.</p>
+      <button class="btn btn-green btn-sm" type="button" id="toOrders">Go to Orders</button></div>`;
+  $("#toOrders").addEventListener("click", () => go("orders"));
+  $$("[data-pay]").forEach(sec => {
+    const p = payments.find(x => x.id === sec.dataset.pay); if (!p || p.coming_soon) return;
+    const on = $("[data-payon]", sec), name = $("[data-payname]", sec);
+    const save = async (body) => {
+      const {payment} = await api("PUT", "payments/" + p.id, body);
+      Object.assign(p, payment); on.checked = p.enabled; if (name) name.value = p.handle || "";
+      return payment;
+    };
+    on.addEventListener("change", async () => {
+      on.disabled = true;
+      try{
+        const body = {enabled: on.checked};
+        if (name && on.checked) body.handle = name.value.trim(); // switching on also saves what's typed
+        const r = await save(body);
+        toast(`${r.label}: ${r.enabled ? "customers see it" : "hidden from customers"}`);
+      }catch(e){ on.checked = !on.checked; toast(e.message, true); if (name && /name first/.test(e.message)) name.focus(); }
+      on.disabled = false;
+    });
+    if (name){
+      let last = name.value;
+      name.addEventListener("change", async () => {
+        const v = name.value.trim().replace(/^[@$]/, "");
+        if (v && !PAY_RE.test(v)){ toast(`${p.label} names can only use letters, numbers, - and _`, true); name.focus(); return; }
+        if (!v && p.enabled){ toast(`Switch ${p.label} off first, or type your name.`, true); name.value = last; return; }
+        try{ const r = await save({handle: v}); last = name.value; toast(r.handle ? `${r.label} name saved: ${PAY_INFO[p.id].prefix}${r.handle}` : `${r.label} name cleared`); }
+        catch(e){ toast(e.message, true); name.value = last; }
+      });
+    }
   });
 }
 
