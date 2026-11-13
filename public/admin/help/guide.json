@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T04:34:52.579Z",
+  "generated": "2026-11-13T20:46:02.901Z",
   "tasks": [
     {
       "id": "home",
@@ -30,7 +30,7 @@
         }
       ],
       "clip": "/admin/help/home/clip.mp4",
-      "clip_seconds": 10.8
+      "clip_seconds": 7.4
     },
     {
       "id": "photo",
@@ -65,7 +65,7 @@
         }
       ],
       "clip": "/admin/help/photo/clip.mp4",
-      "clip_seconds": 16
+      "clip_seconds": 10.1
     },
     {
       "id": "cotm",
@@ -96,7 +96,7 @@
         }
       ],
       "clip": "/admin/help/cotm/clip.mp4",
-      "clip_seconds": 11.9
+      "clip_seconds": 8
     },
     {
       "id": "special",
@@ -127,7 +127,7 @@
         }
       ],
       "clip": "/admin/help/special/clip.mp4",
-      "clip_seconds": 11.7
+      "clip_seconds": 8.2
     },
     {
       "id": "event",
@@ -158,7 +158,7 @@
         }
       ],
       "clip": "/admin/help/event/clip.mp4",
-      "clip_seconds": 11.7
+      "clip_seconds": 8.2
     },
     {
       "id": "signups",
@@ -193,7 +193,7 @@
         }
       ],
       "clip": "/admin/help/signups/clip.mp4",
-      "clip_seconds": 14.5
+      "clip_seconds": 9.5
     },
     {
       "id": "flavor",
@@ -228,7 +228,7 @@
         }
       ],
       "clip": "/admin/help/flavor/clip.mp4",
-      "clip_seconds": 14.1
+      "clip_seconds": 9.7
     },
     {
       "id": "treat",
@@ -259,7 +259,7 @@
         }
       ],
       "clip": "/admin/help/treat/clip.mp4",
-      "clip_seconds": 13
+      "clip_seconds": 8.3
     },
     {
       "id": "price",
@@ -286,7 +286,7 @@
         }
       ],
       "clip": "/admin/help/price/clip.mp4",
-      "clip_seconds": 10.9
+      "clip_seconds": 7.9
     },
     {
       "id": "order",
@@ -317,7 +317,7 @@
         }
       ],
       "clip": "/admin/help/order/clip.mp4",
-      "clip_seconds": 12.3
+      "clip_seconds": 8.9
     },
     {
       "id": "pay",
@@ -352,7 +352,7 @@
         }
       ],
       "clip": "/admin/help/pay/clip.mp4",
-      "clip_seconds": 15.2
+      "clip_seconds": 10.3
     },
     {
       "id": "spreadsheet",
@@ -387,7 +387,7 @@
         }
       ],
       "clip": "/admin/help/spreadsheet/clip.mp4",
-      "clip_seconds": 13.7
+      "clip_seconds": 8.7
     },
     {
       "id": "tip",
@@ -418,7 +418,7 @@
         }
       ],
       "clip": "/admin/help/tip/clip.mp4",
-      "clip_seconds": 10.6
+      "clip_seconds": 7.1
     }
   ]
 }

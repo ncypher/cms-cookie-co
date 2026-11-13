@@ -121,11 +121,12 @@ function eventSignup(e, today) {
   const left = e.capacity == null ? null : Math.max(0, e.capacity - (e.taken || 0));
   return { price: dollars(e.ticket_price_cents), spots_left: left, closes, state: today > closes ? "closed" : left === 0 ? "soldout" : "open" };
 }
+const shapePackage = (k) => ({ id: k.id, name: k.name, description: k.description, from: dollars(k.from_cents), serves: k.serves, photo: mediaUrl(k.photo_key) });
 const shapeTreat = (t) => ({ id: t.id, name: t.name, price: dollars(t.price_cents), description: t.description, category: t.category, photo: mediaUrl(t.photo_key) });
 
 async function getContent(env) {
   const today = todayLocal();
-  const [menu, specials, events, media, flavors, treats, payments] = await env.DB.batch([
+  const [menu, specials, events, media, flavors, treats, payments, catering, packages] = await env.DB.batch([
     env.DB.prepare("SELECT key, kind, name, price_cents, active FROM menu WHERE kind = 'item' ORDER BY sort"),
     env.DB.prepare(
       `SELECT * FROM specials WHERE active = 1
@@ -137,7 +138,10 @@ async function getContent(env) {
     env.DB.prepare(`SELECT * FROM menu WHERE kind = 'flavor' AND ${IN_SEASON} ORDER BY sort, key`).bind(today),
     env.DB.prepare(`SELECT * FROM treats WHERE ${IN_SEASON} ORDER BY sort, id`).bind(today),
     env.DB.prepare("SELECT id, handle FROM payment_methods WHERE enabled = 1 AND id <> 'card' ORDER BY sort, id"),
+    env.DB.prepare("SELECT * FROM catering WHERE id = 1"),
+    env.DB.prepare("SELECT * FROM catering_packages WHERE active = 1 ORDER BY sort, id"),
   ]);
+  const cat = catering.results[0];
   const all = specials.results.map(shapeSpecial);
   const featured = media.results.map(shapeMedia);
   return {
@@ -152,6 +156,11 @@ async function getContent(env) {
     photos: featured.filter((m) => m.kind === "photo"),
     // Only the ways Shaun has switched on (never the card placeholder). Venmo/Cash App without a name are skipped.
     payments: payments.results.filter((p) => !PAY_NEEDS_HANDLE.has(p.id) || p.handle).map((p) => ({ id: p.id, handle: p.handle })),
+    // Nothing about catering is public until Shaun switches it on.
+    catering: cat?.enabled ? {
+      intro: cat.intro, notice_days: cat.notice_days, earliest: todayLocal(cat.notice_days), items: JSON.parse(cat.items_json || "[]"),
+      packages: packages.results.map(shapePackage),
+    } : null,
   };
 }
 
@@ -270,7 +279,9 @@ async function enforceOrderLimit(env, hash) {
   }
   const since = new Date(Date.now() - ORDER_WINDOW_MS).toISOString();
   const recent = await env.DB.prepare(
-    "SELECT (SELECT COUNT(*) FROM orders WHERE client_hash = ?1 AND created_at >= ?2) + (SELECT COUNT(*) FROM registrations WHERE client_hash = ?1 AND created_at >= ?2) AS n"
+    `SELECT (SELECT COUNT(*) FROM orders WHERE client_hash = ?1 AND created_at >= ?2)
+       + (SELECT COUNT(*) FROM registrations WHERE client_hash = ?1 AND created_at >= ?2)
+       + (SELECT COUNT(*) FROM requests WHERE client_hash = ?1 AND created_at >= ?2) AS n`
   ).bind(hash, since).first();
   if ((recent?.n ?? 0) >= ORDER_LIMIT) throw new HttpError(429, TOO_MANY_ORDERS, { "Retry-After": "600" });
 }
@@ -402,6 +413,97 @@ async function registerForEvent(request, env, eventId, { preview = false } = {})
     event: { id: ev.id, title: ev.title, date: ev.date }, emailed: emailStatus === "sent" }, 201);
 }
 
+/* ============ Requests: catering quotes and custom orders ============ */
+const REQUEST_STATUSES = ["new", "quoted", "booked", "done", "declined"];
+const STATUS_LABEL = { new: "New", quoted: "Quoted", booked: "Booked", done: "Done", declined: "Declined" };
+// "about 20" -> 20. Anything without a number is kept for the notes instead.
+function headcountOf(v) {
+  if (v == null || v === "") return { n: null, text: null };
+  const m = String(v).match(/\d{1,5}/);
+  const n = m ? Number(m[0]) : null;
+  if (n != null && (n < 1 || n > 5000)) throw new HttpError(400, "How many people should be between 1 and 5000");
+  return { n, text: n == null ? str(String(v), { max: 60, field: "How many people" }) : null };
+}
+async function createRequest(request, env) {
+  const hash = await clientHash(request, env);
+  await enforceOrderLimit(env, hash);
+  const b = await readJson(request);
+  if (b.website) return json({ ok: true, id: newOrderId("REQ") }, 201); // honeypot: pretend success
+  const kind = b.kind === "catering" ? "catering" : b.kind === "custom" ? "custom" : null;
+  if (!kind) throw new HttpError(400, "Unknown request");
+  const cat = await env.DB.prepare("SELECT * FROM catering WHERE id = 1").first();
+  if (kind === "catering" && !cat?.enabled) throw new HttpError(409, "Catering requests are closed right now. Please text Shaun.");
+  const name = str(b.name, { max: 80, required: true, field: "Name" });
+  const phone = str(b.phone, { max: 30, required: true, field: "Phone" });
+  if (phone.replace(/\D/g, "").length < 10) throw new HttpError(400, "Add a 10-digit phone number so Shaun can text you back");
+  const email = str(b.email, { max: 120, field: "Email" });
+  if (email && !EMAIL_RE.test(email)) throw new HttpError(400, "That email doesn't look right. You can leave it empty.");
+  const today = todayLocal();
+  let event_date = null;
+  if (b.date != null && b.date !== "") {
+    if (!isDate(b.date)) throw new HttpError(400, "Pick the date of your event");
+    event_date = b.date;
+  }
+  if (kind === "catering") {
+    if (!event_date) throw new HttpError(400, "Pick the date of your event");
+    const earliest = todayLocal(cat.notice_days);
+    if (event_date < earliest) throw new HttpError(400, `Catering needs at least ${cat.notice_days} days' notice. Pick ${prettyDay(earliest)} or later, or text Shaun.`);
+  } else if (event_date && event_date < today) throw new HttpError(400, "That date has already passed");
+  if (event_date && event_date > todayLocal(730)) throw new HttpError(400, "Pick a date within the next two years");
+  const hc = headcountOf(b.headcount);
+  if (kind === "catering" && hc.n == null) throw new HttpError(400, "How many people is it for?");
+  const fulfillment = b.fulfillment === "delivery" ? "delivery" : b.fulfillment === "pickup" || kind === "catering" ? "pickup" : null;
+  const interests = (Array.isArray(b.interests) ? b.interests : []).filter((x) => typeof x === "string").map((x) => x.trim().slice(0, 80)).filter(Boolean).slice(0, 15);
+  let package_id = null;
+  if (b.package_id != null && b.package_id !== "") {
+    const k = kind === "catering" ? await env.DB.prepare("SELECT * FROM catering_packages WHERE id = ?1 AND active = 1").bind(Number(b.package_id) || 0).first() : null;
+    if (!k) throw new HttpError(400, "That package isn't available any more");
+    package_id = k.id;
+    if (!interests.includes(k.name)) interests.unshift(k.name);
+  }
+  const budget = str(b.budget, { max: 80, field: "Budget" });
+  let notes = str(b.notes, { max: 1500, field: "Notes" });
+  if (hc.text) notes = [`How many: ${hc.text}`, notes].filter(Boolean).join("\n");
+
+  let row = null;
+  for (let attempt = 0; attempt < 5 && !row; attempt++) {
+    try {
+      row = await env.DB.prepare(
+        `INSERT INTO requests (id, kind, name, phone, email, event_date, headcount, fulfillment, interests, budget, notes, package_id, client_hash)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13) RETURNING *`
+      ).bind(newOrderId("REQ"), kind, name, phone, email, event_date, hc.n, fulfillment, JSON.stringify(interests), budget, notes, package_id, hash).first();
+    } catch (e) {
+      if (attempt === 4 || !String(e.message).includes("UNIQUE")) throw e;
+    }
+  }
+  let emailStatus = "skipped";
+  if (env.EMAIL && env.NOTIFY_TO && env.NOTIFY_FROM) {
+    try {
+      await env.EMAIL.send({
+        from: { name: "CMS Cookie Co. Requests", email: env.NOTIFY_FROM },
+        to: env.NOTIFY_TO,
+        subject: `${kind === "catering" ? "Catering request" : "Custom order request"} ${row.id} from ${name}`,
+        text: [
+          `New ${kind === "catering" ? "catering" : "custom order"} request ${row.id}`, "",
+          interests.length ? `Would like: ${interests.join(", ")}` : null,
+          event_date ? `Date: ${prettyDay(event_date)}` : null,
+          hc.n ? `How many: ${hc.n}` : null,
+          fulfillment ? `Pickup or delivery: ${fulfillment === "delivery" ? "Delivery" : "Pickup"}` : null,
+          budget ? `Budget: ${budget}` : null,
+          `Name: ${name}`, `Phone: ${phone}`, email ? `Email: ${email}` : null, notes ? `Notes: ${notes}` : null,
+          "", `Answer it and set a quote: ${env.SITE_ORIGIN || ""}/admin/#requests`,
+        ].filter((x) => x !== null).join("\n"),
+      });
+      emailStatus = "sent";
+    } catch (e) {
+      console.error("request email failed", row.id, e?.message);
+      emailStatus = "failed";
+    }
+  }
+  await env.DB.prepare("UPDATE requests SET email_status = ?1 WHERE id = ?2").bind(emailStatus, row.id).run();
+  return json({ ok: true, id: row.id, kind, emailed: emailStatus === "sent" }, 201);
+}
+
 /* ============ Spreadsheets (CSV) ============ */
 const csvMoney = (cents) => (cents == null ? "" : "$" + (cents / 100).toFixed(2));
 const csvWhen = (iso) => (iso ? new Date(iso).toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "");
@@ -420,18 +522,30 @@ async function signupsCsv(env, eventId) {
   return csvResponse(`signups-${slug}-${ev.date}.csv`, toCsv(rows));
 }
 async function ordersCsv(env, url) {
+  const { from, to, rows: results } = await rowsInRange(env, "orders", url);
+  const items = (o) => JSON.parse(o.items_json).map((l) => `${l.qty} × ${l.name}${l.detail ? ` (${l.detail})` : ""}`).join("; ");
+  const rows = [["Order", "Placed", "Wanted", "Name", "Phone", "Pickup or delivery", "Items", "Total", "Confirmed", "Paid", "Dietary", "Notes"],
+    ...results.map((o) => [o.id, csvWhen(o.created_at), prettyDay(o.wanted_date), o.name, o.phone, o.fulfillment === "delivery" ? "Delivery" : "Pickup", items(o), csvMoney(o.total_cents), yesNo(o.confirmed), yesNo(o.paid), o.dietary, o.notes])];
+  return csvResponse(`orders-${from}-to-${to}.csv`, toCsv(rows));
+}
+
+// Rows created between two Michigan dates (inclusive). created_at is UTC, so widen by a day and filter.
+async function rowsInRange(env, table, url) {
   const to = url.searchParams.get("to") || todayLocal(), from = url.searchParams.get("from") || todayLocal(-29);
   if (!isDate(from) || !isDate(to)) throw new HttpError(400, "Dates must be YYYY-MM-DD");
   if (from > to) throw new HttpError(400, "The start date is after the end date");
   if (Date.parse(to) - Date.parse(from) > 366 * 864e5) throw new HttpError(400, "Pick a year or less");
-  // created_at is UTC; widen by a day each side, then keep the rows whose Michigan date is in range.
   const lo = new Date(Date.parse(from + "T00:00:00Z") - 864e5).toISOString(), hi = new Date(Date.parse(to + "T00:00:00Z") + 2 * 864e5).toISOString();
-  const { results } = await env.DB.prepare("SELECT * FROM orders WHERE created_at >= ?1 AND created_at < ?2 ORDER BY created_at").bind(lo, hi).all();
-  const items = (o) => JSON.parse(o.items_json).map((l) => `${l.qty} × ${l.name}${l.detail ? ` (${l.detail})` : ""}`).join("; ");
-  const rows = [["Order", "Placed", "Wanted", "Name", "Phone", "Pickup or delivery", "Items", "Total", "Confirmed", "Paid", "Dietary", "Notes"],
-    ...results.filter((o) => { const d = localDay(o.created_at); return d >= from && d <= to; })
-      .map((o) => [o.id, csvWhen(o.created_at), prettyDay(o.wanted_date), o.name, o.phone, o.fulfillment === "delivery" ? "Delivery" : "Pickup", items(o), csvMoney(o.total_cents), yesNo(o.confirmed), yesNo(o.paid), o.dietary, o.notes])];
-  return csvResponse(`orders-${from}-to-${to}.csv`, toCsv(rows));
+  const { results } = await env.DB.prepare(`SELECT * FROM ${table} WHERE created_at >= ?1 AND created_at < ?2 ORDER BY created_at`).bind(lo, hi).all();
+  return { from, to, rows: results.filter((o) => { const d = localDay(o.created_at); return d >= from && d <= to; }) };
+}
+async function requestsCsv(env, url) {
+  const { from, to, rows } = await rowsInRange(env, "requests", url);
+  const out = [["Request", "Received", "Kind", "Status", "Name", "Phone", "Email", "Event date", "How many", "Pickup or delivery", "Would like", "Budget", "Quote", "Notes", "Your notes"],
+    ...rows.map((r) => [r.id, csvWhen(r.created_at), r.kind === "catering" ? "Catering" : "Custom order", STATUS_LABEL[r.status], r.name, r.phone, r.email,
+      r.event_date ? prettyDay(r.event_date) : "", r.headcount, r.fulfillment ? (r.fulfillment === "delivery" ? "Delivery" : "Pickup") : "",
+      JSON.parse(r.interests || "[]").join("; "), r.budget, csvMoney(r.quote_cents), r.notes, r.admin_notes])];
+  return csvResponse(`requests-${from}-to-${to}.csv`, toCsv(out));
 }
 
 /* ============ Public: media from R2 ============ */
@@ -562,6 +676,7 @@ const MEDIA_REFS = [
   ["media", "key_or_url"], ["media", "orig_key"],
   ["menu", "photo_key"], ["menu", "photo_orig_key"],
   ["treats", "photo_key"], ["treats", "photo_orig_key"],
+  ["catering_packages", "photo_key"], ["catering_packages", "photo_orig_key"],
 ];
 async function deleteMediaIfUnused(env, ...keys) {
   let deleted = 0;
@@ -582,6 +697,24 @@ const shapeAdminSpecial = (s) => ({ ...s, price: dollars(s.price_cents), image: 
 const shapeAdminEvent = (e) => ({ ...e, flyer: mediaUrl(e.flyer_key), flyer_orig: mediaUrl(e.flyer_orig_key),
   published: !!e.published, signups_open: !!e.signups_open, ticket_price: dollars(e.ticket_price_cents), taken: e.taken ?? 0, signups: e.signups ?? 0,
   paid_cents: e.paid_cents ?? 0, expected_cents: e.expected_cents ?? 0 });
+const shapeRequest = (r) => ({ ...r, client_hash: undefined, interests: JSON.parse(r.interests || "[]"), quote: dollars(r.quote_cents) });
+const shapeCatering = (c) => ({ enabled: !!c.enabled, intro: c.intro, notice_days: c.notice_days, items: JSON.parse(c.items_json || "[]"), updated_at: c.updated_at });
+const shapeAdminPackage = (k) => ({ ...k, from: dollars(k.from_cents), photo: mediaUrl(k.photo_key), photo_orig: mediaUrl(k.photo_orig_key), active: !!k.active });
+async function packageFromBody(env, b) {
+  let serves = null;
+  if (b.serves != null && b.serves !== "") {
+    serves = Number(b.serves);
+    if (!Number.isInteger(serves) || serves < 1 || serves > 5000) throw new HttpError(400, "Serves must be a whole number from 1 to 5000");
+  }
+  return {
+    name: str(b.name, { max: 80, required: true, field: "Name" }),
+    description: str(b.description, { max: 400, field: "Description" }),
+    from_cents: priceToCents(b.from, { field: "From price" }),
+    serves,
+    ...(await photoPair(env, b, "photo_key", "photo_orig_key", "Photo")),
+    active: bool01(b.active ?? true),
+  };
+}
 const shapeRegistration = (r) => ({ ...r, client_hash: undefined, paid: !!r.paid, checked_in: !!r.checked_in, price: dollars(r.price_cents), total: dollars(r.total_cents) });
 const ADMIN_EVENT_SQL = `SELECT e.*, ${TAKEN} AS taken,
   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS signups,
@@ -748,6 +881,85 @@ async function adminApi(request, env, path, admin) {
   }
 
   if (seg[0] === "orders.csv" && m === "GET") return ordersCsv(env, new URL(request.url));
+  if (seg[0] === "requests.csv" && m === "GET") return requestsCsv(env, new URL(request.url));
+
+  if (seg[0] === "requests") {
+    if (m === "GET" && !id) {
+      const filter = new URL(request.url).searchParams.get("filter") || "open";
+      const where = filter === "all" ? "" : "WHERE status IN ('new', 'quoted', 'booked')";
+      const { results } = await DB.prepare(`SELECT * FROM requests ${where} ORDER BY created_at DESC LIMIT 300`).all();
+      const { n } = await DB.prepare("SELECT COUNT(*) AS n FROM requests WHERE status = 'new'").first();
+      return json({ requests: results.map(shapeRequest), new_count: n });
+    }
+    if (m === "PATCH" && id) {
+      const b = await readJson(request);
+      const sets = [], vals = [];
+      const set = (col, v) => { sets.push(`${col} = ?${vals.length + 1}`); vals.push(v); };
+      if ("status" in b) { if (!REQUEST_STATUSES.includes(b.status)) throw new HttpError(400, "Unknown status"); set("status", b.status); }
+      if ("quote" in b) set("quote_cents", priceToCents(b.quote, { field: "Quote" }) ?? null);
+      if ("admin_notes" in b) set("admin_notes", str(b.admin_notes, { max: 2000, field: "Notes" }));
+      if (!sets.length) throw new HttpError(400, "Nothing to update");
+      set("updated_at", new Date().toISOString()); set("updated_by", admin.email);
+      const row = await DB.prepare(`UPDATE requests SET ${sets.join(", ")} WHERE id = ?${vals.length + 1} RETURNING *`).bind(...vals, id).first();
+      if (!row) throw new HttpError(404, "Request not found");
+      return json({ request: shapeRequest(row) });
+    }
+  }
+
+  if (seg[0] === "catering") {
+    const sub = seg[1], pid = seg[2];
+    if (!sub && m === "GET") {
+      const [cat, pk] = await Promise.all([DB.prepare("SELECT * FROM catering WHERE id = 1").first(), DB.prepare("SELECT * FROM catering_packages ORDER BY sort, id").all()]);
+      return json({ catering: shapeCatering(cat), packages: pk.results.map(shapeAdminPackage) });
+    }
+    if (!sub && m === "PUT") {
+      const b = await readJson(request);
+      const cur = await DB.prepare("SELECT * FROM catering WHERE id = 1").first();
+      const notice = "notice_days" in b ? Number(b.notice_days) : cur.notice_days;
+      if (!Number.isInteger(notice) || notice < 0 || notice > 90) throw new HttpError(400, "Notice must be 0 to 90 days");
+      let items = JSON.parse(cur.items_json || "[]");
+      if ("items" in b) {
+        if (!Array.isArray(b.items)) throw new HttpError(400, "Items must be a list");
+        items = b.items.filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+        if (items.length > 20) throw new HttpError(400, "20 things at most");
+        if (items.some((x) => x.length > 60)) throw new HttpError(400, "Each thing must be 60 letters or fewer");
+      }
+      const row = await DB.prepare("UPDATE catering SET enabled = ?1, intro = ?2, notice_days = ?3, items_json = ?4, updated_at = ?5, updated_by = ?6 WHERE id = 1 RETURNING *")
+        .bind("enabled" in b ? bool01(b.enabled) : cur.enabled, "intro" in b ? str(b.intro, { max: 600, field: "Intro" }) : cur.intro, notice, JSON.stringify(items), new Date().toISOString(), admin.email).first();
+      return json({ catering: shapeCatering(row) });
+    }
+    if (sub === "packages") {
+      if (m === "GET" && !pid) {
+        const { results } = await DB.prepare("SELECT * FROM catering_packages ORDER BY sort, id").all();
+        return json({ packages: results.map(shapeAdminPackage) });
+      }
+      if (m === "POST" && pid && seg[3] === "move") {
+        await moveRow(DB, { table: "catering_packages", idCol: "id", where: "", base: 10 }, Number(pid), (await readJson(request)).dir);
+        return json({ ok: true });
+      }
+      if (m === "POST" && !pid) {
+        const k = await packageFromBody(env, await readJson(request));
+        const { s } = await DB.prepare("SELECT COALESCE(MAX(sort), 0) + 10 AS s FROM catering_packages").first();
+        const row = { ...k, sort: s }, cols = Object.keys(row);
+        const saved = await DB.prepare(`INSERT INTO catering_packages (${cols.join(", ")}) VALUES (${cols.map((_, i) => "?" + (i + 1)).join(", ")}) RETURNING *`).bind(...Object.values(row)).first();
+        return json({ package: shapeAdminPackage(saved) }, 201);
+      }
+      if (m === "PUT" && pid) {
+        const prev = await DB.prepare("SELECT * FROM catering_packages WHERE id = ?1").bind(Number(pid)).first();
+        if (!prev) throw new HttpError(404, "Package not found");
+        const k = await packageFromBody(env, await readJson(request)), cols = Object.keys(k);
+        const row = await DB.prepare(`UPDATE catering_packages SET ${cols.map((c, i) => `${c} = ?${i + 1}`).join(", ")} WHERE id = ?${cols.length + 1} RETURNING *`).bind(...Object.values(k), Number(pid)).first();
+        await releaseReplaced(env, prev, row, ["photo_key", "photo_orig_key"]);
+        return json({ package: shapeAdminPackage(row) });
+      }
+      if (m === "DELETE" && pid) {
+        const row = await DB.prepare("DELETE FROM catering_packages WHERE id = ?1 RETURNING *").bind(Number(pid)).first();
+        if (!row) throw new HttpError(404, "Package not found");
+        await deleteMediaIfUnused(env, row.photo_key, row.photo_orig_key);
+        return json({ ok: true });
+      }
+    }
+  }
 
   if (seg[0] === "registrations" && id) {
     if (m === "PATCH") {
@@ -992,6 +1204,7 @@ async function route(request, env) {
 
   if (path === "/api/content" && request.method === "GET") return withSecurityHeaders(json(await getContent(env)));
   if (path === "/api/orders" && request.method === "POST") return withSecurityHeaders(await createOrder(request, env));
+  if (path === "/api/requests" && request.method === "POST") return withSecurityHeaders(await createRequest(request, env));
   const reg = path.match(/^\/api\/events\/(\d+)\/register$/);
   if (reg && request.method === "POST") return withSecurityHeaders(await registerForEvent(request, env, reg[1]));
   if (path.startsWith("/api/")) return withSecurityHeaders(json({ error: "Not found" }, 404));

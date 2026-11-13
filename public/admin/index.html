@@ -136,6 +136,17 @@ form.edit, .field, .field > *{min-width:0}
 #flavorForm:not(:empty), #treatForm:not(:empty){margin-top:12px}
 .subhead{font:700 13px var(--f-caps); letter-spacing:.14em; text-transform:uppercase; color:var(--pink); margin:16px 0 0}
 
+/* Requests */
+.statusrow{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px}
+.statusrow .chip{min-height:46px; font-size:15px}
+.statusrow .chip[data-st=declined][aria-pressed=true]{background:#8C7B74; border-color:#8C7B74}
+.wants{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+.req .facts{display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:6px; font-weight:700}
+.req .field{margin-top:12px}
+.bigswitch{font-size:17px}
+.itemrow{display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:8px}
+.itemrow input{width:100%; font-size:16px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px}
+
 /* Event signups */
 .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:center}
 .stats b{display:block; font:700 24px/1.1 var(--f-hand); color:var(--green)}
@@ -162,7 +173,7 @@ details.dl[open] summary::after{content:"−"}
 
 /* Tab bar */
 nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; border-top:1.5px solid var(--pink-soft); display:flex; gap:2px; padding:6px max(4px, env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px, env(safe-area-inset-left,0px))}
-nav.tabs button{flex:1 1 auto; min-width:0; border:0; background:none; display:grid; justify-items:center; gap:2px; padding:6px 2px; font:700 10px var(--f-caps); letter-spacing:0; text-transform:uppercase; color:var(--muted); border-radius:12px; position:relative; white-space:nowrap}
+nav.tabs button{flex:1 1 auto; min-width:0; border:0; background:none; display:grid; justify-items:center; gap:2px; padding:6px 1px; font:700 9.5px var(--f-caps); letter-spacing:0; text-transform:uppercase; color:var(--muted); border-radius:12px; position:relative; white-space:nowrap}
 nav.tabs svg{width:24px; height:24px}
 nav.tabs button[aria-current="page"]{color:var(--green); background:var(--blush)}
 nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px; height:18px; border-radius:9px; background:var(--pink-btn); color:#fff; font:700 11px/18px var(--f-body); padding:0 5px}
@@ -211,6 +222,7 @@ nav.tabs .badge{position:absolute; top:2px; left:calc(50% + 6px); min-width:18px
 
 <nav class="tabs" aria-label="Admin sections">
   <button data-tab="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>Orders<span class="badge" id="openBadge" hidden></span></button>
+  <button data-tab="requests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4"/></svg>Requests<span class="badge" id="reqBadge" hidden></span></button>
   <button data-tab="specials"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>Specials</button>
   <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
   <button data-tab="media"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-5-5-8 8"/></svg>Media</button>
@@ -270,7 +282,7 @@ function showGate(msg){
 
 /* ============ Tabs ============ */
 let tab = (location.hash.slice(1) || "orders");
-const TABS = {orders: renderOrders, specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu, payments: renderPayments, help: id => renderHelp(id)};
+const TABS = {orders: renderOrders, requests: () => renderRequests(), specials: () => renderCrud(SPECIALS), events: () => renderCrud(EVENTS), media: renderMedia, menu: renderMenu, payments: renderPayments, help: id => renderHelp(id)};
 function go(t, arg){
   if (!TABS[t]) t = "orders";
   tab = t; history.replaceState(null, "", "#" + t);
@@ -571,6 +583,147 @@ function openForm(cfg, row, restored){
   $("input:not([type=hidden]), select, textarea", form)?.focus({preventScroll:true});
 }
 function showErr(form, msg){ const p = $(".err", form); p.textContent = msg; p.hidden = false; }
+
+/* ============ Requests: catering quotes and custom orders ============ */
+const REQ_STATUS = [["new","New"],["quoted","Quoted"],["booked","Booked"],["done","Done"],["declined","Declined"]];
+let reqFilter = "open";
+function setReqBadge(n){ const b = $("#reqBadge"); b.hidden = !n; b.textContent = n; }
+async function renderRequests(){
+  const [{requests, new_count}, {catering}] = await Promise.all([api("GET", "requests?filter=" + reqFilter), api("GET", "catering")]);
+  setReqBadge(new_count);
+  $("#main").innerHTML = `
+    <h1 class="page">Requests <span class="sub">${new_count} new</span></h1>
+    <p class="meta" style="margin:0 0 12px">Catering quotes and “Upon Request” orders from the website. New ones also come to your email.</p>
+    <div class="card" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+      <div style="flex:1; min-width:180px"><b>Catering on the website:</b> ${catering.enabled ? `<span class="tag green">On</span>` : `<span class="tag warn">Off</span>`}
+        <p class="meta" style="margin:4px 0 0">${catering.enabled ? "People can ask you for a catering quote." : "Nobody sees Catering until you switch it on."}</p></div>
+      <button class="btn btn-green btn-sm" type="button" id="catSettings">Catering settings</button></div>
+    <div class="bar">
+      <button class="chip" data-rf="open" aria-pressed="${reqFilter==="open"}">Open</button>
+      <button class="chip" data-rf="all" aria-pressed="${reqFilter==="all"}">All</button>
+      <button class="btn btn-ghost btn-sm spacer" id="reqRefresh">Refresh</button>
+    </div>
+    ${requests.length ? requests.map(requestCard).join("") : `<p class="empty">${reqFilter === "open" ? "No open requests right now. ♥" : "No requests yet."}</p>`}
+    <details class="card dl" id="reqDl"><summary>⬇ Download a spreadsheet of requests</summary>
+      <div class="two" style="margin-top:12px"><div class="field"><label for="rqFrom">From</label><input id="rqFrom" type="date" value="${daysAgo(29)}"></div>
+        <div class="field"><label for="rqTo">To</label><input id="rqTo" type="date" value="${todayStr()}"></div></div>
+      <a class="btn btn-green btn-sm" id="rqGo" href="/api/admin/requests.csv" download style="margin-top:12px">Download spreadsheet</a></details>`;
+  $("#catSettings").addEventListener("click", () => renderCateringSettings());
+  $$("[data-rf]").forEach(b => b.addEventListener("click", () => { reqFilter = b.dataset.rf; renderRequests(); }));
+  $("#reqRefresh").addEventListener("click", () => renderRequests());
+  const dl = () => { $("#rqGo").href = `/api/admin/requests.csv?from=${encodeURIComponent($("#rqFrom").value)}&to=${encodeURIComponent($("#rqTo").value)}`; };
+  $("#rqFrom").addEventListener("change", dl); $("#rqTo").addEventListener("change", dl); dl();
+  $$("[data-req]").forEach(c => {
+    const r = requests.find(x => x.id === c.dataset.req);
+    const save = async (body, what) => {
+      const {request} = await api("PATCH", "requests/" + encodeURIComponent(r.id), body);
+      Object.assign(r, request); toast(what);
+      $(".stat", c).innerHTML = statusTag(r);
+      $$("[data-st]", c).forEach(b => b.setAttribute("aria-pressed", b.dataset.st === r.status));
+      api("GET", "requests?filter=open").then(d => setReqBadge(d.new_count)).catch(() => {});
+    };
+    $$("[data-st]", c).forEach(b => b.addEventListener("click", async () => {
+      try{ await save({status: b.dataset.st}, `${r.name}: ${REQ_STATUS.find(x => x[0] === b.dataset.st)[1]}`); }catch(e){ toast(e.message, true); }
+    }));
+    const q = $("[data-quote]", c), n = $("[data-anotes]", c);
+    q.addEventListener("change", async () => { try{ await save({quote: q.value}, r.quote_cents == null && !q.value ? "Quote cleared" : `Quote saved: ${money(+q.value)}`); q.value = r.quote ?? ""; }catch(e){ toast(e.message, true); } });
+    n.addEventListener("change", async () => { try{ await save({admin_notes: n.value}, "Your notes are saved"); }catch(e){ toast(e.message, true); } });
+  });
+}
+const statusTag = r => `<span class="tag ${r.status === "new" ? "" : r.status === "booked" || r.status === "done" ? "green" : "warn"}">${REQ_STATUS.find(x => x[0] === r.status)[1]}</span>`;
+function requestCard(r){
+  const digits = r.phone.replace(/[^\d+]/g, "");
+  return `<article class="card req" data-req="${esc(r.id)}">
+    <div class="row"><h3>${esc(r.name)}</h3><span class="tag">${r.kind === "catering" ? "Catering" : "Custom order"}</span><span class="stat">${statusTag(r)}</span></div>
+    <div class="meta">${esc(r.id)} · came in ${esc(ago(r.created_at))}</div>
+    <div class="facts">${r.event_date ? `<span>📅 ${esc(prettyDate(r.event_date, {weekday:"short", month:"short", day:"numeric", year:"numeric"}))}</span>` : ""}
+      ${r.headcount ? `<span>👥 ${r.headcount} people</span>` : ""}${r.fulfillment ? `<span>${r.fulfillment === "delivery" ? "🚗 Delivery" : "🛍️ Pickup"}</span>` : ""}</div>
+    ${r.interests.length ? `<div class="wants">${r.interests.map(i => `<span class="tag green">${esc(i)}</span>`).join("")}</div>` : ""}
+    ${r.budget ? `<p style="margin:8px 0 0"><b>Budget:</b> ${esc(r.budget)}</p>` : ""}
+    ${r.notes ? `<p style="margin:8px 0 0; white-space:pre-wrap"><b>Notes:</b> ${esc(r.notes)}</p>` : ""}
+    <div class="contact"><a class="btn btn-green btn-sm" href="sms:${esc(digits)}">Text ${esc(r.phone)}</a><a class="btn btn-ghost btn-sm" href="tel:${esc(digits)}">Call</a>
+      ${r.email ? `<a class="btn btn-ghost btn-sm" href="mailto:${esc(r.email)}">Email</a>` : ""}</div>
+    <div class="statusrow" role="group" aria-label="Status">${REQ_STATUS.map(([k, l]) => `<button class="chip" type="button" data-st="${k}" aria-pressed="${r.status === k}">${l}</button>`).join("")}</div>
+    <div class="field"><label for="q_${esc(r.id)}">Your quote ($)</label><input id="q_${esc(r.id)}" data-quote type="number" inputmode="decimal" step="0.01" min="0" max="1000" value="${r.quote ?? ""}" placeholder="Type it after you text them"></div>
+    <div class="field"><label for="n_${esc(r.id)}">Your notes (only you see these)</label><textarea id="n_${esc(r.id)}" data-anotes maxlength="2000" style="min-height:64px">${esc(r.admin_notes || "")}</textarea></div>
+  </article>`;
+}
+
+/* ---- Catering settings: on/off, intro, notice, things she caters, packages ---- */
+const PACKAGES_CFG = {
+  path: "catering/packages", listKey: "packages", tab: "requests", noun: "package", newTitle: "Add a package", slot: "#pkgForm", reload: () => renderCateringSettings(),
+  open: () => renderCateringSettings(),
+  fields: [
+    {name:"name", label:"Package name", type:"text", required:true, max:80},
+    {name:"description", label:"What's in it", type:"textarea", max:400},
+    {pair:[{name:"from", label:"From ($)", type:"money", hint:"Shows as “from $X”."}, {name:"serves", label:"Serves", type:"number", max:5000, hint:"How many people."}]},
+    {name:"photo_key", orig:"photo_orig_key", label:"Photo", type:"image", preview:"photo", origPreview:"photo_orig", shape: () => "wide"},
+    {name:"active", label:"Show on the site", type:"switch", default:true},
+  ],
+};
+async function renderCateringSettings(){
+  const {catering: c, packages} = await api("GET", "catering");
+  let items = [...c.items];
+  const itemRows = () => items.map((t, i) => `<div class="itemrow"><input value="${esc(t)}" maxlength="60" data-item="${i}" aria-label="Thing you cater ${i + 1}"><button class="btn btn-danger btn-sm" type="button" data-itemdel="${i}" aria-label="Remove ${esc(t)}">✕</button></div>`).join("");
+  $("#main").innerHTML = `
+    <button class="btn btn-ghost btn-sm back" type="button" id="backReq">← Requests</button>
+    <h1 class="page">Catering</h1>
+    <section class="card">
+      <label class="switch bigswitch"><input type="checkbox" id="catOn" ${c.enabled ? "checked" : ""}> Show Catering on the website</label>
+      <p class="meta" style="margin:4px 0 0">${c.enabled ? "On: a Catering button and box are on the home page." : "Off: nobody sees Catering, and catering requests are turned away."}</p>
+    </section>
+    <form class="card edit" id="catForm" novalidate>
+      <h3>What people see</h3>
+      <div class="field"><label for="catIntro">A few words at the top</label><textarea id="catIntro" maxlength="600">${esc(c.intro || "")}</textarea></div>
+      <div class="field"><label for="catNotice">How many days' notice you need</label><input id="catNotice" type="number" inputmode="numeric" min="0" max="90" value="${c.notice_days}">
+        <span class="hint">People can't pick a date sooner than this. 0 = any day.</span></div>
+      <div class="field"><span class="lbl">Things you cater</span><span class="hint">These become checkboxes on the quote form.</span><div id="catItemsBox">${itemRows()}</div>
+        <button class="btn btn-ghost btn-sm" type="button" id="addItem" style="justify-self:start; margin-top:8px">+ Add one</button></div>
+      <p class="err" hidden></p>
+      <div class="row"><button class="btn btn-rose" type="submit">Save</button></div>
+    </form>
+    <section class="card" id="pkgSec">
+      <div class="row"><p class="subhead" style="margin:0">Packages</p><button class="btn btn-rose btn-sm spacer" id="addPkg" type="button">+ Add a package</button></div>
+      <p class="meta" style="margin:6px 0 0">Optional. Each has an “Ask about this” button that fills in the quote form. They never go in the cart.</p>
+      <div id="pkgForm"></div>
+      ${packages.length ? packages.map((k, i) => `<div class="irow" data-pkg="${k.id}">
+        <div class="itop">${k.photo ? `<img class="ithumb square" src="${esc(k.photo)}" alt="" loading="lazy">` : `<span class="ithumb square" aria-hidden="true">🍪</span>`}
+          <div class="iname"><b>${esc(k.name)}</b><div class="row" style="gap:6px">${k.from != null ? `<span class="price" style="font-size:18px">from ${money(k.from)}</span>` : ""}${k.serves ? `<span class="meta">serves ${k.serves}</span>` : ""}${k.active ? "" : `<span class="tag warn">Hidden</span>`}</div></div><span></span></div>
+        <div class="iact"><button class="btn btn-ghost btn-sm" data-move="up" ${i === 0 ? "disabled" : ""} aria-label="Move ${esc(k.name)} up">↑</button>
+          <button class="btn btn-ghost btn-sm" data-move="down" ${i === packages.length - 1 ? "disabled" : ""} aria-label="Move ${esc(k.name)} down">↓</button>
+          <button class="btn btn-ghost btn-sm" data-pedit>Edit</button><button class="btn btn-danger btn-sm" data-pdel>Delete</button></div></div>`).join("") : `<p class="empty">No packages yet.</p>`}
+    </section>`;
+  $("#backReq").addEventListener("click", () => go("requests"));
+  $("#catOn").addEventListener("change", async e => {
+    const inp = e.target; inp.disabled = true;
+    try{ await api("PUT", "catering", {enabled: inp.checked}); toast(inp.checked ? "Catering is on the website" : "Catering is hidden"); renderCateringSettings(); }
+    catch(x){ inp.checked = !inp.checked; toast(x.message, true); inp.disabled = false; }
+  });
+  const box = $("#catItemsBox");
+  const syncItems = () => { items = $$("[data-item]", box).map(i => i.value); };
+  const redraw = () => { box.innerHTML = itemRows(); wireItems(); };
+  const wireItems = () => $$("[data-itemdel]", box).forEach(b => b.addEventListener("click", () => { syncItems(); items.splice(+b.dataset.itemdel, 1); redraw(); }));
+  wireItems();
+  $("#addItem").addEventListener("click", () => { syncItems(); if (items.length >= 20) return toast("20 at most", true); items.push(""); redraw(); $$("[data-item]", box).at(-1).focus(); });
+  $("#catForm").addEventListener("submit", async e => {
+    e.preventDefault(); syncItems();
+    const form = e.target, btn = $("[type=submit]", form); btn.disabled = true;
+    try{ await api("PUT", "catering", {intro: $("#catIntro").value.trim(), notice_days: +$("#catNotice").value, items: items.map(t => t.trim()).filter(Boolean)}); toast("Catering saved"); renderCateringSettings(); }
+    catch(x){ showErr(form, x.message); btn.disabled = false; }
+  });
+  $("#addPkg").addEventListener("click", () => openForm(PACKAGES_CFG, null));
+  $$("[data-pkg]").forEach(r => {
+    const k = packages.find(x => x.id === +r.dataset.pkg), path = `catering/packages/${k.id}`;
+    $$("[data-move]", r).forEach(b => b.addEventListener("click", async () => { try{ await api("POST", path + "/move", {dir: b.dataset.move}); renderCateringSettings(); }catch(e){ toast(e.message, true); } }));
+    $("[data-pedit]", r).addEventListener("click", () => openForm(PACKAGES_CFG, k));
+    $("[data-pdel]", r).addEventListener("click", () => {
+      const act = $(".iact", r), keep = act.innerHTML;
+      act.innerHTML = `<span class="confirm">Delete <b>${esc(k.name)}</b>?</span><button class="btn btn-danger btn-sm" data-yes>Yes, delete</button><button class="btn btn-ghost btn-sm" data-no>Keep it</button>`;
+      $("[data-no]", act).addEventListener("click", () => renderCateringSettings());
+      $("[data-yes]", act).addEventListener("click", async () => { try{ await api("DELETE", path); toast("Package deleted"); renderCateringSettings(); }catch(e){ toast(e.message, true); act.innerHTML = keep; } });
+    });
+  });
+}
 
 /* ============ Event signups: who's coming, paid, checked in, spreadsheet ============ */
 async function renderSignups(id){
@@ -986,8 +1139,9 @@ if (matchMedia("(display-mode: standalone)").matches || navigator.standalone ===
 
 // Put a half-filled form back after the page was reloaded (see Drafts).
 async function restoreDraft(d){
-  const cfg = {specials: SPECIALS, events: EVENTS, flavors: FLAVORS_CFG, treats: TREATS_CFG}[d.path];
+  const cfg = {specials: SPECIALS, events: EVENTS, flavors: FLAVORS_CFG, treats: TREATS_CFG, "catering/packages": PACKAGES_CFG}[d.path];
   if (!cfg) return draftStore.clear();
+  if (cfg.open) await cfg.open();
   let row = null;
   if (d.id != null){
     const data = await api("GET", cfg.path);
@@ -1008,6 +1162,7 @@ async function restoreDraft(d){
     await go(tab);
     if (d && d.path !== "media") restoreDraft(d).catch(() => draftStore.clear());
     api("GET", "orders?filter=open").then(d => setBadge(d.orders.length)).catch(()=>{});
+    api("GET", "requests?filter=open").then(d => setReqBadge(d.new_count)).catch(()=>{});
   }catch(e){ if (e.status !== 401 && e.status !== 503) showGate(e.message); }
 })();
 </script>

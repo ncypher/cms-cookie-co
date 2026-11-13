@@ -338,6 +338,22 @@ button{font:inherit; color:inherit; cursor:pointer}
 .tr .buy{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:2px}
 @media (max-width:420px){ .tr-grid{grid-template-columns:1fr 1fr; gap:12px} }
 
+/* Catering (switched on in admin) */
+.catering-panel{margin-top:32px}
+.catering-panel .intro{text-align:center; font:400 20px/1.35 var(--f-hand); max-width:640px; margin:0 auto 14px}
+.cat-items{display:flex; flex-wrap:wrap; justify-content:center; gap:6px 16px; list-style:none; padding:0; margin:0 0 18px; font:400 17.5px/1.4 var(--f-hand)}
+.cat-items li::before{content:"♥"; color:var(--pink); margin-right:8px; font-size:.85em}
+.pk-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin-bottom:22px}
+.pk{display:grid; gap:6px; align-content:start; background:#fff; border:1.5px solid var(--pink-soft); border-radius:14px; padding:12px}
+.pk img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px}
+.pk b{font:700 20px/1.2 var(--f-hand); color:var(--green)}
+.pk p{font-size:14.5px; line-height:1.4; color:var(--muted)}
+.pk .meta{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+.pk .meta small{font:600 12.5px var(--f-caps); letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.quote-form{display:grid; gap:12px; max-width:640px; margin:0 auto}
+.quote-form h3{font:400 30px var(--f-script); color:var(--green); text-align:center}
+@media (max-width:440px){ .circles{gap:10px} .circles .heart{display:none} .circle{font-size:14px} }
+
 /* Bottom trio */
 .trio{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:stretch; margin-top:14px}
 .trio .panel{padding-top:22px; margin-top:0}
@@ -415,6 +431,8 @@ button{font:inherit; color:inherit; cursor:pointer}
         <a class="circle" href="sms:+17347550533"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i>Text</a>
         <span class="heart" aria-hidden="true" style="margin-top:28px">♥</span>
         <a class="circle" href="tel:+17347550533"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></i>Call</a>
+        <span class="heart" aria-hidden="true" style="margin-top:28px" data-cathide hidden>♥</span>
+        <a class="circle" href="#catering" id="cateringBtn" hidden><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15h18"/><path d="M5 15a7 7 0 0 1 14 0"/><path d="M12 6V4.5M10.5 4.5h3"/><path d="M2.5 18.5h19"/></svg></i>Catering</a>
       </div>
     </div>
   </section>
@@ -540,6 +558,36 @@ button{font:inherit; color:inherit; cursor:pointer}
     <div class="tr-grid" id="treatGrid"></div>
   </section>
 
+  <section class="panel catering-panel" id="catering" hidden>
+    <span class="hearts l">♥</span><h2 class="tag">Catering</h2><span class="hearts r">♥</span>
+    <p class="intro" id="catIntro"></p>
+    <ul class="cat-items" id="catItems"></ul>
+    <div class="pk-grid" id="catPackages"></div>
+    <form class="quote-form" id="catForm" novalidate>
+      <h3>Request a quote</h3>
+      <div class="row2">
+        <div class="field"><label for="cName">Your name</label><input id="cName" autocomplete="name" required></div>
+        <div class="field"><label for="cPhone">Phone</label><input id="cPhone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="cDate">Date of your event</label><input id="cDate" type="date" required></div>
+        <div class="field"><label for="cCount">How many people?</label><input id="cCount" type="number" inputmode="numeric" min="1" max="5000" placeholder="40" required></div>
+      </div>
+      <div class="field"><span style="font-weight:700;font-size:14px">What would you like?</span><div class="checks" id="catChecks"></div></div>
+      <div class="row2">
+        <div class="field"><label for="cHow">Pickup or delivery</label><select id="cHow"><option value="pickup">Pickup</option><option value="delivery">Delivery (ask Shaun)</option></select></div>
+        <div class="field"><label for="cBudget">Budget (optional)</label><input id="cBudget" placeholder="about $150"></div>
+      </div>
+      <div class="field"><label for="cEmail">Email (optional)</label><input id="cEmail" type="email" inputmode="email" autocomplete="email"></div>
+      <div class="field"><label for="cNotes">Tell Shaun about it</label><textarea id="cNotes" placeholder="The occasion, colors, flavors, allergies…"></textarea></div>
+      <input type="hidden" id="cPackage">
+      <div class="hp" aria-hidden="true"><label for="cWebsite">Leave this empty</label><input id="cWebsite" tabindex="-1" autocomplete="off"></div>
+      <p class="hint" id="cNotice" style="font-size:14px;color:var(--muted);margin:0"></p>
+      <p class="err" id="cErr" role="alert" hidden></p>
+      <button class="btn btn-rose" type="submit">Request a quote</button>
+    </form>
+  </section>
+
   <div class="trio">
     <section class="panel flight" data-item="flight">
       <h2 class="ptitle">Cookie Tasting Flight</h2>
@@ -591,6 +639,7 @@ button{font:inherit; color:inherit; cursor:pointer}
           <div class="field"><label for="rqCount">Guests / servings</label><input id="rqCount" inputmode="numeric" placeholder="about 20"></div>
         </div>
         <div class="field"><label for="rqNotes">Tell Shaun about it</label><textarea id="rqNotes" placeholder="Theme, colors, flavors, allergies…"></textarea></div>
+        <div class="hp" aria-hidden="true"><label for="rqWebsite">Leave this empty</label><input id="rqWebsite" tabindex="-1" autocomplete="off"></div>
         <p class="err" id="rqErr" hidden></p>
         <button class="btn btn-rose" type="submit">Send request to Shaun</button>
       </form>
@@ -976,7 +1025,101 @@ $("#reqForm").addEventListener("submit", e => {
   if (!name || phone.replace(/\D/g,"").length < 10){ err.textContent = "Add your name and a 10-digit phone number so Shaun can reach you."; err.hidden = false; return; }
   err.hidden = true;
   const text = `Hi Shaun! Custom order request\n\nInterested in: ${picks.join(", ")||"Not sure yet"}\nEvent date: ${prettyDate($("#rqDate").value)}\nGuests/servings: ${$("#rqCount").value||"—"}\nName: ${name}\nPhone: ${phone}` + ($("#rqNotes").value.trim()?`\nDetails: ${$("#rqNotes").value.trim()}`:"");
-  showSend({text, subject:`Custom order request from ${name}`}, false);
+  sendRequest(e.submitter || $("#reqForm [type=submit]"), {text, subject:`Custom order request from ${name}`},
+    {kind:"custom", name, phone, date: $("#rqDate").value, headcount: $("#rqCount").value, interests: picks, notes: $("#rqNotes").value.trim(), website: $("#rqWebsite").value},
+    () => { $("#reqForm").reset(); });
+});
+
+/* ============ Requests are saved (catering + custom), with text/email as a backup ============ */
+async function sendRequest(btn, payload, body, onDone){
+  const label = btn.textContent; btn.disabled = true; btn.textContent = "Sending…";
+  try{
+    const res = await fetch("/api/requests", {method:"POST", headers:{"Content-Type":"application/json", Accept:"application/json"}, body: JSON.stringify(body)});
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 400) throw Object.assign(new Error(data.error || "Please check the form."), {fixable: true});
+    if (!res.ok) throw new Error(data.error || "That didn't go through.");
+    onDone && onDone();
+    showRequestDone({...payload, text: `${payload.text}\n\nRequest number: ${data.id}`}, data.id);
+  }catch(err){
+    if (err.fixable){ toast(err.message); return; }
+    toast(`${err.message} You can text it to Shaun instead.`);
+    showSend(payload, false);
+  }finally{ btn.disabled = false; btn.textContent = label; }
+}
+function showRequestDone(payload, id){
+  if (!drawerOpen) openDrawer();
+  goStep("sent");
+  $("#drawerTitle").textContent = "Request sent";
+  const sms = `sms:${CONFIG.phone}?&body=${encodeURIComponent(payload.text)}`;
+  const mail = `mailto:${CONFIG.email}?subject=${encodeURIComponent(payload.subject + " (" + id + ")")}&body=${encodeURIComponent(payload.text)}`;
+  $("#stepSend").innerHTML = `<div class="done">
+      <div style="width:120px">${cookieSVG("fs", 9, {heart:true})}</div>
+      <div class="big">Thank you!</div>
+      <p style="color:var(--muted)">Your request went straight to Shaun. Your request number is</p>
+      <div class="copybox"><span class="price tnum" style="font-size:24px">${esc(id)}</span></div>
+      <p><b>Shaun will text you with a quote.</b></p>
+    </div>
+    <p style="color:var(--muted);font-size:14px;text-align:center">Want to send it another way too?</p>
+    <div class="send-grid"><a class="btn btn-ghost" href="${sms}">Text it to Shaun</a><a class="btn btn-ghost" href="${mail}">Email it</a><button class="btn btn-ghost" id="copyReq">Copy message</button></div>`;
+  $("#drawerFoot").hidden = false;
+  $("#drawerFoot").innerHTML = `<button class="btn btn-rose" id="finish">Done</button>`;
+  $("#finish").addEventListener("click", () => { closeDrawer(); step = "cart"; });
+  $("#copyReq").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(payload.text); toast("Copied."); }catch(e){ toast("Couldn't copy. Text it to Shaun instead."); }
+  });
+}
+
+/* ---- Catering panel ---- */
+let CATERING = null;
+function renderCatering(cat){
+  CATERING = cat;
+  $("#catering").hidden = !cat; $("#cateringBtn").hidden = !cat;
+  document.querySelectorAll("[data-cathide]").forEach(el => el.hidden = !cat);
+  if (!cat) return;
+  $("#catIntro").textContent = cat.intro || "";
+  $("#catItems").innerHTML = cat.items.map(i => `<li>${esc(i)}</li>`).join("");
+  $("#catItems").hidden = !cat.items.length;
+  $("#catPackages").hidden = !cat.packages.length;
+  $("#catPackages").innerHTML = cat.packages.map(k => `<div class="pk">
+      ${k.photo ? `<img src="${esc(k.photo)}" alt="${esc(k.name)}" loading="lazy">` : ""}
+      <b>${esc(k.name)}</b>${k.description ? `<p>${esc(k.description)}</p>` : ""}
+      <div class="meta">${k.from != null ? `<span class="price tnum">from ${money(k.from)}</span>` : ""}${k.serves ? `<small>serves ${k.serves}</small>` : ""}</div>
+      <button class="btn btn-ghost btn-sm" type="button" data-askpkg="${k.id}">Ask about this</button></div>`).join("");
+  const names = [...cat.packages.map(k => k.name), ...cat.items];
+  const checked = new Set([...document.querySelectorAll("#catChecks input:checked")].map(x => x.value));
+  $("#catChecks").innerHTML = names.map((n, i) => `<label><input type="checkbox" value="${esc(n)}" id="cc${i}" ${checked.has(n) ? "checked" : ""}> ${esc(n)}</label>`).join("");
+  $("#cDate").min = cat.earliest;
+  $("#cNotice").textContent = cat.notice_days ? `Please ask at least ${cat.notice_days} day${cat.notice_days === 1 ? "" : "s"} ahead (${prettyDate(cat.earliest)} or later). Sooner? Text Shaun.` : "";
+  document.querySelectorAll("[data-askpkg]").forEach(b => b.addEventListener("click", () => askAbout(+b.dataset.askpkg)));
+}
+// "Ask about this": tick the package, note it, and take them to the form. (Packages never go in the cart.)
+function askAbout(id){
+  const k = CATERING?.packages.find(x => x.id === id); if (!k) return;
+  $("#cPackage").value = k.id;
+  document.querySelectorAll("#catChecks input").forEach(x => { if (x.value === k.name) x.checked = true; });
+  if (!$("#cNotes").value.includes(k.name)) $("#cNotes").value = (`I'm interested in: ${k.name}.\n` + $("#cNotes").value).trim();
+  $("#catForm").scrollIntoView({behavior:"smooth", block:"start"});
+  setTimeout(() => $("#cName").focus({preventScroll:true}), 400);
+}
+$("#catForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = $("#cName").value.trim(), phone = $("#cPhone").value.trim(), date = $("#cDate").value, count = $("#cCount").value.trim();
+  const err = $("#cErr");
+  const problem = !name ? "Add your name so Shaun knows who to quote."
+    : phone.replace(/\D/g,"").length < 10 ? "Add a 10-digit phone number so Shaun can text you."
+    : !date ? "Pick the date of your event."
+    : CATERING && date < CATERING.earliest ? `Please pick ${prettyDate(CATERING.earliest)} or later, or text Shaun.`
+    : !(+count >= 1) ? "How many people is it for?" : "";
+  if (problem){ err.textContent = problem; err.hidden = false; return; }
+  err.hidden = true;
+  const picks = [...document.querySelectorAll("#catChecks input:checked")].map(x => x.value);
+  const how = $("#cHow").value, notes = $("#cNotes").value.trim(), budget = $("#cBudget").value.trim();
+  const text = `Hi Shaun! Catering request\n\nWould like: ${picks.join(", ") || "Not sure yet"}\nDate: ${prettyDate(date)}\nHow many: ${count}\nPickup or delivery: ${how === "delivery" ? "Delivery" : "Pickup"}` + (budget ? `\nBudget: ${budget}` : "") + `\nName: ${name}\nPhone: ${phone}` + (notes ? `\nNotes: ${notes}` : "");
+  const pkg = $("#cPackage").value;
+  sendRequest(e.submitter || $("#catForm [type=submit]"), {text, subject:`Catering request from ${name}`},
+    {kind:"catering", name, phone, date, headcount: +count, fulfillment: how, interests: picks.filter(p => !CATERING?.packages.some(k => String(k.id) === pkg && k.name === p)),
+      package_id: pkg ? +pkg : null, budget, email: $("#cEmail").value.trim(), notes, website: $("#cWebsite").value},
+    () => { $("#catForm").reset(); $("#cPackage").value = ""; });
 });
 
 /* ============ Misc ============ */
@@ -1182,6 +1325,7 @@ async function loadContent(){
     }
     applyFlavors(c.flavors); applyMenu(c.menu); renderTreats(c.treats); renderContent(c);
     if (Array.isArray(c.payments)){ PAYMENTS = c.payments; renderPayContact(); }
+    renderCatering(c.catering || null);
   }catch(e){ /* Static flyer prices still work; checkout falls back to text/email if the API is down. */ }
 }
 loadContent();

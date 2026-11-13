@@ -50,3 +50,14 @@ INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price
   SELECT 'EV-1110-3141', id, 'Sample Parent', '(555) 555-0142', NULL, 2, 'Two kids, ages 7 and 9', 3500, 7000, 1, 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 day') FROM events WHERE title = 'Holiday Cookie Decorating Class';
 INSERT INTO registrations (id, event_id, name, phone, email, seats, notes, price_cents, total_cents, paid, email_status, created_at)
   SELECT 'EV-1111-2718', id, 'Sample Friend', '(555) 555-0177', 'friend@example.com', 1, NULL, 3500, 3500, 0, 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-3 hours') FROM events WHERE title = 'Holiday Cookie Decorating Class';
+
+-- Requests + catering back to the launch state: catering off, no packages, two made-up requests to answer.
+DELETE FROM requests; DELETE FROM catering_packages;
+UPDATE catering SET enabled = 0, notice_days = 7, updated_at = NULL, updated_by = NULL,
+  intro = 'Cookies for your party, shower, office or wedding. Tell Shaun about your event and she''ll text you a quote.',
+  items_json = '["Cookie trays","Cookie cake bites","Mini cookie cakes","Cookie cupcakes","Cookie sheet cakes","Custom designs & colors"]';
+INSERT INTO requests (id, kind, name, phone, email, event_date, headcount, fulfillment, interests, budget, notes, status, email_status, created_at) VALUES
+  ('REQ-1112-5150', 'catering', 'Sample Neighbor', '(555) 555-0188', NULL, date('now', '+20 days'), 40, 'delivery', '["Cookie trays","Mini cookie cakes"]', 'about $150',
+   'Baby shower, pink and gold please.', 'new', 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-5 hours')),
+  ('REQ-1111-4242', 'custom', 'Sample Coworker', '(555) 555-0199', NULL, date('now', '+9 days'), 12, NULL, '["Cookie Cupcakes"]', NULL,
+   'Office birthday.', 'quoted', 'sent', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 day'));
