@@ -135,12 +135,30 @@
       "start": "/admin/#menu",
       "steps": [
         { "caption": "Tap {Menu}, then {+ Add a treat}.", "highlight": "#addTreat", "before": [{ "wait": "#addTreat" }, { "scroll": "#treatSec" }] },
-        { "caption": "Type the {Treat name} and {Price}. {Kind of treat} is optional, like “Cookie Cake”.", "highlight": "#f_price", "tap": false,
+        { "caption": "Type the {Treat name} and {Price}. {Group} is optional, like “Kits” or “Gift boxes”.", "highlight": "#f_price", "tap": false,
           "before": [{ "fill": "#f_name", "text": "Mini Cookie Cake" }, { "fill": "#f_price", "text": "18" }, { "fill": "#f_category", "text": "Cookie Cake" }, { "fill": "#f_description", "text": "6-inch cookie cake with your message." }] },
         { "caption": "Tap {Choose photo}. Want a price tag on it? Tap {Add sticker}, then {Price tag}.", "highlight": "#treatForm [data-upl] label:has(input[data-pick]:not([capture]))", "tap": false,
           "after": [{ "file": "#treatForm input[data-pick]:not([capture])", "path": "public/assets/lunchbox.webp" }, { "wait": ".ps[data-ready] canvas" }, { "pause": 400 }, { "tap": ".ps [data-a=sticker]" }, { "tap": ".ps-sheet [data-k=price]" }, { "tap": ".ps [data-a=done-layer]" }, { "pause": 500 }] },
         { "caption": "Tap {Use this photo}.", "highlight": ".ps [data-a=use]", "after": [{ "waitGone": ".ps" }] },
         { "caption": "Tap {Save}. Switch it off any time to hide it.", "highlight": "#treatForm [type=submit]", "after": [{ "wait": ".irow[data-kind=treat]" }, { "scroll": "#treatSec" }, { "pause": 500 }] }
+      ]
+    },
+    {
+      "id": "sized",
+      "icon": "🏷️",
+      "title": "Add something with a price (treat or special, with sizes)",
+      "go": "menu",
+      "tip": "A {treat} stays on your menu until you switch it off. A {special} is for a limited time: give it an {Ends} date and it comes down by itself. Both can have sizes.",
+      "start": "/admin/#orders",
+      "steps": [
+        { "caption": "Tap {Menu} at the bottom of the screen.", "highlight": "nav.tabs button[data-tab=menu]", "after": [{ "wait": "#bigTreat" }] },
+        { "caption": "Always on your menu? Tap {+ Add a treat}. Just for a little while? Tap {+ Add a special} instead.", "highlight": "#bigTreat", "after": [{ "wait": "#treatForm #f_name" }] },
+        { "caption": "Type the {Treat name}. Pick a {Group}, like Kits, or type your own.", "highlight": "#f_category", "tap": false,
+          "before": [{ "fill": "#f_name", "text": "Cookie Decorating Kit" }, { "fill": "#f_category", "text": "Kits" }] },
+        { "caption": "One price? Type it in {Price}. Comes in sizes? Tap {+ Add a size} and type each size and its price.", "highlight": "#treatForm [data-szadd]",
+          "after": [{ "fill": "[data-szl='0']", "text": "Kit for 2" }, { "fill": "[data-szp='0']", "text": "10" }, { "tap": "#treatForm [data-szadd]" }, { "fill": "[data-szl='1']", "text": "Family kit" }, { "fill": "[data-szp='1']", "text": "18" }, { "pause": 500 }] },
+        { "caption": "Add a photo with {Choose photo}, then tap {Save}. On the site, people pick a size and the price follows.", "highlight": "#treatForm [type=submit]",
+          "after": [{ "wait": ".irow[data-kind=treat]" }, { "scroll": "#treatSec" }, { "pause": 500 }] }
       ]
     },
     {
@@ -188,6 +206,40 @@
         { "caption": "Want Cash App too? Type your $cashtag, then switch Cash App on.", "highlight": "[data-pay=cashapp] label.switch", "before": [{ "scroll": "[data-pay=cashapp]" }, { "fill": "#ph_cashapp", "text": "CmsCookieCo" }], "after": [{ "pause": 900 }] },
         { "caption": "Money came in? Tap {Orders}. The Venmo note has the order number in it.", "highlight": "nav.tabs button[data-tab=orders]", "after": [{ "wait": "[data-f=all]" }, { "tap": "[data-f=all]" }, { "wait": "article[data-order]" }] },
         { "caption": "Find that order and switch on {Paid}.", "highlight": "article[data-order] label.switch:has([data-toggle$='|paid'])", "tap": false, "after": [{ "pause": 600 }] }
+      ]
+    },
+    {
+      "id": "catering",
+      "icon": "🍽️",
+      "title": "Turn on Catering and add a package",
+      "go": "requests",
+      "tip": "In the same place you can change the words at the top, how many days' notice you need, and the list of things you cater. Tap {Save} under them.",
+      "start": "/admin/#orders",
+      "steps": [
+        { "caption": "Tap {Requests} at the bottom of the screen.", "highlight": "nav.tabs button[data-tab=requests]", "after": [{ "wait": "#catSettings" }] },
+        { "caption": "Tap {Catering settings}.", "highlight": "#catSettings", "after": [{ "wait": "#catOn" }] },
+        { "caption": "Switch on {Show Catering on the website}. A Catering button and box appear on the home page.", "highlight": "label.switch:has(#catOn)", "after": [{ "pause": 1200 }, { "wait": "#addPkg" }] },
+        { "caption": "Want a package people can ask about? Tap {+ Add a package}.", "highlight": "#addPkg", "before": [{ "scroll": "#pkgSec" }], "after": [{ "wait": "#pkgForm #f_name" }] },
+        { "caption": "Type the name, what's in it, the {From} price and how many it {Serves}. Add a photo, then tap {Save}.", "highlight": "#pkgForm [type=submit]",
+          "before": [{ "fill": "#f_name", "text": "Party Cookie Tray" }, { "fill": "#f_description", "text": "Four dozen cookies, mixed flavors, with a bow." }, { "fill": "#f_from", "text": "60" }, { "fill": "#f_serves", "text": "25" }],
+          "after": [{ "wait": "[data-pkg]" }, { "scroll": "[data-pkg]" }, { "pause": 500 }] }
+      ]
+    },
+    {
+      "id": "request",
+      "icon": "💬",
+      "title": "Answer a catering request (text them, set a quote, mark Booked)",
+      "go": "requests",
+      "tip": "New requests also come to your email. {Open} shows the ones still going; {All} shows everything, and you can download a spreadsheet at the bottom.",
+      "start": "/admin/#orders",
+      "steps": [
+        { "caption": "Tap {Requests}. New ones have a pink {New} tag.", "highlight": "nav.tabs button[data-tab=requests]", "after": [{ "wait": "[data-req='REQ-1112-5150']" }] },
+        { "caption": "Tap {Text} to message them about their event.", "highlight": "[data-req='REQ-1112-5150'] .contact a.btn-green", "tap": false, "before": [{ "scroll": "[data-req='REQ-1112-5150'] .contact" }] },
+        { "caption": "When you know the price, type it in {Your quote}. It saves by itself.", "highlight": "[data-req='REQ-1112-5150'] [data-quote]", "tap": false,
+          "after": [{ "fill": "[data-req='REQ-1112-5150'] [data-quote]", "text": "150" }, { "press": "Tab" }, { "pause": 700 }] },
+        { "caption": "Sent them the quote? Tap {Quoted}.", "highlight": "[data-req='REQ-1112-5150'] [data-st=quoted]", "after": [{ "pause": 700 }] },
+        { "caption": "They said yes? Tap {Booked}. Jot anything to remember in {Your notes}. Only you see them.", "highlight": "[data-req='REQ-1112-5150'] [data-st=booked]",
+          "after": [{ "fill": "[data-req='REQ-1112-5150'] [data-anotes]", "text": "Deliver by 11. Pink and gold boxes." }, { "press": "Tab" }, { "pause": 800 }] }
       ]
     },
     {

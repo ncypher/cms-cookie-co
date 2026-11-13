@@ -10,7 +10,7 @@ const guide = JSON.parse(fs.readFileSync(path.join(ROOT, "public", "admin", "hel
 const pub = (url) => path.join(ROOT, "public", ...url.split("/").filter(Boolean));
 
 test("tasks.json covers every task in the brief, 4–6 steps each", () => {
-  assert.deepEqual(spec.tasks.map((t) => t.id), ["home", "photo", "cotm", "special", "event", "signups", "flavor", "treat", "price", "order", "pay", "spreadsheet", "tip"]);
+  assert.deepEqual(spec.tasks.map((t) => t.id), ["home", "photo", "cotm", "special", "event", "signups", "flavor", "treat", "sized", "price", "order", "pay", "catering", "request", "spreadsheet", "tip"]);
   for (const t of spec.tasks) {
     assert.ok(t.steps.length >= 4 && t.steps.length <= 6, `${t.id} has ${t.steps.length} steps`);
     for (const s of t.steps) { assert.ok(s.caption.trim(), t.id); assert.ok(s.highlight, t.id); }

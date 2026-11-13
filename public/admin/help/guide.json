@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T20:55:14.307Z",
+  "generated": "2026-11-13T21:00:04.216Z",
   "tasks": [
     {
       "id": "home",
@@ -30,7 +30,7 @@
         }
       ],
       "clip": "/admin/help/home/clip.mp4",
-      "clip_seconds": 7.4
+      "clip_seconds": 7.3
     },
     {
       "id": "photo",
@@ -65,7 +65,7 @@
         }
       ],
       "clip": "/admin/help/photo/clip.mp4",
-      "clip_seconds": 11.2
+      "clip_seconds": 10.1
     },
     {
       "id": "cotm",
@@ -127,7 +127,7 @@
         }
       ],
       "clip": "/admin/help/special/clip.mp4",
-      "clip_seconds": 8.1
+      "clip_seconds": 8.3
     },
     {
       "id": "event",
@@ -193,7 +193,7 @@
         }
       ],
       "clip": "/admin/help/signups/clip.mp4",
-      "clip_seconds": 9.3
+      "clip_seconds": 9.4
     },
     {
       "id": "flavor",
@@ -242,7 +242,7 @@
           "image": "/admin/help/treat/1.webp"
         },
         {
-          "caption": "Type the {Treat name} and {Price}. {Kind of treat} is optional, like “Cookie Cake”.",
+          "caption": "Type the {Treat name} and {Price}. {Group} is optional, like “Kits” or “Gift boxes”.",
           "image": "/admin/help/treat/2.webp"
         },
         {
@@ -259,7 +259,38 @@
         }
       ],
       "clip": "/admin/help/treat/clip.mp4",
-      "clip_seconds": 8.3
+      "clip_seconds": 9.3
+    },
+    {
+      "id": "sized",
+      "icon": "🏷️",
+      "title": "Add something with a price (treat or special, with sizes)",
+      "go": "menu",
+      "tip": "A {treat} stays on your menu until you switch it off. A {special} is for a limited time: give it an {Ends} date and it comes down by itself. Both can have sizes.",
+      "steps": [
+        {
+          "caption": "Tap {Menu} at the bottom of the screen.",
+          "image": "/admin/help/sized/1.webp"
+        },
+        {
+          "caption": "Always on your menu? Tap {+ Add a treat}. Just for a little while? Tap {+ Add a special} instead.",
+          "image": "/admin/help/sized/2.webp"
+        },
+        {
+          "caption": "Type the {Treat name}. Pick a {Group}, like Kits, or type your own.",
+          "image": "/admin/help/sized/3.webp"
+        },
+        {
+          "caption": "One price? Type it in {Price}. Comes in sizes? Tap {+ Add a size} and type each size and its price.",
+          "image": "/admin/help/sized/4.webp"
+        },
+        {
+          "caption": "Add a photo with {Choose photo}, then tap {Save}. On the site, people pick a size and the price follows.",
+          "image": "/admin/help/sized/5.webp"
+        }
+      ],
+      "clip": "/admin/help/sized/clip.mp4",
+      "clip_seconds": 14
     },
     {
       "id": "price",
@@ -286,7 +317,7 @@
         }
       ],
       "clip": "/admin/help/price/clip.mp4",
-      "clip_seconds": 7.9
+      "clip_seconds": 8
     },
     {
       "id": "order",
@@ -317,7 +348,7 @@
         }
       ],
       "clip": "/admin/help/order/clip.mp4",
-      "clip_seconds": 9
+      "clip_seconds": 10.3
     },
     {
       "id": "pay",
@@ -352,7 +383,69 @@
         }
       ],
       "clip": "/admin/help/pay/clip.mp4",
-      "clip_seconds": 10.5
+      "clip_seconds": 10.6
+    },
+    {
+      "id": "catering",
+      "icon": "🍽️",
+      "title": "Turn on Catering and add a package",
+      "go": "requests",
+      "tip": "In the same place you can change the words at the top, how many days' notice you need, and the list of things you cater. Tap {Save} under them.",
+      "steps": [
+        {
+          "caption": "Tap {Requests} at the bottom of the screen.",
+          "image": "/admin/help/catering/1.webp"
+        },
+        {
+          "caption": "Tap {Catering settings}.",
+          "image": "/admin/help/catering/2.webp"
+        },
+        {
+          "caption": "Switch on {Show Catering on the website}. A Catering button and box appear on the home page.",
+          "image": "/admin/help/catering/3.webp"
+        },
+        {
+          "caption": "Want a package people can ask about? Tap {+ Add a package}.",
+          "image": "/admin/help/catering/4.webp"
+        },
+        {
+          "caption": "Type the name, what's in it, the {From} price and how many it {Serves}. Add a photo, then tap {Save}.",
+          "image": "/admin/help/catering/5.webp"
+        }
+      ],
+      "clip": "/admin/help/catering/clip.mp4",
+      "clip_seconds": 8.5
+    },
+    {
+      "id": "request",
+      "icon": "💬",
+      "title": "Answer a catering request (text them, set a quote, mark Booked)",
+      "go": "requests",
+      "tip": "New requests also come to your email. {Open} shows the ones still going; {All} shows everything, and you can download a spreadsheet at the bottom.",
+      "steps": [
+        {
+          "caption": "Tap {Requests}. New ones have a pink {New} tag.",
+          "image": "/admin/help/request/1.webp"
+        },
+        {
+          "caption": "Tap {Text} to message them about their event.",
+          "image": "/admin/help/request/2.webp"
+        },
+        {
+          "caption": "When you know the price, type it in {Your quote}. It saves by itself.",
+          "image": "/admin/help/request/3.webp"
+        },
+        {
+          "caption": "Sent them the quote? Tap {Quoted}.",
+          "image": "/admin/help/request/4.webp"
+        },
+        {
+          "caption": "They said yes? Tap {Booked}. Jot anything to remember in {Your notes}. Only you see them.",
+          "image": "/admin/help/request/5.webp"
+        }
+      ],
+      "clip": "/admin/help/request/clip.mp4",
+      "clip_seconds": 8.7
     },
     {
       "id": "spreadsheet",
@@ -387,7 +480,7 @@
         }
       ],
       "clip": "/admin/help/spreadsheet/clip.mp4",
-      "clip_seconds": 8.6
+      "clip_seconds": 8.8
     },
     {
       "id": "tip",
@@ -418,7 +511,7 @@
         }
       ],
       "clip": "/admin/help/tip/clip.mp4",
-      "clip_seconds": 7.1
+      "clip_seconds": 7.3
     }
   ]
 }
