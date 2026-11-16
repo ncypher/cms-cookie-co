@@ -14,7 +14,8 @@ Written 2026-11-16. Facts marked **not checked** were not verified when this was
 - **Access app "CMS Admin"**: the sign-in in front of the Kitchen (one-time code by email, stays signed in for a month).
   - According to the Oct 20 setup notes, the policy "Shaun and Tom" allows Shaun's Gmail and Tom's email (**not re-checked since**).
   - The Worker also checks its own list, the `ADMIN_EMAILS` secret.
-- **Worker secrets (names only):** `ADMIN_EMAILS`, `RATE_LIMIT_SALT`. There are no Square secrets yet, so card payments are off.
+- **Worker secrets (names only):** `ADMIN_EMAILS`, `RATE_LIMIT_SALT`, and the Square set `SQUARE_APP_ID`, `SQUARE_APP_SECRET`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, `SQUARE_TOKEN_ENC_KEY` (added 2026-11-16).
+- **Card payments are staged, not on.** The Kitchen shows Connect Square, Card is switched off, and no Square account is connected. Customers see no card button.
 
 Cost: Workers, D1, R2, Email Routing and Access (up to 50 people) all have free tiers that cover a site this size, so it should be $0 a year. **Which Workers plan the account is on was not checked.** If it's Workers Paid, that's $5 a month. Owner today: Tom.
 
@@ -35,7 +36,7 @@ Cost: Workers, D1, R2, Email Routing and Access (up to 50 people) all have free 
 **When something changes:**
 - Add flavors, events and prices? Shaun does that in the Kitchen. No developer needed.
 - New features, a new card, or a new email address go through Tom.
-- If card payments are turned on: Tom sets the four Square secrets once (DEPLOY.md §8), and Shaun taps Connect Square.
+- To turn card payments on: Shaun opens her Square account, taps Connect Square → Allow in the Kitchen, and switches Card on. Then she and Tom do one $1 test payment and refund (DEPLOY.md §8). The secrets are already set.
 
 **A plain agreement they could both keep:**
 > Tom hosts and looks after cmscookieco3more.com. The domain, the website and everything on it are Shaun's. Shaun pays the domain renewal (about $11 a year) [or: Tom covers it]. Tom fixes anything that breaks within a few days and makes small changes when asked. Either of them can end this with 30 days' notice, and then Tom hands everything over using Path B, including a full copy of her data. Money from customers always goes straight to Shaun's own accounts, never through Tom.
@@ -72,7 +73,7 @@ The account holds only her site, so handing over means making her the owner of t
 7. **Decide about the Square connection.** Card payments use Tom's Square developer app. Its ID and secret are Worker secrets.
    - **Option 1, keep it:** card payments keep working as long as Tom keeps that app. If he deletes it or resets its secret, card payments stop and customers just see Venmo, Cash App and cash.
    - **Option 2, give her her own app:** whoever develops for her makes a new Square developer app and replaces `SQUARE_APP_ID`, `SQUARE_APP_SECRET` and `SQUARE_WEBHOOK_SIGNATURE_KEY`. Then she taps Connect Square once more.
-   - Either way her money and her Square account are untouched. If card payments were never turned on, Option 2 is simplest: do it when going live.
+   - Either way her money and her Square account are untouched. The production secrets set on 2026-11-16 are for Tom's app, so Option 1 is what happens unless someone changes them.
    - *Check:* after any change, a $1 card test shows "Paid by card".
 8. **Remove Tom.** Manage Account → Members → Tom → Remove.
    - *Could break:* doing this before steps 3 and 4 would leave nobody able to pay for or change the account.

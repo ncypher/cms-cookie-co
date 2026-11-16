@@ -15,7 +15,8 @@ Wrangler commands are exact. Email Routing and Access have no Wrangler commands,
 | D1 | `cms` · `2463eae5-4d26-46c0-a508-8bfec2d56ec8` · migrations 0001–0010 applied |
 | R2 | `cms-media` |
 | Access | team `cmscookieco.cloudflareaccess.com`, app **CMS Admin** (`/admin`, `/api/admin`), One-time PIN only, 1-month session, policy "Shaun and Tom" |
-| Secrets | `ADMIN_EMAILS`, `RATE_LIMIT_SALT` (no Square secrets yet, so card payments are off) |
+| Secrets | `ADMIN_EMAILS`, `RATE_LIMIT_SALT`, and since 2026-11-16 the Square production set: `SQUARE_APP_ID`, `SQUARE_APP_SECRET`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, `SQUARE_TOKEN_ENC_KEY` |
+| Square | **Staged** (2026-11-16): production app, redirect URL and webhook set; the Kitchen shows Connect Square; Card is off and no Square account is connected yet |
 | Cron | `17 9 * * *` daily (Square token renewal), on since 2026-11-16 |
 | Email Routing | enabled (MX/SPF live); destination `cmscookieco3more@gmail.com` (verified 2026-11-13); rules orders@ and hello@ → that Gmail (created 2026-11-16) |
 
@@ -152,7 +153,9 @@ Schema changes go in a new file in `migrations/`, then run `npx wrangler d1 migr
 
 ## 8. Card payments with Square (off until you do this)
 
-The code is live but dark: with no `SQUARE_APP_ID` secret the site and admin look exactly as before (card row greyed "Coming soon", no card button anywhere). Card details never touch this site; customers pay on Square's own page.
+**Status 2026-11-16: steps 1 and 2 are done.** Tom set the production app's redirect URL and webhook subscription, and the four secrets are in the Worker. What's left is step 3 (Shaun connects and switches Card on) and step 4 (a $1 test). A copy of the production `SQUARE_TOKEN_ENC_KEY` is in Tom's `square.env` (outside the repo) as `SQUARE_PROD_TOKEN_ENC_KEY`.
+
+Without a `SQUARE_APP_ID` secret the site and admin look as before (card row greyed "Coming soon", no card button anywhere). With the secrets set, the Kitchen shows **Connect Square**, but customers see no card button until Shaun has connected *and* switched Card on. Connecting never switches Card on by itself. Card details never touch this site; customers pay on Square's own page.
 
 1. **developer.squareup.com → your app → toggle to Production.**
    - **OAuth page:** Redirect URL = `https://cmscookieco3more.com/api/admin/square/callback` (exactly).

@@ -10,7 +10,7 @@ The website for Shaun Marie Schwartz's home bakery in South Lyon, MI: **[cmscook
   - **Help** has "Show me" pictures and clips for every task.
   - `/kitchen` shows how to put the Kitchen on her home screen.
 - **Spreadsheets:** orders, signups and requests download as spreadsheets.
-- **Card payments (Square)** are built and tested, but stay switched off ("Coming soon") until production Square secrets exist. See [DEPLOY.md §8](DEPLOY.md#8-card-payments-with-square-off-until-you-do-this).
+- **Card payments (Square)** are built, tested and staged in production. The Kitchen shows Connect Square, but customers see no card button until Shaun connects her Square account and switches Card on. See [DEPLOY.md §8](DEPLOY.md#8-card-payments-with-square-off-until-you-do-this).
 
 Ownership, costs and how to hand the site over are in [HANDOFF.md](HANDOFF.md). Rebuilding production from scratch is in [DEPLOY.md](DEPLOY.md).
 
