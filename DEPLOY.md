@@ -12,11 +12,12 @@ Wrangler commands are exact. Email Routing and Access have no Wrangler commands,
 |---|---|
 | Cloudflare account | `170f1ef57fe71799f3973d6b06c97098` (owns the cmscookieco3more.com zone) |
 | Worker | `cms-cookie-co` on `cmscookieco3more.com` + `www` (www 301 → apex); workers.dev off |
-| D1 | `cms` · `2463eae5-4d26-46c0-a508-8bfec2d56ec8` · migrations 0001–0007 applied |
+| D1 | `cms` · `2463eae5-4d26-46c0-a508-8bfec2d56ec8` · migrations 0001–0010 applied |
 | R2 | `cms-media` |
 | Access | team `cmscookieco.cloudflareaccess.com`, app **CMS Admin** (`/admin`, `/api/admin`), One-time PIN only, 1-month session, policy "Shaun and Tom" |
-| Secrets | `ADMIN_EMAILS`, `RATE_LIMIT_SALT` |
-| Email Routing | enabled (MX/SPF live); destination `cmscookieco3more@gmail.com`. The orders@ / hello@ rules can only be created after that address is verified (see step 1) |
+| Secrets | `ADMIN_EMAILS`, `RATE_LIMIT_SALT` (no Square secrets yet, so card payments are off) |
+| Cron | `17 9 * * *` daily (Square token renewal), on since 2026-11-16 |
+| Email Routing | enabled (MX/SPF live); destination `cmscookieco3more@gmail.com` (verified 2026-11-13); rules orders@ and hello@ → that Gmail (created 2026-11-16) |
 
 The steps below are how it was built, and how to rebuild it.
 
@@ -167,6 +168,6 @@ The code is live but dark: with no `SQUARE_APP_ID` secret the site and admin loo
 3. **Shaun:** Admin → Payments → **Connect Square** → sign in to Square → **Allow**. Then switch **Card** on.
 4. **Prove it:** order something for $1 on the live site, pay by card, check it flips to **Paid by card**, then refund it in Square (Admin → Payments → Open Square).
 
-The Worker renews the Square connection every 6 days in the background when the home page loads. A daily cron (`17 9 * * *`) is ready in `wrangler.jsonc` but commented out: Cloudflare refuses cron triggers until the account has a workers.dev subdomain. Open **Workers & Pages** once in the dashboard to create it (this Worker stays off workers.dev), then uncomment the line and deploy. If Shaun removes the app in Square, the site switches card off by itself and Payments says to connect again. To turn card off for good, tap Disconnect (or delete the four secrets).
+The Worker renews the Square connection every 6 days in the background when the home page loads. A daily cron (`17 9 * * *`) does the same. If Shaun removes the app in Square, the site switches card off by itself and Payments says to connect again. To turn card off for good, tap Disconnect (or delete the four secrets).
 
 Local sandbox testing: put the sandbox values in `.dev.vars` (see `.dev.vars.example`), and in the Square app's **Sandbox** OAuth page set Redirect URL `http://localhost:8787/api/admin/square/callback`. Square's sandbox Allow screen only shows while the sandbox test seller's Dashboard is open in the same browser (Developer Console → Sandbox test accounts → Open in Square Dashboard).
